@@ -1,0 +1,30 @@
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Other python non-code
+.ipynb_checkpoints/
+.ipython
+.python-version
+/venv/
+
+# Egg files
+*.egg-info/
+.eggs
+
+# pytest
+.pytest_cache*
+.coverage*
+htmlcov/
+
+# tox
+.tox/
+
+# misc
+.DS_Store
+/.idea/
+
+# scm version file (generated for editable installs)
+/src/atlutils/version.py

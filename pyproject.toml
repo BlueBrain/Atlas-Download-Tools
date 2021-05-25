@@ -1,0 +1,7 @@
+[build-system]
+requires = [
+    "pip>=10",
+    "setuptools>=42",
+    "setuptools_scm[toml]>=3.4",
+    "wheel",
+]

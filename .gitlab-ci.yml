@@ -1,0 +1,40 @@
+# For pip caching see documentation here:
+# https://docs.gitlab.com/ee/ci/caching/#caching-python-dependencies
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+cache:
+  key: "$CI_JOB_NAME"
+  paths:
+    - .cache/pip
+
+stages:
+  - lint
+  - test
+default:
+  before_script:
+    - pip install -U pip setuptools wheel
+    - pip install tox
+    - python -V
+lint:
+  stage: lint
+  image: python:3.7
+  script:
+    - tox -e lint
+pytest:36:
+  stage: test
+  image: python:3.6
+  coverage: '/^TOTAL.+?(\d+\%)$/'
+  script:
+    - tox -e py36
+pytest:37:
+  stage: test
+  image: python:3.7
+  coverage: '/^TOTAL.+?(\d+\%)$/'
+  script:
+    - tox -e py37
+pytest:38:
+  stage: test
+  image: python:3.8
+  coverage: '/^TOTAL.+?(\d+\%)$/'
+  script:
+    - tox -e py38
