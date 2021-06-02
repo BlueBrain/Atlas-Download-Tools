@@ -2,7 +2,15 @@
 from setuptools import find_packages, setup
 
 python_requires = ">=3.6"
-install_requires = []
+install_requires = [
+    "allensdk",
+    "matplotlib",
+    "numpy",
+    "opencv-python",
+    "pandas",
+    "requests",
+    "scikit-image",
+]
 extras_require = {
     "dev": [
         "bandit",
@@ -12,6 +20,7 @@ extras_require = {
         "pydocstyle",
         "pytest",
         "pytest-cov",
+        "pytest-mock",
         "tox",
     ],
 }
