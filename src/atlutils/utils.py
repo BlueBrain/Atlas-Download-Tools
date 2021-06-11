@@ -12,12 +12,11 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import requests
-from allensdk.api.queries.image_download_api import ImageDownloadApi
 
 CACHE_FOLDER = os.path.expanduser("~/.atlutils/")
 
 
-def get_image(image_id, folder=None, **kwargs):
+def get_image(image_id, folder=None, expression=False):
     """Get any image from Allen's database just by its id.
 
     Notes
@@ -33,14 +32,20 @@ def get_image(image_id, folder=None, **kwargs):
     folder : str or LocalPath or None
         Local folder where image saved. If None then automatically defaults to `CACHE_FOLDER`.
 
-    **kwargs
-        Additional parameters to be passed onto the `download_image` method of ``ImageDownloadApi``. See
+    expression : bool
+        If True, retrieve the specified SectionImage's expression mask image.
+        Otherwise, retrieve the specified SectionImage.
         See references for details.
 
     Returns
     -------
     img : np.ndarray
         Downloaded/locally loaded image. The dtype is np.uint8.
+
+    Raises
+    ------
+    ValueError
+        If request to download the image failed.
 
     References
     ----------
@@ -57,12 +62,8 @@ def get_image(image_id, folder=None, **kwargs):
         os.makedirs(folder)
 
     # Create full path
-    additional_speficier = "_".join(
-        sorted(["{}_{}".format(k, v) for k, v in kwargs.items()])
-    )
-    if additional_speficier:
-        additional_speficier = "_{}".format(additional_speficier)
-    path = "{}{}{}.jpg".format(folder, image_id, additional_speficier)
+    additional_specifier = "_expression" if expression else ""
+    path = "{}{}{}.jpg".format(folder, image_id, additional_specifier)
 
     # Check image exists
     if os.path.exists(path):
@@ -74,10 +75,20 @@ def get_image(image_id, folder=None, **kwargs):
         return img
 
     else:
+        image_url = (
+            f"https://api.brain-map.org/api/v2/section_image_download/{image_id}"
+        )
+        if expression:
+            image_url += "?view=expression"
 
-        img_api = ImageDownloadApi()
-        img_api.download_image(image_id, file_path=path, **kwargs)
-        return get_image(image_id, **kwargs)
+        response = requests.get(image_url, stream=True)
+        if not response.ok:
+            raise ValueError("Request failed!")
+
+        with open(path, "wb") as f:
+            for chunk in response.iter_content(1024):
+                f.write(chunk)
+        return get_image(image_id, expression=expression)
 
 
 def get_2d(image_id, ref2inp=False, add_last=False):

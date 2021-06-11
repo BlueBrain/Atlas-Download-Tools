@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 import requests
-from allensdk.api.queries.synchronization_api import SynchronizationApi
 
 from atlutils.utils import (
     CACHE_FOLDER,
@@ -41,8 +40,8 @@ class TestUtils:
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 
-        # with kwargs
-        img = get_image(image_id, tmpdir, a=1, b=2)
+        # Retrieve expression of the specified image
+        img = get_image(image_id, tmpdir, expression=True)
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 
@@ -471,20 +470,19 @@ class TestUtils:
     @pytest.mark.parametrize("i", [400, 1213.1])
     @pytest.mark.parametrize("r", [4900, 7223.1])
     def test_pir_to_xy_APIequalsALLENSDK(self, dataset_id, p, i, r):
-        """Test that manually extracted requests equals official Allen's package result.
-
-        Notes
-        -----
-        The official package is called AllenSDK,
-        see https://github.com/AllenInstitute/AllenSDK.
-        """
+        """Test that extracted requests equals official Allen's package result."""
 
         x, y, section_number, closest_section_image_id = pir_to_xy_API_single(
             p, i, r, dataset_id=dataset_id
         )
 
-        sync_api = SynchronizationApi()
-        r = sync_api.get_reference_to_image(9, p, i, r, [dataset_id])[0]["image_sync"]
+        url = (
+            "https://api.brain-map.org/api/v2/reference_to_image/9.json"
+            f"?x={p}&y={i}&z={r}&section_data_set_ids={dataset_id}"
+        )
+
+        response = requests.get(url)
+        r = response.json()["msg"][0]["image_sync"]
 
         x_s, y_s, section_number_s, closest_section_image_id_s = (
             r["x"],

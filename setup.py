@@ -3,7 +3,6 @@ from setuptools import find_packages, setup
 
 python_requires = ">=3.6"
 install_requires = [
-    "allensdk",
     "matplotlib",
     "numpy",
     "opencv-python",
