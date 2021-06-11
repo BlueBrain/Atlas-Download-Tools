@@ -12,6 +12,7 @@ from atlutils.utils import (
     get_2d,
     get_2d_bulk,
     get_3d,
+    get_experiment_list_from_gene,
     get_image,
     pir_to_xy_API_single,
     xy_to_pir_API_single,
@@ -61,6 +62,14 @@ class TestUtils:
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 
+    @pytest.mark.internet
+    def test_get_experiment_list(self):
+        """Test that experiment list is good."""
+        results = get_experiment_list_from_gene("S100b", "sagittal")
+        assert [79762548, 922, 924] == results
+        results = get_experiment_list_from_gene("S100b", "coronal")
+        assert [923, 79591593] == results
+
     @pytest.mark.parametrize(
         "image_id", EXISTING_IMAGE_IDS[:1]
     )  # doesnt make sense to do more because we mock
@@ -73,7 +82,7 @@ class TestUtils:
 
         # patching
         fake_response = Mock(spec=requests.Request)
-        fake_response.status_code = 200
+        fake_response.ok = True
 
         rv = {
             "success": True,
@@ -155,7 +164,7 @@ class TestUtils:
 
         # patching
         fake_response = Mock(spec=requests.Request)
-        fake_response.status_code = 200
+        fake_response.ok = True
 
         rv = {
             "success": True,
@@ -294,7 +303,7 @@ class TestUtils:
 
         # patching
         fake_response = Mock(spec=requests.Request)
-        fake_response.status_code = 200
+        fake_response.ok = True
 
         rv = {
             "success": True,
@@ -386,7 +395,7 @@ class TestUtils:
 
         # patching
         fake_response = Mock(spec=requests.Request)
-        fake_response.status_code = 200
+        fake_response.ok = True
 
         rv = {
             "success": True,
@@ -433,7 +442,7 @@ class TestUtils:
 
         # patching
         fake_response = Mock(spec=requests.Request)
-        fake_response.status_code = 200
+        fake_response.ok = True
 
         rv = {
             "success": True,

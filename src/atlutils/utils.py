@@ -16,6 +16,35 @@ import requests
 CACHE_FOLDER = os.path.expanduser("~/.atlutils/")
 
 
+def abi_get_request(url):
+    """Request url and check the response is valid.
+
+    Parameters
+    ----------
+    url : str
+        URL of the request.
+
+    Returns
+    -------
+    response : list or dict
+         Response to the request.
+
+    Raises
+    ------
+    ValueError
+        If the status_code of the request is different than 200.
+        (=Request failed)
+    """
+    r = requests.get(url)
+
+    if not r.ok:
+        raise ValueError("Request failed!")
+
+    response = r.json()["msg"]
+
+    return response
+
+
 def get_image(image_id, folder=None, expression=False):
     """Get any image from Allen's database just by its id.
 
@@ -91,6 +120,39 @@ def get_image(image_id, folder=None, expression=False):
         return get_image(image_id, expression=expression)
 
 
+def get_experiment_list_from_gene(gene_name, axis="sagittal"):
+    """Get Allen's experiments IDs for a given gene expression name.
+
+    Parameters
+    ----------
+    gene_name : str
+        Gene Expression name.
+
+    axis : {"coronal", "sagittal"}
+        Axis of the experiment.
+
+    Returns
+    -------
+    experiment_list : list
+        List of the experiment ID for a given gene expression and a given axis.
+    """
+    experiment_list = []
+
+    url = (
+        f"https://api.brain-map.org/api/v2/data/"
+        "query.json?criteria=model::SectionDataSet,rma::criteria,[failed$eq'false']"
+        f",products[abbreviation$eq'Mouse'],plane_of_section[name$eq'{axis}'],"
+        f"genes[acronym$eq'\"{gene_name}\"']"
+    )
+
+    response = abi_get_request(url)
+
+    for experiment in response:
+        experiment_list.append(experiment["id"])
+
+    return experiment_list
+
+
 def get_2d(image_id, ref2inp=False, add_last=False):
     """For a section image returns the 2D transformation matrix.
 
@@ -122,18 +184,15 @@ def get_2d(image_id, ref2inp=False, add_last=False):
     """
     # Very quick implementation
 
-    url = "http://api.brain-map.org/api/v2/data/query.json?"
-    url += (
-        "criteria=model::SectionImage,rma::criteria,"
-        "[id$eq{}],rma::include,alignment2d".format(image_id)
+    url = (
+        f"https://api.brain-map.org/api/v2/data/query.json?"
+        f"criteria=model::SectionImage,rma::criteria,"
+        f"[id$eq{image_id}],rma::include,alignment2d"
     )
 
-    r = requests.get(url)
+    response = abi_get_request(url)
 
-    if r.status_code != 200:
-        raise ValueError("Request failed!")
-
-    temp = r.json()["msg"][0]["alignment2d"]
+    temp = response[0]["alignment2d"]
     raw_linear = [
         temp["t{}_0{}".format("vs" if ref2inp else "sv", i)] for i in range(4)
     ]
@@ -184,21 +243,18 @@ def get_2d_bulk(dataset_id, ref2inp=False, add_last=False):
         where a is the 2D matrix.
 
     """
-    url = "http://api.brain-map.org/api/v2/data/query.json?"
-    url += (
+    url = (
+        "https://api.brain-map.org/api/v2/data/query.json?"
         "criteria=model::SectionImage,rma::criteria,"
-        "section_data_set[id$eq{}],rma::include,alignment2d".format(dataset_id)
+        f"section_data_set[id$eq{dataset_id}],rma::include,alignment2d"
     )
     url += ",rma::options[num_rows$eq2000]"
     # You want to make sure no section images are censored
 
-    r = requests.get(url)
-
-    if r.status_code != 200:
-        raise ValueError("Request failed!")
+    response = abi_get_request(url)
 
     res_dict = {}
-    for x in r.json()["msg"]:
+    for x in response:
         temp = x["alignment2d"]
         temp_sn = x["section_number"]
         raw_linear = [
@@ -262,17 +318,15 @@ def get_3d(dataset_id, ref2inp=False, add_last=False, return_meta=False):
         When request not successful.
 
     """
-    url = "http://api.brain-map.org/api/v2/data/query.json?"
-    url += (
+    url = (
+        "https://api.brain-map.org/api/v2/data/query.json?"
         "criteria=model::SectionDataSet,rma::criteria,"
-        "[id$eq{}],rma::include,alignment3d".format(dataset_id)
+        f"[id$eq{dataset_id}],rma::include,alignment3d"
     )
-    r = requests.get(url)
 
-    if r.status_code != 200:
-        raise ValueError("Request failed!")
+    response = abi_get_request(url)
 
-    temp = r.json()["msg"][0]["alignment3d"]
+    temp = response[0]["alignment3d"]
     raw_linear = [
         temp["t{}_{:02d}".format("rv" if ref2inp else "vr", i)] for i in range(9)
     ]
@@ -291,10 +345,10 @@ def get_3d(dataset_id, ref2inp=False, add_last=False, return_meta=False):
         a = np.vstack((a, [0, 0, 0, 1]))
 
     # RS
-    rs = r.json()["msg"][0]["reference_space_id"]
+    rs = response[0]["reference_space_id"]
 
     # thickness
-    thickness = r.json()["msg"][0]["section_thickness"]
+    thickness = response[0]["section_thickness"]
 
     if return_meta:
         return a, rs, thickness
@@ -340,17 +394,15 @@ def pir_to_xy_API_single(p, i, r, dataset_id, reference_space=9):
     """
     # url = 'http://api.brain-map.org/api/v2/image_to_reference/
     # {}.json?x={}&y={}'.format(image_id, x, y)
-    url = "http://api.brain-map.org/api/v2/reference_to_image/"
-    url += "{}.json?x={}&y={}&z={}&section_data_set_ids={}".format(
-        reference_space, p, i, r, dataset_id
+    url = (
+        "https://api.brain-map.org/api/v2/reference_to_image/"
+        f"{reference_space}.json?x={p}&y={i}&z={r}&"
+        f"section_data_set_ids={dataset_id}"
     )
 
-    r = requests.get(url)
+    response = abi_get_request(url)
 
-    if r.status_code != 200:
-        raise ValueError("Request failed!")
-
-    temp = r.json()["msg"][0]["image_sync"]
+    temp = response[0]["image_sync"]
 
     x, y = temp["x"], temp["y"]
     section_number = temp["section_number"]
@@ -387,16 +439,14 @@ def xy_to_pir_API_single(x, y, image_id):
         Sagittal dimension (left -> right).
         The x (column) coordinate in coronal sections.
     """
-    url = "http://api.brain-map.org/api/v2/image_to_reference/{}.json?x={}&y={}".format(
-        image_id, x, y
+    url = (
+        "http://api.brain-map.org/api/v2/image_to_reference/"
+        f"{image_id}.json?x={x}&y={y}"
     )
 
-    r = requests.get(url)
+    response = abi_get_request(url)
 
-    if r.status_code != 200:
-        raise ValueError("Request failed!")
-
-    temp = r.json()["msg"]["image_to_reference"]
+    temp = response["image_to_reference"]
 
     p, i, r = temp["x"], temp["y"], temp["z"]
 
@@ -421,19 +471,16 @@ class CommonQueries:
             Id representing the reference space.
 
         """
-        url = "http://api.brain-map.org/api/v2/data/query.json?"
-        url += "criteria=model::SectionDataSet,rma::criteria,[id$eq{}]".format(
-            dataset_id
+        url = (
+            "http://api.brain-map.org/api/v2/data/query.json?"
+            f"criteria=model::SectionDataSet,rma::criteria,[id$eq{dataset_id}]"
         )
-        r = requests.get(url)
 
-        if r.status_code != 200:
-            raise ValueError("Request failed!")
+        response = abi_get_request(url)
 
-        raw = r.json()["msg"]
-        if not raw:
+        if not response:
             raise ValueError("No entries for the query (maybe wrong dataset id).")
 
-        reference_space_id = raw[0]["reference_space_id"]
+        reference_space_id = response[0]["reference_space_id"]
 
         return reference_space_id

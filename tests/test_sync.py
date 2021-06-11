@@ -36,7 +36,6 @@ class TestSync:
         )
 
         fake_response = Mock(spec=requests.Request)
-        fake_response.status_code = 200
 
         rv = {
             "success": True,
@@ -77,6 +76,7 @@ class TestSync:
         }
 
         fake_response.json = Mock(return_value=rv)
+        fake_response.ok = True
         mocker.patch("requests.get", return_value=fake_response)
 
         if p % 10 == 0 and 0 <= p < 13200:

@@ -74,7 +74,7 @@ def get_reference_image(p, folder=None):
     )
     r = requests.get(url)
 
-    if r.status_code != 200:
+    if not r.ok:
         raise ValueError("Request failed.")
 
     raw = r.json()["msg"]
