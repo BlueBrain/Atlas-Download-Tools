@@ -59,7 +59,8 @@ def get_image(image_id, folder=None, expression=False):
         Integer representing an id of the section image.
 
     folder : str or LocalPath or None
-        Local folder where image saved. If None then automatically defaults to `CACHE_FOLDER`.
+        Local folder where image saved.
+        If None then automatically defaults to `CACHE_FOLDER`.
 
     expression : bool
         If True, retrieve the specified SectionImage's expression mask image.
@@ -139,10 +140,10 @@ def get_experiment_list_from_gene(gene_name, axis="sagittal"):
     experiment_list = []
 
     url = (
-        f"https://api.brain-map.org/api/v2/data/"
+        "https://api.brain-map.org/api/v2/data/"
         "query.json?criteria=model::SectionDataSet,rma::criteria,[failed$eq'false']"
         f",products[abbreviation$eq'Mouse'],plane_of_section[name$eq'{axis}'],"
-        f"genes[acronym$eq'\"{gene_name}\"']"
+        f"genes[acronym$eq'{gene_name}']"
     )
 
     response = abi_get_request(url)
@@ -469,7 +470,6 @@ class CommonQueries:
         -------
         reference_space_id : int
             Id representing the reference space.
-
         """
         url = (
             "http://api.brain-map.org/api/v2/data/query.json?"
@@ -484,3 +484,39 @@ class CommonQueries:
         reference_space_id = response[0]["reference_space_id"]
 
         return reference_space_id
+
+    @staticmethod
+    def get_axis(dataset_id):
+        """Get axis for a given dataset.
+
+        Parameters
+        ----------
+        dataset_id : int
+            Id representing a section dataset.
+
+        Returns
+        -------
+        axis : str
+            Axis of the dataset images. {'sagittal', 'coronal'}
+        """
+        url = (
+            "https://api.brain-map.org/api/v2/data/query.json?"
+            f"criteria=model::SectionDataSet,rma::criteria,[id$eq{dataset_id}]"
+        )
+
+        response = abi_get_request(url)
+
+        if not response:
+            raise ValueError("No entries for the query (maybe wrong dataset id).")
+
+        plane_of_section_id = response[0]["plane_of_section_id"]
+        if plane_of_section_id == 1:
+            axis = "coronal"
+        elif plane_of_section_id == 2:
+            axis = "sagittal"
+        else:
+            raise ValueError(
+                f"The plane of section {plane_of_section_id} is not recognized yet."
+            )
+
+        return axis

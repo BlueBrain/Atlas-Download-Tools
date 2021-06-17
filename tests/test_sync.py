@@ -7,11 +7,11 @@ import pytest
 import requests
 
 from atlutils.sync import (
-    corners_rs9,
+    corners_coronal,
     get_reference_image,
     pir_to_xy_API,
     pir_to_xy_local,
-    pir_to_xy_local_coronal,
+    pir_to_xy_local_with_axis,
     warp_rs9,
     xy_to_pir_API,
 )
@@ -171,15 +171,18 @@ class TestSync:
     @pytest.mark.parametrize("p", [10, 20])
     @pytest.mark.parametrize("i_list", [[40, 31.8]])
     @pytest.mark.parametrize("r_list", [[49, 12.3]])
-    def test_pir_to_xy_local_coronal(self, p, i_list, r_list, dataset_id):
+    def test_pir_to_xy_local_with_axis(self, p, i_list, r_list, dataset_id):
         """Test that local works."""
+
+        N = len(i_list)
+        p_list = [p] * N
 
         (
             x_list,
             y_list,
             section_number,
             closest_section_image_id,
-        ) = pir_to_xy_local_coronal(p, i_list, r_list, dataset_id=dataset_id)
+        ) = pir_to_xy_local_with_axis(p_list, i_list, r_list, dataset_id=dataset_id)
 
         assert len(x_list) == len(y_list) == len(i_list) == len(r_list)
 
@@ -247,10 +250,10 @@ class TestSync:
     @pytest.mark.internet
     @pytest.mark.parametrize("dataset_id", EXISTING_DATASET_IDS)
     @pytest.mark.parametrize("p", [10, 2000])
-    def test_corners_rs9(self, p, dataset_id):
+    def test_corners_coronal(self, p, dataset_id):
         """Test that corners in rs 9 work"""
 
-        section_number, closest_section_image_id = corners_rs9(p, dataset_id)
+        section_number, closest_section_image_id = corners_coronal(p, dataset_id)
 
         assert isinstance(section_number, int)
         assert isinstance(closest_section_image_id, int)

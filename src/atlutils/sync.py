@@ -5,13 +5,15 @@ Notes
 See the module `atlutils.utils.py` for lower level
 functions that are called within this module.
 """
+import collections
 
 import numpy as np
-import requests
 from skimage.transform import resize, warp
 
 from atlutils.base import DisplacementField
 from atlutils.utils import (
+    CommonQueries,
+    abi_get_request,
     get_2d,
     get_2d_bulk,
     get_3d,
@@ -19,6 +21,32 @@ from atlutils.utils import (
     pir_to_xy_API_single,
     xy_to_pir_API_single,
 )
+
+
+def _check_consistent_sequences(*args):
+    """Check that sequences are consistent.
+
+    Parameters
+    ----------
+    *args : sequence of float
+        List of coronal dimensions (anterior -> posterior).
+
+    Raises
+    ------
+    TypeError
+        If inputs are not sequences.
+    ValueError
+        If sequences do not have the same size.
+    """
+    # Check type
+    for input in args:
+        if not isinstance(input, collections.abc.Sequence):
+            raise TypeError("Inputs need to be sequences.")
+
+    # Check dimensions
+    for i in range(len(args) - 1):
+        if not len(args[i]) == len(args[i + 1]):
+            raise ValueError("The sequences need to have the same length.")
 
 
 def get_reference_image(p, folder=None):
@@ -67,22 +95,19 @@ def get_reference_image(p, folder=None):
     section_data_set_id = 576985993
     section_number = p // 10
 
-    url = "http://api.brain-map.org/api/v2/data/query.json?"
-    url += "criteria=model::SectionImage,rma::criteria,"
-    url += "[section_number$eq{}],section_data_set[id$eq{}]".format(
-        section_number, section_data_set_id
+    url = (
+        "http://api.brain-map.org/api/v2/data/query.json?"
+        "criteria=model::SectionImage,rma::criteria,"
+        f"[section_number$eq{section_number}],"
+        f"section_data_set[id$eq{section_data_set_id}]"
     )
-    r = requests.get(url)
 
-    if not r.ok:
-        raise ValueError("Request failed.")
+    response = abi_get_request(url)
 
-    raw = r.json()["msg"]
-
-    if not raw:
+    if not response:
         raise ValueError("No entries for the query.")
 
-    id_ = raw[0]["id"]
+    id_ = response[0]["id"]
 
     return get_image(id_, folder)
 
@@ -97,9 +122,9 @@ def xy_to_pir_API(x_list, y_list, image_id):
 
     Parameters
     ----------
-    x_list : list
+    x_list : sequence of float
         List of x coordinates (columns) in the section image with id `image_id`.
-    y_list : list
+    y_list : sequence of float
         List of y coordinates (rows) in the section image with id `image_id`.
     image_id : int
         Integer representing an id of the section image with id `image_id`.
@@ -123,11 +148,7 @@ def xy_to_pir_API(x_list, y_list, image_id):
         If `x_list` and `y_list` different length.
     """
     # Checks
-    if not isinstance(x_list, list) and not isinstance(y_list, list):
-        raise TypeError("The x_list and y_list need to be lists")
-
-    if len(x_list) != len(y_list):
-        raise ValueError("The inputs x_list and y_list need to have the same length.")
+    _check_consistent_sequences(x_list, y_list)
 
     p_list, i_list, r_list = [], [], []
 
@@ -179,17 +200,7 @@ def pir_to_xy_API(p_list, i_list, r_list, dataset_id, reference_space=9):
         is the closest existing approximation.
     """
     # Checks
-    if not (
-        isinstance(p_list, list)
-        and isinstance(i_list, list)
-        and isinstance(r_list, list)
-    ):
-        raise TypeError("The p_list, i_list and r_list need to be lists")
-
-    if not (len(p_list) == len(i_list) == len(r_list)):
-        raise ValueError(
-            "The inputs p_list, i_list and r_list need to have the same length."
-        )
+    _check_consistent_sequences(p_list, i_list, r_list)
 
     x_list, y_list, section_number_list, closest_section_image_id_list = [], [], [], []
 
@@ -249,18 +260,8 @@ def pir_to_xy_local(p_list, i_list, r_list, dataset_id, reference_space=9):
         is the closest existing approximation.
     """
     # Check dimensions
-    if not (
-        isinstance(i_list, list)
-        and isinstance(r_list, list)
-        and isinstance(p_list, list)
-    ):
-        raise TypeError("Both the i_list and r_list need to be lists.")
-
-    if not len(p_list) == len(i_list) == len(r_list):
-        raise ValueError("The i_list and r_list need to have the same length.")
-
-    else:
-        N = len(p_list)
+    _check_consistent_sequences(p_list, i_list, r_list)
+    N = len(p_list)
 
     # Get dataset metadata
     a_3d, reference_space_actual, section_thickness = get_3d(
@@ -317,7 +318,9 @@ def pir_to_xy_local(p_list, i_list, r_list, dataset_id, reference_space=9):
     return x_list, y_list, section_number_list, closest_section_image_id_list
 
 
-def pir_to_xy_local_coronal(p, i_list, r_list, dataset_id, reference_space=9):
+def pir_to_xy_local_with_axis(
+    p_list, i_list, r_list, dataset_id, reference_space=9, axis="coronal"
+):
     """Convert a fixed p and custom is, rs in a reference space into a xs, ys.
 
     Notes
@@ -328,8 +331,8 @@ def pir_to_xy_local_coronal(p, i_list, r_list, dataset_id, reference_space=9):
 
     Parameters
     ----------
-    p : float
-        A fixed coronal dimensions (anterior -> posterior). In microns.
+    p_list : list
+        List of coronal dimensions (anterior -> posterior).
     i_list : list
         List of transversal dimensions (superior -> inferior).
         The y (row) coordinate in coronal sections.
@@ -340,7 +343,9 @@ def pir_to_xy_local_coronal(p, i_list, r_list, dataset_id, reference_space=9):
         Id of the section dataset.
     reference_space : int, optional
         Reference space for which to perform the computations,
-        most likely 9 is the one we always want.
+        most likely 9 or 10 are the ones we always want.
+    axis : {"sagittal", "coronal"}
+        Axis of the dataset images.
 
     Returns
     -------
@@ -360,20 +365,8 @@ def pir_to_xy_local_coronal(p, i_list, r_list, dataset_id, reference_space=9):
         is the closest existing approximation.
     """
     # Check dimensions
-
-    if not (isinstance(i_list, list) and isinstance(r_list, list)):
-        raise TypeError("Both the i_list and r_list need to be lists.")
-
-    if not len(i_list) == len(r_list):
-        raise ValueError("The i_list and r_list need to have the same length.")
-
-    else:
-        N = len(i_list)
-
-    p_list = p if isinstance(p, list) else [p] * N
-
-    if len(p_list) != N:
-        raise ValueError("The p_list, i_list and r_list need to have the same length.")
+    _check_consistent_sequences(p_list, i_list, r_list)
+    N = len(p_list)
 
     # Get dataset metadata
     a_3d, reference_space_actual, section_thickness = get_3d(
@@ -383,12 +376,30 @@ def pir_to_xy_local_coronal(p, i_list, r_list, dataset_id, reference_space=9):
         return_meta=True,
     )
 
-    # Check that reference space is 9
-    if not reference_space_actual == reference_space == 9:
-        raise NotImplementedError("Currently only reference_space 9 allowed")
+    # Check that reference space is 9 or 10
+    if reference_space not in {9, 10}:
+        raise NotImplementedError("Currently only reference_space 9 and 10 allowed")
+
+    if reference_space_actual != reference_space:
+        raise ValueError(
+            f"Reference space from ABI (={reference_space_actual}) "
+            f"and atlutils (={reference_space}) should be the same"
+        )
 
     # Determine corresponding section images in the corners
-    section_number_corner_mode, image_id_corner_mode = corners_rs9(p, dataset_id)
+    if axis == "coronal":
+        section_number_corner_mode, image_id_corner_mode = corners_coronal(
+            p_list[0], dataset_id
+        )
+    elif axis == "sagittal":
+        section_number_corner_mode, image_id_corner_mode = corners_sagittal(
+            r_list[0], dataset_id
+        )
+    else:
+        raise ValueError(
+            f"Currently, axis {axis} not supported. "
+            "Only sagittal and coronal allowed"
+        )
 
     a_2d = get_2d(image_id=image_id_corner_mode, ref2inp=True, add_last=True)
 
@@ -408,7 +419,7 @@ def pir_to_xy_local_coronal(p, i_list, r_list, dataset_id, reference_space=9):
     )
 
 
-def corners_rs9(p, dataset_id):
+def corners_coronal(p, dataset_id):
     """Determine the most suitable section image based on 4 corners of reference space 9.
 
     Parameters
@@ -440,7 +451,49 @@ def corners_rs9(p, dataset_id):
 
     # Find mode
     section_number_corner_mode = max(
-        set(section_number_corners), key=section_number_corners.count
+        section_number_corners, key=section_number_corners.count
+    )  # if multimodal, then lower is chosen
+
+    image_id_corner_mode = image_id_corners[
+        section_number_corners.index(section_number_corner_mode)
+    ]
+
+    return section_number_corner_mode, image_id_corner_mode
+
+
+def corners_sagittal(r, dataset_id):
+    """Determine the most suitable section image based on 4 corners of reference space 9.
+
+    Parameters
+    ----------
+    r : int
+        Sagittal slice coordinate in microns.
+        Note that r = section_thickness * section_number.
+        So in our case r = 10 * section number.
+    dataset_id : int
+        Id of the section dataset.
+
+    Returns
+    -------
+    section_number : int
+        Section number as computed by the 3D transformation.
+        Since the dataset will never contain exactly this section one just uses
+        the closest section image (see `closest_section_image_id`).
+    closest_section_image_id : int
+        Id of the image contained in the section dataset such that
+        for the given `p`, `i`, `r` input is the closest existing approximation.
+    """
+    _, _, section_number_corners, image_id_corners = pir_to_xy_API(
+        [0, 0, 13199, 13199],
+        [0, 7999, 0, 7999],
+        4 * [r],
+        dataset_id=dataset_id,
+        reference_space=10,
+    )
+
+    # Find mode
+    section_number_corner_mode = max(
+        section_number_corners, key=section_number_corners.count
     )  # if multimodal, then lower is chosen
 
     image_id_corner_mode = image_id_corners[
@@ -518,11 +571,12 @@ def warp_rs9(
         """
         i_list = list(coords[:, 1] * ds_f)
         r_list = list(coords[:, 0] * ds_f)
+        p_list = [p] * len(i_list)
 
         output_coords = np.empty_like(coords)
 
-        x_list, y_list, _, _ = pir_to_xy_local_coronal(
-            p, i_list, r_list, dataset_id=dataset_id
+        x_list, y_list, _, _ = pir_to_xy_local_with_axis(
+            p_list, i_list, r_list, dataset_id=dataset_id
         )
 
         output_coords[:, 1] = y_list
@@ -532,7 +586,7 @@ def warp_rs9(
 
     # Variables
     if img_section_id is None:
-        _, img_section_id = corners_rs9(p, dataset_id)
+        _, img_section_id = corners_coronal(p, dataset_id)
     output_shape = (8000 // ds_f, 11400 // ds_f)
 
     # Images
@@ -556,18 +610,25 @@ def warp_rs9(
     return img_ref_resized, img_section_resized, warped_img_section
 
 
-def get_transform(p, dataset_id, ds_f=1):
+def get_transform(
+    slice_coordinate, dataset_id, ds_f=1, reference_space=9, axis="coronal"
+):
     """Get transformation given a fixed coronal section.
 
     Parameters
     ----------
-    p : int
-        Coronal slice coordinate in microns.
+    slice_coordinate : float
+        Coronal/Sagittal slice coordinate in microns.
     dataset_id : int
         Id of the section dataset. Used to determine the 3D matrix.
     ds_f : int, optional
         Downsampling factor. If set to 1 no downsampling takes place.
         Note that if `ds_f` = 25, then we obtain the shape (320, 456).
+    reference_space : int, optional
+        Reference space for which to perform the computations,
+        most likely 9 or 10 are the ones we always want.
+    axis : str, optional
+        Axis of the dataset images. {'sagittal', 'coronal'}
 
     Returns
     -------
@@ -575,18 +636,39 @@ def get_transform(p, dataset_id, ds_f=1):
         Displacement field of shape (8000 // `ds_f`, 11400 // `ds_f`, ?)
         representing reference -> moved transformation.
     """
-    output_shape = (8000 // ds_f, 11400 // ds_f)
+    if reference_space not in (9, 10):
+        raise ValueError("Currently only reference_space 9 and 10 are available.")
+
+    if reference_space == 9:
+        output_shape = (8000 // ds_f, 11400 // ds_f)
+    else:
+        output_shape = (13200 // ds_f, 8000 // ds_f)
 
     y, x = np.indices(output_shape)
     grid = np.stack((x.ravel(), y.ravel())).T
 
-    i_list = list(grid[:, 1] * ds_f)
-    r_list = list(grid[:, 0] * ds_f)
+    if reference_space == 9:
+        i_list = list(grid[:, 1] * ds_f)
+        r_list = list(grid[:, 0] * ds_f)
+        p_list = [
+            slice_coordinate,
+        ] * len(i_list)
+    else:
+        p_list = list(grid[:, 1] * ds_f)
+        i_list = list(grid[:, 0] * ds_f)
+        r_list = [
+            slice_coordinate,
+        ] * len(p_list)
 
     output_grid = np.empty_like(grid)
 
-    x_list, y_list, _, _ = pir_to_xy_local_coronal(
-        p, i_list, r_list, dataset_id=dataset_id
+    x_list, y_list, _, _ = pir_to_xy_local_with_axis(
+        p_list,
+        i_list,
+        r_list,
+        dataset_id=dataset_id,
+        reference_space=reference_space,
+        axis=axis,
     )
 
     output_grid[:, 1] = y_list
@@ -602,7 +684,7 @@ def get_transform(p, dataset_id, ds_f=1):
 def download_dataset(
     dataset_id,
     ds_f=25,
-    p_detection_xy=(0, 0),
+    detection_xy=(0, 0),
     order="sn",
     verbose=True,
     include_expression=False,
@@ -616,9 +698,10 @@ def download_dataset(
     ds_f : int, optional
         Downsampling factor. If set to 1 no downsampling takes place.
         Note that if `ds_f` = 25, then we obtain the shape (320, 456).
-    p_detection_xy : tuple
+    detection_xy : tuple
         Represents the x and y coordinate in the image that will be
-        used for determining the coronal dimension `p` in the reference space.
+        used for determining the slice number in the reference space.
+        `p` for coronal slices, `r` for sagittal slices.
     order : str, {'id', 'sn'}
         How to order the streamed pairs.
             - 'id' : smallest image ids first
@@ -633,8 +716,9 @@ def download_dataset(
     Returns
     -------
     res_dict : generator
-        Generator yielding consecutive four tuples of  (image_id, p, img, df).
-        The `p` is the coronal dimension in microns.
+        Generator yielding consecutive four tuples of
+        (image_id, constant_ref_coordinate, img, df).
+        The `constant_ref_coordinate` is the dimension in the given axis in microns.
         The `img` is the raw gene expression image with dtype `uint8`.
         The `df` is the displacement field of shape (8000 // `ds_f`, 11400 // `ds_f`).
         Note that the sorting. If `include_expression=True` then last returned image
@@ -642,6 +726,8 @@ def download_dataset(
         That is the generator yield (image_id, p, img, df, img_expr).
     """
     metadata = get_2d_bulk(dataset_id)
+    reference_space = CommonQueries.get_reference_space(dataset_id=dataset_id)
+    axis = CommonQueries.get_axis(dataset_id)
 
     if order == "id":
         all_image_ids = sorted(metadata.keys())
@@ -656,15 +742,26 @@ def download_dataset(
         if verbose:
             print(image_id)
         try:
-            p, _, _ = xy_to_pir_API_single(*p_detection_xy, image_id=image_id)
+            p, i, r = xy_to_pir_API_single(*detection_xy, image_id=image_id)
+            if axis == "coronal":
+                slice_ref_coordinate = p
+            else:
+                slice_ref_coordinate = r
+
             img = get_image(image_id)
-            df = get_transform(p, dataset_id=dataset_id, ds_f=ds_f)
+            df = get_transform(
+                slice_ref_coordinate,
+                dataset_id=dataset_id,
+                ds_f=ds_f,
+                reference_space=reference_space,
+                axis=axis,
+            )
 
             if not include_expression:
-                yield image_id, p, img, df
+                yield image_id, slice_ref_coordinate, img, df
             else:
                 img_expression = get_image(image_id, expression=True)
-                yield image_id, p, img, df, img_expression
+                yield image_id, slice_ref_coordinate, img, df, img_expression
 
         except Exception as e:
             print(e)
