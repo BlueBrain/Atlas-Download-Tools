@@ -26,6 +26,8 @@ extras_require = {
 
 setup(
     name="atldld",
+    author="Blue Brain Project, EPFL",
+    url="https://github.com/BlueBrain/Atlas-Download-Tools",
     use_scm_version={
         "write_to": "src/atldld/version.py",
         "write_to_template": '"""The package version."""\n__version__ = "{version}"\n',
