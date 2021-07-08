@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from skimage.transform import resize
 
-from atlutils.base import DisplacementField
+from atldld.base import DisplacementField
 
 SUPPORTED_DTYPES_ANNOTATIONS = ["int8", "int16", "int32"]
 SUPPORTED_APPROACHES_ANNOTATIONS = ["scipy", "opencv"]

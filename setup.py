@@ -25,9 +25,9 @@ extras_require = {
 }
 
 setup(
-    name="atlutils",
+    name="atldld",
     use_scm_version={
-        "write_to": "src/atlutils/version.py",
+        "write_to": "src/atldld/version.py",
         "write_to_template": '"""The package version."""\n__version__ = "{version}"\n',
         "local_scheme": "no-local-version",
     },

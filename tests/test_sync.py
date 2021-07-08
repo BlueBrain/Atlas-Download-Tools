@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import requests
 
-from atlutils.sync import (
+from atldld.sync import (
     corners_coronal,
     get_reference_image,
     pir_to_xy_API,

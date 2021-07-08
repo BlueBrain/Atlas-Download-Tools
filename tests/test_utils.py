@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import requests
 
-from atlutils.utils import (
+from atldld.utils import (
     CACHE_FOLDER,
     CommonQueries,
     get_2d,

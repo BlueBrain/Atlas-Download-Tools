@@ -10,8 +10,8 @@ import collections
 import numpy as np
 from skimage.transform import resize, warp
 
-from atlutils.base import DisplacementField
-from atlutils.utils import (
+from atldld.base import DisplacementField
+from atldld.utils import (
     CommonQueries,
     abi_get_request,
     get_2d,
