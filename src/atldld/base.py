@@ -1,11 +1,3 @@
-"""Fundamental building blocks of the project.
-
-Notes
------
-This module does not import any other module except for zoo.
-Be careful to keep this logic in order to prevent cyclical imports.
-"""
-
 # The package atldld is a tool to download atlas data.
 #
 # Copyright (C) 2021 EPFL/Blue Brain Project
@@ -22,6 +14,13 @@ Be careful to keep this logic in order to prevent cyclical imports.
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""Fundamental building blocks of the project.
+
+Notes
+-----
+This module does not import any other module except for zoo.
+Be careful to keep this logic in order to prevent cyclical imports.
+"""
 
 import math
 import pathlib

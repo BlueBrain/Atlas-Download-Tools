@@ -1,12 +1,3 @@
-"""A collection of utilities related to working with Allen's API.
-
-Notes
------
-See the module `atlutils.sync.py` for more elaborate functions that use these utils.
-Each function here is independent and performs a very specific lower level operation.
-
-"""
-
 # The package atldld is a tool to download atlas data.
 #
 # Copyright (C) 2021 EPFL/Blue Brain Project
@@ -23,6 +14,14 @@ Each function here is independent and performs a very specific lower level opera
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""A collection of utilities related to working with Allen's API.
+
+Notes
+-----
+See the module `atlutils.sync.py` for more elaborate functions that use these utils.
+Each function here is independent and performs a very specific lower level operation.
+
+"""
 
 import os
 

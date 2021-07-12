@@ -1,5 +1,3 @@
-"""Define all fixtures."""
-
 # The package atldld is a tool to download atlas data.
 #
 # Copyright (C) 2021 EPFL/Blue Brain Project
@@ -16,6 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""Define all fixtures."""
 
 import numpy as np
 import pytest

@@ -1,5 +1,3 @@
-"""Atlas Data Utils - utiliy package for downloading datasets."""
-
 # The package atldld is a tool to download atlas data.
 #
 # Copyright (C) 2021 EPFL/Blue Brain Project
@@ -16,5 +14,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""Atlas Data Utils - utiliy package for downloading datasets."""
 
 from .version import __version__  # noqa
