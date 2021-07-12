@@ -9,7 +9,7 @@ Atlas Download Tools is a toolbox to download atlas data.
 #### Installation from source
 If you want to try the latest version, you can install from source.
 ```shell script
-pip install git+https://github.com/BlueBrain/Atlas-Download-Tools#egg=atldld
+pip install git+https://github.com/BlueBrain/Atlas-Download-Tools
 ```
 
 #### Installation for development
@@ -18,7 +18,7 @@ all the extra requirements for running test.
 ```shell script
 git clone https://github.com/BlueBrain/Atlas-Download-Tools
 cd Atlas-Download-Tools
-pip install -e .[dev]
+pip install -e '.[dev]'
 ```
 
 
