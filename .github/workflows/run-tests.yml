@@ -46,6 +46,3 @@ jobs:
 
       - name: tests and coverage
         run: tox -vv -e ${{ matrix.tox-env }} -- --color=yes
-
-      - name: docs
-        run: tox -vv -e docs
