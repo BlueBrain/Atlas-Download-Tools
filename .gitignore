@@ -43,4 +43,4 @@ htmlcov/
 /.idea/
 
 # scm version file (generated for editable installs)
-/src/atlutils/version.py
+/src/atldld/version.py
