@@ -18,7 +18,7 @@
 
 Notes
 -----
-See the module `atlutils.sync.py` for more elaborate functions that use these utils.
+See the module `atldld.sync.py` for more elaborate functions that use these utils.
 Each function here is independent and performs a very specific lower level operation.
 
 """
@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import requests
 
-CACHE_FOLDER = os.path.expanduser("~/.atlutils/")
+CACHE_FOLDER = os.path.expanduser("~/.atldld/")
 
 
 def abi_get_request(url):

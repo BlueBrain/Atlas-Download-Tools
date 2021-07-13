@@ -31,7 +31,7 @@ import numpy as np
 from scipy.interpolate import NearestNDInterpolator
 from skimage.transform import AffineTransform, SimilarityTransform, resize
 
-GLOBAL_CACHE_FOLDER = pathlib.Path.home() / ".atlutils"
+GLOBAL_CACHE_FOLDER = pathlib.Path.home() / ".atldld"
 
 
 def affine(shape, matrix=None):
