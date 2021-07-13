@@ -18,7 +18,7 @@
 
 Notes
 -----
-See the module `atlutils.utils.py` for lower level
+See the module `atldld.utils.py` for lower level
 functions that are called within this module.
 """
 
@@ -400,7 +400,7 @@ def pir_to_xy_local_with_axis(
     if reference_space_actual != reference_space:
         raise ValueError(
             f"Reference space from ABI (={reference_space_actual}) "
-            f"and atlutils (={reference_space}) should be the same"
+            f"and atldld (={reference_space}) should be the same"
         )
 
     # Determine corresponding section images in the corners

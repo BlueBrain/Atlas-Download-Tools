@@ -658,7 +658,7 @@ class TestPlotRanges:
         fake_plt = Mock()
         fake_plt.subplots = lambda *args, **kwargs: (None, fake_ax)
 
-        monkeypatch.setattr("atlutils.base.plt", fake_plt)
+        monkeypatch.setattr("atldld.base.plt", fake_plt)
 
         df.plot_ranges()
 
