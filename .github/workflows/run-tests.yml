@@ -16,6 +16,13 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
+        include:
+          - python-version: 3.6
+            tox-env: py36
+          - python-version: 3.7
+            tox-env: py37
+          - python-version: 3.8
+            tox-env: py38
 
     steps:
 
@@ -38,7 +45,7 @@ jobs:
         run: tox -vv -e lint
 
       - name: tests and coverage
-        run: tox -vv -e py37
+        run: tox -vv -e ${{ matrix.tox-env }} -- --color=yes
 
       - name: docs
         run: tox -vv -e docs
