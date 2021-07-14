@@ -3,16 +3,16 @@
 
 Atlas Download Tools is a toolbox to download atlas data.
 
-### Installation
+## Installation
 
 
-#### Installation from source
+### Installation from source
 If you want to try the latest version, you can install from source.
 ```shell script
 pip install git+https://github.com/BlueBrain/Atlas-Download-Tools
 ```
 
-#### Installation for development
+### Installation for development
 If you want a dev install, you should install the latest version from source with
 all the extra requirements for running test.
 ```shell script
@@ -22,7 +22,7 @@ pip install -e '.[dev]'
 ```
 
 
-### How to use the package
+## How to use the package
 
 The package `atldld` has several functionalities to download data from [Allen Brain Institute](https://portal.brain-map.org/):
 
@@ -63,7 +63,7 @@ df = get_transform(r, dataset_id=DATASET_ID)
 ```
 
 
-### Funding & Acknowledgment
+## Funding & Acknowledgment
 
 The development of this software was supported by funding to the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL), from the Swiss government’s ETH Board of the Swiss Federal Institutes of Technology.
 
