@@ -1,6 +1,6 @@
 # Atlas Download Tools
 
-<p align="center">
+<p>
 <a href="https://github.com/BlueBrain/Atlas-Download-Tools/blob/master/LICENSE.md"><img src="https://img.shields.io/github/license/BlueBrain/Atlas-Download-Tools" alt="License" /></a>
 &emsp;
 <a href="https://github.com/BlueBrain/Atlas-Download-Tools/actions?query=workflow%3A%22ci+testing%22+branch%3Amain+"><img src="https://img.shields.io/github/workflow/status/BlueBrain/Atlas-Download-Tools/ci%20testing/master" alt="Build status" /></a>
