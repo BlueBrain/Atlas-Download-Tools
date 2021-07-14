@@ -35,7 +35,7 @@ dataset_ids = get_experiment_list_from_gene("Pvalb", axis='sagittal')
 - One can download any dataset from a dataset ID:
 ```python
 from atldld.sync import download_dataset
-dataset = download_dataset(dataset_id=DATASET_ID, *kwargs)
+dataset = download_dataset(dataset_id=DATASET_ID, **kwargs)
 image_id, section_number, img, df = next(dataset)
 ```
 
