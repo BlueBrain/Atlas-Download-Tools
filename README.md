@@ -3,7 +3,7 @@
 <p>
 <a href="https://github.com/BlueBrain/Atlas-Download-Tools/blob/master/LICENSE.md"><img src="https://img.shields.io/github/license/BlueBrain/Atlas-Download-Tools" alt="License" /></a>
 &emsp;
-<a href="https://github.com/BlueBrain/Atlas-Download-Tools/actions?query=workflow%3A%22ci+testing%22+branch%3Amain+"><img src="https://img.shields.io/github/workflow/status/BlueBrain/Atlas-Download-Tools/ci%20testing/master" alt="Build status" /></a>
+<a href="https://github.com/BlueBrain/Atlas-Download-Tools/actions/workflows/run-tests.yml/badge.svg?branch=main"><img src="https://img.shields.io/github/workflow/status/BlueBrain/Atlas-Download-Tools/ci%20testing/master" alt="Build status" /></a>
 &emsp;
 <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Black"></a>
 <a href="https://pycqa.github.io/isort/"><img src="https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336" alt="Isort"></a>
