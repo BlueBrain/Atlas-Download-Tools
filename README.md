@@ -32,7 +32,24 @@ pip install -e '.[dev]'
 ```
 
 ## How to use the package
+Atlas-Download-Tools can be used through a command line interface (CLI), as well
+as programmatically through a python API.
 
+At present the CLI is rather limited, but we are working on adding the most
+useful functionality as soon as possible.
+
+### Using the CLI
+All functionality can be accessed through the `atldld` command and its
+sub-commands. For example:
+```bash
+$ atldld
+$ atldld info version
+$ atldld info version --help
+```
+For further information please refer to the help part of the corresponding
+command.
+
+### Using the python API
 The package `atldld` has several functionalities to download data from [Allen Brain Institute](https://portal.brain-map.org/):
 
 - One can find dataset IDs from a gene expression name:
