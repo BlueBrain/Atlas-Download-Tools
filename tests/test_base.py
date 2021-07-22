@@ -17,6 +17,7 @@
 """Test for base.py module."""
 
 import pathlib
+from typing import Union
 from unittest.mock import Mock
 
 import numpy as np
@@ -494,7 +495,9 @@ class TestFromFile:
     )
     def test_npy(self, tmpdir, array, as_str):
         """Possible to read npy arrays."""
-        full_path = pathlib.Path(str(tmpdir)) / "file_temp.npy"
+        full_path: Union[pathlib.Path, str] = (
+            pathlib.Path(str(tmpdir)) / "file_temp.npy"
+        )
 
         if as_str:
             full_path = str(full_path)
@@ -719,7 +722,7 @@ class TestResize:
         adiff = abs(np.subtract(img_1, img_2, dtype="float"))
 
         if img.dtype == np.uint8:
-            eps = 25
+            eps: Union[int, float] = 25
         elif img.dtype == np.float32:
             eps = 1e-1
         else:
@@ -753,7 +756,7 @@ class TestSave:
 
         df_orig = DisplacementField(delta_x, delta_y)
 
-        file_path = pathlib.Path(str(tmpdir)) / "test.npy"
+        file_path: Union[pathlib.Path, str] = pathlib.Path(str(tmpdir)) / "test.npy"
 
         if as_str:
             file_path = str(file_path)

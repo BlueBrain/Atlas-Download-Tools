@@ -318,7 +318,7 @@ def pir_to_xy_local(p_list, i_list, r_list, dataset_id, reference_space=9):
 
         # Get section and section_image_id from the first coordinates
         closest_section_number = min(
-            existing_section_numbers, key=lambda x: abs(x - section_numbers[i])
+            existing_section_numbers, key=lambda x: abs(float(x - section_numbers[i]))
         )
         closest_section_image_id = section_number_to_id[closest_section_number]
 
@@ -750,7 +750,7 @@ def download_dataset(
         all_image_ids = sorted(metadata.keys())
 
     elif order == "sn":
-        all_image_ids = sorted(metadata.keys(), key=lambda x: -metadata[x][1])
+        all_image_ids = sorted(metadata.keys(), key=lambda x: -int(metadata[x][1]))
 
     else:
         raise ValueError("Unsupported order {}".format(order))
@@ -759,7 +759,8 @@ def download_dataset(
         if verbose:
             print(image_id)
         try:
-            p, i, r = xy_to_pir_API_single(*detection_xy, image_id=image_id)
+            det_x, det_y = detection_xy
+            p, i, r = xy_to_pir_API_single(det_x, det_y, image_id=image_id)
             if axis == "coronal":
                 slice_ref_coordinate = p
             else:
