@@ -19,6 +19,7 @@ from setuptools import find_packages, setup
 
 python_requires = ">=3.6"
 install_requires = [
+    "click",
     "matplotlib",
     "numpy",
     "opencv-python",
@@ -54,4 +55,5 @@ setup(
     python_requires=python_requires,
     install_requires=install_requires,
     extras_require=extras_require,
+    entry_points={"console_scripts": ["atldld = atldld.cli:root"]},
 )
