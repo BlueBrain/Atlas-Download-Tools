@@ -1,7 +1,7 @@
 # Atlas Download Tools
 
 <p>
-<a href="https://github.com/BlueBrain/Atlas-Download-Tools/blob/master/LICENSE.md"><img src="https://img.shields.io/github/license/BlueBrain/Atlas-Download-Tools" alt="License" /></a>
+<a href="https://github.com/BlueBrain/Atlas-Download-Tools/blob/main/LICENSE.txt"><img src="https://img.shields.io/github/license/BlueBrain/Atlas-Download-Tools" alt="License" /></a>
 &emsp;
 <a href="https://github.com/BlueBrain/Atlas-Download-Tools/actions/workflows/run-tests.yml"><img src="https://github.com/BlueBrain/Atlas-Download-Tools/actions/workflows/run-tests.yml/badge.svg?branch=main" alt="Build status" /></a>
 &emsp;
