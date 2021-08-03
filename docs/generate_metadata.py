@@ -1,10 +1,11 @@
-import pathlib
+"""Generate repository metadata."""
 import datetime
+import pathlib
 
-import atlalign
+import atldld
 
-metadata_template = \
-    """---
+metadata_template = """\
+---
 packageurl: https://github.com/BlueBrain/Atlas-Download-Tools
 major: {major_version}
 minor: {minor_version}
@@ -22,19 +23,18 @@ contributors: Francesco Casalegno
 """
 
 file_directory = pathlib.Path(__file__).parent.resolve()
-metadata_path = file_directory / 'metadata.md'
+metadata_path = file_directory / "metadata.md"
 
-version = atlalign.__version__
-major_version = version.split('.')[0]
-minor_version = version.split('.')[1]
+version = atldld.__version__
+major_version = version.split(".")[0]
+minor_version = version.split(".")[1]
 date = datetime.datetime.now().strftime("%d/%m/%y")
 
-metadata_instance = metadata_template.format(version=version,
-                                             major_version=major_version,
-                                             minor_version=minor_version,
-                                             date=date)
+metadata_instance = metadata_template.format(
+    version=version, major_version=major_version, minor_version=minor_version, date=date
+)
 
-with metadata_path.open('w') as f:
+with metadata_path.open("w") as f:
     f.write(metadata_instance)
 
-print('Finished')
+print("Finished")

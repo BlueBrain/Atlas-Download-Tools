@@ -5,14 +5,14 @@ Installation
 It is highly recommended to install the project into a new virtual environment.
 
 
-#Installation from PyPI
-#----------------------
-#The :code:`atldld` package can be easily installed from PyPI.
-#
-#
-#.. code-block:: bash
-#
-#    pip install atldld
+Installation from PyPI
+----------------------
+The :code:`atldld` package can be easily installed from PyPI.
+
+
+.. code-block:: bash
+
+    pip install atldld
 
 Installation from source
 ------------------------
@@ -34,8 +34,8 @@ following way:
 .. code-block:: bash
 
     git clone https://github.com/BlueBrain/Atlas-Download-Tools
-    cd atlas_alignment
-    pip install -e .[dev,docs]
+    cd Atlas-Download-Tools
+    pip install -e '.[dev,docs]'
 
 
 Generating documentation
