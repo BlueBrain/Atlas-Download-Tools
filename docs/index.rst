@@ -17,7 +17,7 @@ Atlas Download Tools
    :maxdepth: 2
    :caption: API Reference
 
-   source/api/modules
+   source/api/atldld
 
 
 Indices and tables

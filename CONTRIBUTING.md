@@ -38,5 +38,5 @@ If you wish to re-generate the API documentation of the package, please use the
 sphinx command line as follow:
 
 ```
-sphinx-apidoc src/atldld/ -o docs/source/api
+sphinx-apidoc src/atldld/ -Tefo docs/source/api
 ```
