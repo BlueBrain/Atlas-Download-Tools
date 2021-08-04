@@ -31,3 +31,12 @@ following GitHub's guidelines.
    - Black for formatting code
    - Flake8 for linting code
    - PyDocStyle for checking docstrings
+
+## Generating the API documentation
+
+If you wish to re-generate the API documentation of the package, please use the
+sphinx command line as follow:
+
+```
+sphinx-apidoc src/atldld/ -Tefo docs/source/api
+```

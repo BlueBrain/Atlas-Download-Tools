@@ -95,7 +95,9 @@ def get_image(image_id, folder=None, expression=False):
 
     References
     ----------
-    [1] https://allensdk.readthedocs.io/en/latest/allensdk.api.queries.image_download_api.html#allensdk.api.queries.image_download_api.ImageDownloadApi  # noqa
+    [1] `AllenSDK API: ImageDownloadApi <https://allensdk.readthedocs.io/
+    en/latest/allensdk.api.queries.image_download_api.html#allensdk.api.
+    queries.image_download_api.ImageDownloadApi>`_
 
     """
     folder = folder or CACHE_FOLDER

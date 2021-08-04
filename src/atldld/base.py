@@ -814,7 +814,7 @@ class DisplacementField:
         Parameters
         ----------
         freq : int
-            Take every `freq`th pixel. The higher the more sparse.
+            Take every freq-th pixel. The higher the more sparse.
         figsize : tuple
             Size of the figure.
         kwargs_domain : dict or None
@@ -954,15 +954,15 @@ class DisplacementField:
             Currently the only 3 supported dtypes are uint8, float32 and float64.
             The logic is for the `warped_img`  to have the dtype
             (input dtype - output dtype).
-                * uint8 - uint8
-                * float32 - float32
-                * float64 - float32
+            * uint8 - uint8
+            * float32 - float32
+            * float64 - float32
         interpolation : str, {'nearest', 'linear', 'cubic', 'area', 'lanczos'}
             Regular grid interpolation method to be used.
         border_mode : str, {'constant', 'replicate', 'reflect',
         'wrap', 'reflect101', 'transparent'}
             How to fill outside of the range values.
-             See references for detailed explanation.
+            See references for detailed explanation.
         c : float
             Only used if `border_mode='constant'` and represents the fill value.
 

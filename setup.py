@@ -39,6 +39,7 @@ extras_require = {
         "pytest-mock",
         "tox",
     ],
+    "docs": ["sphinx>=1.3", "sphinx-bluebrain-theme"],
 }
 
 setup(

@@ -44,3 +44,6 @@ htmlcov/
 
 # scm version file (generated for editable installs)
 /src/atldld/version.py
+
+# Sphinx documentation
+docs/_build/
