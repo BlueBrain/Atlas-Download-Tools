@@ -721,9 +721,9 @@ def download_dataset(
         `p` for coronal slices, `r` for sagittal slices.
     order : str, {'id', 'sn'}
         How to order the streamed pairs.
-            - 'id' : smallest image ids first
-            - 'sn' : highest section number
-            (equivalent to lowest p becase AB switched the order:) first
+        - 'id' : smallest image ids first
+        - 'sn' : highest section number
+        (equivalent to lowest p becase AB switched the order:) first
     verbose : bool
         If True, then printing information to standard output.
     include_expression : bool
