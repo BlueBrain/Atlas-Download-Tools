@@ -12,7 +12,13 @@
 <a href="http://mypy-lang.org"><img src="http://www.mypy-lang.org/static/mypy_badge.svg" alt="Checked with mypy"></a>
 </p>
 
-Atlas Download Tools is a toolbox to download atlas data.
+Search, download, and prepare atlas data.
+
+Among different sources of data, Allen Brain Institute hosts a rich database of
+gene expression images, Nissl volumes, and annotation atlases.
+The Atlas-Download-Tools library can help you to download single section images
+and entire datasets, as well as the corresponding metadata.
+It can further pre-process the image data to place it in the standard reference space.
 
 ## Installation
 
