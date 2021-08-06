@@ -1,3 +1,5 @@
+<img src="docs/_images/banner.jpg"/>
+
 # Atlas Download Tools
 
 <p>
