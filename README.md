@@ -1,4 +1,4 @@
-<img src="docs/logo/Atlas-download-Tools.jpg"/>
+<img src="docs/_images/banner.jpg"/>
 
 # Atlas Download Tools
 
