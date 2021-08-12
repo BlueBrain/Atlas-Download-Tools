@@ -354,7 +354,7 @@ def affine(shape, matrix):
     """
     if matrix.shape != (3, 3):
         raise ValueError(
-            "The shape of affine transformation matrix is {}, correct is (3, 3).".format(
+            "The shape of transformation matrix is {}, correct is (3, 3).".format(
                 matrix.shape
             )
         )

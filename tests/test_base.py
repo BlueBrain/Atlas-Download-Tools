@@ -559,7 +559,7 @@ class TestWarpAnnotation:
 
 
 def test_affine():
-    with pytest.raises(ValueError, match="correct is \(3, 3\)"):
+    with pytest.raises(ValueError, match="correct is"):
         affine((3, 5), np.ones((3, 4)))
 
     matrix = np.eye(3)
