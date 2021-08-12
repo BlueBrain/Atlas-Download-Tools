@@ -40,7 +40,7 @@ class TestDisplacementFieldEssentials:
 
     def test_wrong_construction(self):
         with pytest.raises(ValueError, match="2D"):
-            delta = np.ones((2, 2, 2)) # 3D not supported
+            delta = np.ones((2, 2, 2))  # 3D not supported
             DisplacementField(delta, delta)
 
         with pytest.raises(ValueError, match="do not match"):
@@ -557,6 +557,7 @@ class TestWarpAnnotation:
         assert np.all(output == correct_output)
         assert output.dtype == correct_output.dtype
 
+
 def test_affine():
     with pytest.raises(ValueError, match="correct is \(3, 3\)"):
         affine((3, 5), np.ones((3, 4)))
@@ -567,6 +568,7 @@ def test_affine():
 
     assert (delta_x == 0).all()
     assert (delta_y == 0).all()
+
 
 @pytest.mark.parametrize("apply_centering", [True, False])
 def test_affine_simple(apply_centering):
