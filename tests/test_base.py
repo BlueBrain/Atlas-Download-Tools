@@ -18,7 +18,6 @@
 
 import pathlib
 from typing import Union
-from unittest.mock import Mock
 
 import numpy as np
 import pytest
