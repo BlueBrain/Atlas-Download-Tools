@@ -187,37 +187,6 @@ class TestFromTransform:
         assert np.allclose(df.delta_y, df_new.delta_y, atol=atol)
 
 
-class TestJacobian:
-    """A collection of tests focused on the `jacobian` property."""
-
-    def test_identity(self):
-        """Jacobian of identity has at each point determinant 1."""
-
-        shape = (4, 5)
-        df = DisplacementField(np.zeros(shape), np.zeros(shape))
-
-        assert np.all(df.jacobian == np.ones(shape))
-
-    def test_one_point_collapse(self):
-        """Mapping all points into 1 point results in a noninvertible mapping."""
-
-        shape = (3, 4)
-
-        collapse_point = (2, 2)  # r, c
-
-        delta_x = np.zeros(shape)
-        delta_y = np.zeros(shape)
-
-        for r in range(shape[0]):
-            for c in range(shape[1]):
-                delta_x[r, c] = collapse_point[1] - c
-                delta_y[r, c] = collapse_point[0] - r
-
-        df = DisplacementField(delta_x, delta_y)
-
-        assert np.allclose(df.jacobian, 0)
-
-
 class TestMultiplication:
     """A collection of tests focused on the __mul__ and __rmul__ method"""
 

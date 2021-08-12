@@ -214,40 +214,6 @@ class DisplacementField:
         return self * c
 
     @property
-    def jacobian(self):
-        """Compute determinant of a Jacobian per each pixel."""
-        delta_x = self.delta_x
-        delta_y = self.delta_y
-
-        a_11 = np.zeros(self.shape)
-        a_12 = np.zeros(self.shape)
-        a_21 = np.zeros(self.shape)
-        a_22 = np.zeros(self.shape)
-
-        # inside (symmetric)
-        a_11[:, 1:-1] = 1 + (-delta_x[:, :-2] + delta_x[:, 2:]) / 2
-        a_12[1:-1, :] = (-delta_x[:-2, :] + delta_x[2:, :]) / 2
-        a_21[:, 1:-1] = (-delta_y[:, :-2] + delta_y[:, 2:]) / 2
-        a_22[1:-1, :] = 1 + (-delta_y[:-2, :] + delta_y[2:, :]) / 2
-
-        # edges (one-sided)
-        a_11[:, 0] = 1 + (delta_x[:, 1] - delta_x[:, 0])
-        a_11[:, -1] = 1 + (delta_x[:, -1] - delta_x[:, -2])
-
-        a_12[0, :] = delta_x[1, :] - delta_x[0]
-        a_12[-1, :] = delta_x[-1, :] - delta_x[-2, :]
-
-        a_21[:, 0] = delta_y[:, 1] - delta_y[:, 0]
-        a_21[:, -1] = delta_y[:, -1] - delta_y[:, -2]
-
-        a_22[0, :] = 1 + delta_y[1, :] - delta_y[0]
-        a_22[-1, :] = 1 + delta_y[-1, :] - delta_y[-2, :]
-
-        res = np.multiply(a_11, a_22) - np.multiply(a_12, a_21)
-
-        return res
-
-    @property
     def norm(self):
         """Norm for each pixel."""
         return np.sqrt(np.square(self.delta_x) + np.square(self.delta_y))
