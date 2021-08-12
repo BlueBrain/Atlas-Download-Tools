@@ -456,11 +456,7 @@ class TestWarpAnnotation:
             dtype
         )  # might overflow to something but whatever
 
-        img_warped = df.warp(
-            img,
-            interpolation="nearest",
-            border_mode="replicate"
-        )
+        img_warped = df.warp(img, interpolation="nearest", border_mode="replicate")
 
         assert set(np.unique(img_warped)).issubset(set(np.unique(img)))
 
@@ -508,10 +504,7 @@ class TestWarpAnnotation:
 
         img = np.random.randint(1, 256, size=shape).astype(dtype)
 
-        output = df.warp(
-            img,
-            interpolation="nearest",
-            border_mode="replicate")
+        output = df.warp(img, interpolation="nearest", border_mode="replicate")
 
         assert np.all(output == np.tile(img[:, [-1]], (1, shape[-1])))
 
