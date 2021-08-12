@@ -489,21 +489,6 @@ class DisplacementField:
         return self * c
 
     @property
-    def average_displacement(self):
-        """Average displacement per pixel."""
-        return self.norm.mean()
-
-    @property
-    def delta_x_scaled(self):
-        """Scaled version of delta_x."""
-        return self.delta_x / self.shape[1]
-
-    @property
-    def delta_y_scaled(self):
-        """Scaled version of delta_y."""
-        return self.delta_y / self.shape[0]
-
-    @property
     def is_valid(self):
         """Check whether both delta_x and delta_y finite."""
         return np.all(np.isfinite(self.delta_x)) and np.all(np.isfinite(self.delta_y))

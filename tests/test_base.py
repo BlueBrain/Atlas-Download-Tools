@@ -292,25 +292,6 @@ class TestDisplacementFieldEssentials:
     Mostly focused on the properties.
     """
 
-    def test_average_displacement(self):
-        """Test focused on the `average_displacement` property"""
-
-        shape = (4, 4)
-
-        delta_x_1 = np.zeros(shape)
-        delta_y_1 = np.zeros(shape)
-
-        delta_x_1[0, 0] = 2
-
-        delta_x_2 = np.zeros(shape)
-        delta_y_2 = np.zeros(shape)
-
-        df_1 = DisplacementField(delta_x_1, delta_y_1)
-        df_2 = DisplacementField(delta_x_2, delta_y_2)
-
-        assert df_1.average_displacement == 2 / 16
-        assert df_2.average_displacement == 0
-
     def test_is_valid(self):
         """Focused on the is_valid property"""
         shape = (3, 4)
@@ -378,21 +359,6 @@ class TestDisplacementFieldEssentials:
         assert np.all(df_all.outsiders == mask_all)
         assert np.all(df_none.outsiders == mask_none)
         assert np.all(df_one.outsiders == mask_one)
-
-    def test_scaled_delta_xy(self):
-        """The goal is to make sure that one can access
-        scaled versions of delta_x and delta_y"""
-
-        shape = (h, w) = (200, 400)
-
-        delta_x = np.ones(shape, dtype=np.float32) * 5
-        delta_y = np.ones(shape, dtype=np.float32) * 8
-
-        df = DisplacementField(delta_x, delta_y)
-
-        assert np.allclose(df.delta_x_scaled, (delta_x / w)) and np.allclose(
-            df.delta_y_scaled, (delta_y / h)
-        )
 
     def test_transformation(self):
         """Check that going from displacement field to the actual
