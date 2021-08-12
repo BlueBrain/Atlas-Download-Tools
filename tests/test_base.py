@@ -51,7 +51,7 @@ class TestDisplacementFieldEssentials:
         df = DisplacementField(delta, delta)
 
         with pytest.raises(TypeError, match="not DisplacementField"):
-            df == "not a df"
+            df == "not a df"  # noqa
 
         assert df == df
 
