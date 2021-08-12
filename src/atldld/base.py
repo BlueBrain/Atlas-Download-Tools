@@ -21,7 +21,6 @@ import pathlib
 
 import cv2
 import numpy as np
-from scipy.interpolate import NearestNDInterpolator
 from skimage.transform import AffineTransform, SimilarityTransform
 
 GLOBAL_CACHE_FOLDER = pathlib.Path.home() / ".atldld"
@@ -273,13 +272,10 @@ class DisplacementField:
         Parameters
         ----------
         img : np.ndarray
-            Input image to which we will apply the transformation.
-            Currently the only 3 supported dtypes are uint8, float32 and float64.
-            The logic is for the `warped_img`  to have the dtype
-            (input dtype - output dtype).
-            * uint8 - uint8
-            * float32 - float32
-            * float64 - float32
+            Input image to which we will apply the transformation. Note
+            that certain dtypes (e.g. `np.float64`) are not supported
+            by OpenCV.
+
         interpolation : str, {'nearest', 'linear', 'cubic', 'area', 'lanczos'}
             Regular grid interpolation method to be used.
         border_mode : str, {'constant', 'replicate', 'reflect',
@@ -292,7 +288,7 @@ class DisplacementField:
         Returns
         -------
         warped_img : np.ndarray
-            Warped image. Note that the dtype will be the same as the input `img`.
+            Warped image.
         """
         interpolation_mapper = {
             "nearest": cv2.INTER_NEAREST,
@@ -325,89 +321,16 @@ class DisplacementField:
                 )
             )
 
-        dtype = img.dtype
-
-        if dtype == np.float32 or dtype == np.uint8:
-            img_ = img
-
-        elif dtype == np.float64:
-            img_ = img.astype(np.float32)
-            dtype = np.float32
-
-        else:
-            raise ValueError("Unsupported dtype {}.".format(dtype))
-
         fx, fy = self.transformation
 
         return cv2.remap(
-            img_,
+            img,
             fx,
             fy,
             interpolation=interpolation_mapper[interpolation],
             borderMode=border_mode_mapper[border_mode],
             borderValue=c,
         )
-
-    def warp_annotation(self, img, approach="opencv"):
-        """Warp an input annotation image based on the displacement field.
-
-        If displacement falls outside of the image the logic is to replicate the border.
-        This approach guarantees that no new labels are created.
-
-        Notes
-        -----
-        If approach is 'scipy' then calls ``scipy.spatial.cKDTree``
-        in the background with default Euclidian distance
-        and exactly 1 nearest neighbor.
-
-        Parameters
-        ----------
-        img : np.ndarray
-            Input annotation image. The allowed dtypes are currently int8, int16, int32
-        approach : str, {'scipy', 'opencv'}
-            Approach to be used. Currently 'opencv' way faster.
-
-        Returns
-        -------
-        warped_img : np.ndarray
-            Warped image.
-        """
-        allowed_dtypes = ["int8", "int16", "int32"]
-        input_dtype = img.dtype
-
-        # CHECKS
-        if not any([input_dtype == x for x in allowed_dtypes]):
-            raise ValueError("The only allowed dtypes are {}".format(allowed_dtypes))
-
-        if approach == "scipy":
-            x, y = np.meshgrid(list(range(self.shape[1])), list(range(self.shape[0])))
-
-            temp_all = np.hstack(
-                (y.reshape(-1, 1), x.reshape(-1, 1), img[y, x].reshape(-1, 1))
-            )
-
-            inst = NearestNDInterpolator(temp_all[:, :2], temp_all[:, 2])
-            x_r, y_r = x.ravel(), y.ravel()
-
-            coords = np.hstack(
-                (
-                    (y_r + self.delta_y.ravel()).reshape(-1, 1),
-                    (x_r + self.delta_x.ravel()).reshape(-1, 1),
-                )
-            )
-
-            return inst(coords).reshape(self.shape).astype(input_dtype)
-
-        elif approach == "opencv":
-            # opencv keeps the same dtype apparently
-            fx, fy = self.transformation
-
-            return cv2.remap(
-                img, fx, fy, cv2.INTER_NEAREST, borderMode=cv2.BORDER_REPLICATE
-            )
-
-        else:
-            raise ValueError("Unrecognized approach {}".format(approach))
 
 
 def affine(shape, matrix=None):

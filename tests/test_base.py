@@ -25,7 +25,6 @@ import pytest
 from atldld.base import DisplacementField, affine_simple
 
 SUPPORTED_DTYPES_ANNOTATIONS = ["int8", "int16", "int32"]
-SUPPORTED_APPROACHES_ANNOTATIONS = ["scipy", "opencv"]
 WARP_INTERPOLATIONS = ["linear"]
 WARP_BORDER_MODES = ["constant", "replicate"]
 
@@ -422,11 +421,10 @@ class TestWarp:
 
 
 class TestWarpAnnotation:
-    """A collection of tests focused on the `warp_annotation` method."""
+    """Tests focused on `warp` method using nearest neigbours interpolation."""
 
     @pytest.mark.parametrize("dtype", SUPPORTED_DTYPES_ANNOTATIONS)
-    @pytest.mark.parametrize("approach", SUPPORTED_APPROACHES_ANNOTATIONS)
-    def test_identity(self, approach, dtype):
+    def test_identity(self, dtype):
         """Identity has no effect"""
 
         shape = (4, 5)
@@ -439,15 +437,14 @@ class TestWarpAnnotation:
         img = np.random.randint(300, size=shape).astype(
             dtype
         )  # might overflow to something but whatever
-        res = df.warp_annotation(img, approach=approach)
+        res = df.warp(img, interpolation="nearest")
 
         assert np.all(res == img)
         assert img.dtype == res.dtype
 
     @pytest.mark.parametrize("dtype", SUPPORTED_DTYPES_ANNOTATIONS)
-    @pytest.mark.parametrize("approach", SUPPORTED_APPROACHES_ANNOTATIONS)
     @pytest.mark.parametrize("random_state", range(30))
-    def test_no_new_classes(self, random_state, approach, dtype):
+    def test_no_new_classes(self, random_state, dtype):
         """No creation of new classes - exactly one nearest neighbour."""
 
         shape = (9, 10)
@@ -459,16 +456,19 @@ class TestWarpAnnotation:
             dtype
         )  # might overflow to something but whatever
 
-        img_warped = df.warp_annotation(img, approach=approach)
+        img_warped = df.warp(
+            img,
+            interpolation="nearest",
+            border_mode="replicate"
+        )
 
         assert set(np.unique(img_warped)).issubset(set(np.unique(img)))
 
     @pytest.mark.parametrize("dtype", SUPPORTED_DTYPES_ANNOTATIONS)
-    @pytest.mark.parametrize("approach", SUPPORTED_APPROACHES_ANNOTATIONS)
     @pytest.mark.parametrize(
         "translation_xy", [(-0.49, 0), (0.49, 0), (0, -0.49), (0, 0.49), (0.2, 0.2)]
     )
-    def test_small_shift(self, translation_xy, approach, dtype):
+    def test_small_shift(self, translation_xy, dtype):
         """Test that small shifts do not affect the warp.
 
         Notes
@@ -490,13 +490,12 @@ class TestWarpAnnotation:
         np.random.seed(random_state)
         img = np.random.randint(256, size=shape).astype(dtype)
 
-        img_warped = df.warp_annotation(img, approach=approach)
+        img_warped = df.warp(img, interpolation="nearest")
 
         assert np.all(img_warped == img)
 
     @pytest.mark.parametrize("dtype", SUPPORTED_DTYPES_ANNOTATIONS)
-    @pytest.mark.parametrize("approach", SUPPORTED_APPROACHES_ANNOTATIONS)
-    def test_outside_of_image(self, approach, dtype):
+    def test_outside_of_image(self, dtype):
         """The behavior should be replication of the border."""
         shape = (4, 5)
 
@@ -509,13 +508,15 @@ class TestWarpAnnotation:
 
         img = np.random.randint(1, 256, size=shape).astype(dtype)
 
-        output = df.warp_annotation(img, approach=approach)
+        output = df.warp(
+            img,
+            interpolation="nearest",
+            border_mode="replicate")
 
         assert np.all(output == np.tile(img[:, [-1]], (1, shape[-1])))
 
     @pytest.mark.parametrize("dtype", SUPPORTED_DTYPES_ANNOTATIONS)
-    @pytest.mark.parametrize("approach", SUPPORTED_APPROACHES_ANNOTATIONS)
-    def test_different_dtypes(self, dtype, approach):
+    def test_different_dtypes(self, dtype):
         """Create a rotation transformation and make sure dtypes do not matter."""
         power = int(dtype.partition("int")[-1])
         assert dtype[:3] == "int"
@@ -541,24 +542,7 @@ class TestWarpAnnotation:
             dtype=dtype,
         )
 
-        output = df.warp_annotation(img, approach=approach)
+        output = df.warp(img, interpolation="nearest")
 
         assert np.all(output == correct_output)
         assert output.dtype == correct_output.dtype
-
-    @pytest.mark.parametrize("dtype", SUPPORTED_DTYPES_ANNOTATIONS)
-    def test_approaches_equivalent(self, dtype):
-        """Make sure approaches equivalent"""
-        shape = (10, 11)
-
-        img = np.random.randint(1, 256, size=shape).astype(dtype)
-        deltas = affine_simple(shape, rotation=np.pi / 10)
-        df = DisplacementField(*deltas)
-
-        all_results = [
-            df.warp_annotation(img, approach=x)
-            for x in SUPPORTED_APPROACHES_ANNOTATIONS
-        ]
-
-        for i in range(len(all_results) - 1):
-            assert np.array_equal(all_results[i], all_results[i + 1])
