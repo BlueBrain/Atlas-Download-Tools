@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 from skimage.transform import resize
 
-from atldld.base import DisplacementField, affine, affine_simple
+from atldld.base import DisplacementField, affine_simple
 
 SUPPORTED_DTYPES_ANNOTATIONS = ["int8", "int16", "int32"]
 SUPPORTED_APPROACHES_ANNOTATIONS = ["scipy", "opencv"]
