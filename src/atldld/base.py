@@ -47,6 +47,26 @@ class DisplacementField:
         in the y coordinate (rows). Positive values move the pixel down,
         negative pixels move the pixels up.
     """
+    def __init__(self, delta_x, delta_y):
+
+        # Checks
+        shape_x, shape_y = delta_x.shape, delta_y.shape
+
+        if not len(shape_x) == len(shape_y) == 2:
+            raise ValueError("The displacement fields need to be 2D arrays")
+
+        if not shape_x == shape_y:
+            raise ValueError(
+                "The width and height of x and y displacement field do not match, "
+                "{} vs {}".format(shape_x, shape_y)
+            )
+
+        self.delta_x = delta_x.astype(np.float32)  # for warping
+        self.delta_y = delta_y.astype(np.float32)
+
+        # Define more attributes
+        self.shape = shape_x
+
 
     @classmethod
     def from_file(cls, file_path):
@@ -129,26 +149,6 @@ class DisplacementField:
         delta_y = f_y - y
 
         return DisplacementField(delta_x, delta_y)
-
-    def __init__(self, delta_x, delta_y):
-
-        # Checks
-        shape_x, shape_y = delta_x.shape, delta_y.shape
-
-        if not len(shape_x) == len(shape_y) == 2:
-            raise ValueError("The displacement fields need to be 2D arrays")
-
-        if not shape_x == shape_y:
-            raise ValueError(
-                "The width and height of x and y displacement field do not match, "
-                "{} vs {}".format(shape_x, shape_y)
-            )
-
-        self.delta_x = delta_x.astype(np.float32)
-        self.delta_y = delta_y.astype(np.float32)
-
-        # Define more attributes
-        self.shape = shape_x
 
     def __eq__(self, other):
         """Equality."""
