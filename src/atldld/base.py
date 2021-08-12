@@ -251,14 +251,11 @@ class DisplacementField:
         Parameters
         ----------
         path : str or pathlib.Path
-            Path to the file.
+            Path to the file. Needs to end with `.npy`.
         """
         path = pathlib.Path(path)
 
-        if path.suffix == "":
-            path = path.with_suffix(".npy")
-
-        elif path.suffix == ".npy":
+        if path.suffix == ".npy":
             pass
 
         else:
@@ -333,7 +330,7 @@ class DisplacementField:
         )
 
 
-def affine(shape, matrix=None):
+def affine(shape, matrix):
     """Affine transformation encoded in a 2 x 3 matrix.
 
     Parameters
@@ -355,17 +352,9 @@ def affine(shape, matrix=None):
     delta_y : np.ndarray
         Displacement vector field of the y coordinates.
     """
-    if matrix is None:
-        matrix = np.eye(3)
-
-    if matrix.shape == (2, 3):
-        matrix = np.vstack(
-            (matrix, [0, 0, 1])
-        )  # just add the homogeneous coordinates parts
-
     if matrix.shape != (3, 3):
         raise ValueError(
-            "The shape of affine transformation matrix is {}, correct is (3, 3)".format(
+            "The shape of affine transformation matrix is {}, correct is (3, 3).".format(
                 matrix.shape
             )
         )

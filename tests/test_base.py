@@ -22,7 +22,7 @@ from typing import Union
 import numpy as np
 import pytest
 
-from atldld.base import DisplacementField, affine_simple
+from atldld.base import DisplacementField, affine, affine_simple
 
 SUPPORTED_DTYPES_ANNOTATIONS = ["int8", "int16", "int32"]
 WARP_INTERPOLATIONS = ["linear"]
@@ -37,6 +37,23 @@ class TestDisplacementFieldEssentials:
     -----
     Mostly focused on the properties.
     """
+
+    def test_wrong_construction(self):
+        with pytest.raises(ValueError, match="2D"):
+            delta = np.ones((2, 2, 2)) # 3D not supported
+            DisplacementField(delta, delta)
+
+        with pytest.raises(ValueError, match="do not match"):
+            DisplacementField(np.ones((2, 3)), np.ones((4, 3)))
+
+    def test_equality(self):
+        delta = np.zeros((2, 5))
+        df = DisplacementField(delta, delta)
+
+        with pytest.raises(TypeError, match="not DisplacementField"):
+            df == "not a df"
+
+        assert df == df
 
     def test_norm(self):
         shape = (4, 5)
@@ -539,3 +556,25 @@ class TestWarpAnnotation:
 
         assert np.all(output == correct_output)
         assert output.dtype == correct_output.dtype
+
+def test_affine():
+    with pytest.raises(ValueError, match="correct is \(3, 3\)"):
+        affine((3, 5), np.ones((3, 4)))
+
+    matrix = np.eye(3)
+
+    delta_x, delta_y = affine((5, 5), matrix)
+
+    assert (delta_x == 0).all()
+    assert (delta_y == 0).all()
+
+@pytest.mark.parametrize("apply_centering", [True, False])
+def test_affine_simple(apply_centering):
+    delta_x, delta_y = affine_simple((5, 7), apply_centering=apply_centering)
+
+    assert delta_x.shape == (5, 7)
+    assert delta_y.shape == (5, 7)
+
+    # Defaults lead to identity
+    assert (delta_x == 0).all()
+    assert (delta_y == 0).all()
