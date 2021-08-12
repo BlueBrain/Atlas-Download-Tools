@@ -523,16 +523,6 @@ class DisplacementField:
         return res
 
     @property
-    def n_pixels(self):
-        """Count the number of pixels in the displacement field.
-
-        Notes
-        -----
-        Number of channels is ignored.
-        """
-        return np.prod(self.shape[:2])
-
-    @property
     def norm(self):
         """Norm for each pixel."""
         return np.sqrt(np.square(self.delta_x) + np.square(self.delta_y))
