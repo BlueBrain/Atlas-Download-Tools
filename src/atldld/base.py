@@ -528,23 +528,6 @@ class DisplacementField:
         return np.sqrt(np.square(self.delta_x) + np.square(self.delta_y))
 
     @property
-    def outsiders(self):
-        """For each pixels determines whether it is mapped outside of the image.
-
-        Notes
-        -----
-        An important thing to look out for since for each outsider
-        the interpolator cannot use grid interpolation.
-        """
-        x, y = np.meshgrid(list(range(self.shape[1])), list(range(self.shape[0])))
-        f_x, f_y = x + self.delta_x, y + self.delta_y
-
-        return np.logical_or(
-            np.logical_or(0 > f_x, f_x >= self.shape[1]),
-            np.logical_or(0 > f_y, f_y >= self.shape[0]),
-        )
-
-    @property
     def transformation(self):
         """Output the actual transformation rather than the displacement field.
 
@@ -746,35 +729,6 @@ class DisplacementField:
         )  # matplotlib has positive delta y as up, in our case its down
 
         return ax_quiver
-
-    def plot_outside(self, figsize=(15, 15), ax=None):
-        """Plot all pixels that are mapped outside of the image.
-
-        Parameters
-        ----------
-        figsize : tuple
-            Size of the figure.
-        ax : matplotlib.Axes
-            Axes upon which to plot. If None, create a new one
-
-        Returns
-        -------
-        ax : matplotlib.Axes
-            Axes with the visualization.
-        """
-        res = np.zeros(self.shape, dtype=float)
-
-        if ax is None:
-            _, ax_outside = plt.subplots(figsize=figsize)
-
-        else:
-            ax_outside = ax
-
-        res[self.outsiders] = 1
-
-        ax_outside.imshow(res, cmap="gray")
-
-        return ax_outside
 
     def plot_ranges(
         self, freq=10, figsize=(15, 10), kwargs_domain=None, kwargs_range=None, ax=None

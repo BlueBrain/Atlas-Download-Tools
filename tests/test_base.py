@@ -307,34 +307,6 @@ class TestDisplacementFieldEssentials:
         assert np.allclose(df_1.norm, np.zeros(shape))
         assert np.allclose(df_2.norm, np.ones(shape) * 5)
 
-    def test_outsiders(self):
-        """Test that number of outsiders is computed correctly."""
-
-        shape = (h, w) = (20, 40)
-
-        delta_y_all = np.ones(shape) * (h + 1)
-        delta_x_all = np.ones(shape) * (w + 1)
-
-        delta_y_none = np.zeros(shape)
-        delta_x_none = np.zeros(shape)
-
-        delta_y_one = np.zeros(shape)
-        delta_x_one = np.zeros(shape)
-        delta_x_one[10, 10] = w + 1
-
-        df_all = DisplacementField(delta_x_all, delta_y_all)
-        df_none = DisplacementField(delta_x_none, delta_y_none)
-        df_one = DisplacementField(delta_x_one, delta_y_one)
-
-        mask_all = np.ones(shape, dtype=bool)
-        mask_none = np.zeros(shape, dtype=bool)
-        mask_one = np.zeros(shape, dtype=bool)
-        mask_one[10, 10] = True
-
-        assert np.all(df_all.outsiders == mask_all)
-        assert np.all(df_none.outsiders == mask_none)
-        assert np.all(df_one.outsiders == mask_one)
-
     def test_transformation(self):
         """Check that going from displacement field to the actual
         transformation works perfectly.
