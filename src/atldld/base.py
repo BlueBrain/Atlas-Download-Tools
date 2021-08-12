@@ -22,7 +22,7 @@ import pathlib
 import cv2
 import numpy as np
 from scipy.interpolate import NearestNDInterpolator
-from skimage.transform import AffineTransform, SimilarityTransform, resize
+from skimage.transform import AffineTransform, SimilarityTransform
 
 GLOBAL_CACHE_FOLDER = pathlib.Path.home() / ".atldld"
 

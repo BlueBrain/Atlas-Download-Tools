@@ -21,7 +21,6 @@ from typing import Union
 
 import numpy as np
 import pytest
-from skimage.transform import resize
 
 from atldld.base import DisplacementField, affine_simple
 
