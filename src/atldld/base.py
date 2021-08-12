@@ -46,6 +46,7 @@ class DisplacementField:
         in the y coordinate (rows). Positive values move the pixel down,
         negative pixels move the pixels up.
     """
+
     def __init__(self, delta_x, delta_y):
 
         # Checks
@@ -65,7 +66,6 @@ class DisplacementField:
 
         # Define more attributes
         self.shape = shape_x
-
 
     @classmethod
     def from_file(cls, file_path):
