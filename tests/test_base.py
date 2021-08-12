@@ -90,37 +90,6 @@ class TestDisplacementFieldEssentials:
         assert f_x[y_2, x_2] == pytest.approx(x_2 + delta_x[y_2, x_2])
         assert f_y[y_2, x_2] == pytest.approx(y_2 + delta_y[y_2, x_2])
 
-    def test_mask(self):
-        shape = (300, 500)
-
-        delta_x = np.ones(shape) * 11
-        delta_y = np.ones(shape) * 8
-        df = DisplacementField(delta_x, delta_y)
-
-        mask_matrix_wrong_shape = np.zeros((shape[0], shape[1] + 1), dtype=bool)
-        mask_matrix_wrong_type = np.zeros(shape)
-        mask_matrix = np.zeros(shape, dtype=bool)
-        mask_matrix[9:11, 18:24] = True
-
-        with pytest.raises(ValueError):
-            df.mask(mask_matrix_wrong_shape)
-
-        with pytest.raises(TypeError):
-            df.mask(mask_matrix_wrong_type)
-
-        df_masked = df.mask(mask_matrix, fill_value=(155, 12))
-
-        assert np.all(
-            df_masked.delta_x[mask_matrix] == np.ones(shape)[mask_matrix] * 11
-        )
-        assert np.all(df_masked.delta_y[mask_matrix] == np.ones(shape)[mask_matrix] * 8)
-        assert np.all(
-            df_masked.delta_x[~mask_matrix] == np.ones(shape)[~mask_matrix] * 155
-        )
-        assert np.all(
-            df_masked.delta_y[~mask_matrix] == np.ones(shape)[~mask_matrix] * 12
-        )
-
 
 class TestFromFile:
     """Collections of tests focused on the classmethod `from_file`."""

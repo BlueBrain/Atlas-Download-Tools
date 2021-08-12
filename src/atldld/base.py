@@ -488,56 +488,6 @@ class DisplacementField:
 
         return f_x, f_y
 
-    def mask(self, mask_matrix, fill_value=0):
-        """Mask a displacement field.
-
-        Notes
-        -----
-        Not in place, returns a modified instance.
-
-        Parameters
-        ----------
-        mask_matrix : np.array
-            An array of dtype=bool where True represents a pixel that is supposed
-            to be unchanged. False pixels are filled with `fill_value`.
-        fill_value : float or tuple
-            Value to fill the False pixels with.
-            If tuple then fill_value_x, fill_value_y
-
-        Returns
-        -------
-        DisplacementField
-            A new DisplacementField instance accordingly masked.
-        """
-        if not mask_matrix.shape == self.shape:
-            raise ValueError(
-                "The mask array has an incorrect shape of {}.".format(mask_matrix.shape)
-            )
-
-        if not mask_matrix.dtype == bool:
-            raise TypeError(
-                "The dtype of the array needs to be a bool, current dtype {}".format(
-                    mask_matrix.dtype
-                )
-            )
-
-        delta_x_masked = self.delta_x.copy()
-        delta_y_masked = self.delta_y.copy()
-
-        if isinstance(fill_value, tuple):
-            fill_value_x, fill_value_y = fill_value
-
-        elif isinstance(fill_value, (float, int)):
-            fill_value_x, fill_value_y = fill_value, fill_value
-
-        else:
-            raise TypeError("Incorrect type {} of fill_value".format(type(fill_value)))
-
-        delta_x_masked[~mask_matrix] = fill_value_x
-        delta_y_masked[~mask_matrix] = fill_value_y
-
-        return DisplacementField(delta_x_masked, delta_y_masked)
-
     def resize(self, new_shape):
         """Calculate a resized displacement vector field.
 
