@@ -16,8 +16,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Test for sync.py module."""
 
-from unittest.mock import Mock
-
 import numpy as np
 import pytest
 import requests

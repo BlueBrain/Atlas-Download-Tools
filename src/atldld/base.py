@@ -375,68 +375,6 @@ class DisplacementField:
             self.delta_y, other.delta_y
         )
 
-    def __call__(self, other, interpolation="linear", border_mode="replicate", c=0):
-        """Composition of transformations.
-
-        Notes
-        -----
-        This composition is only approximate since we need to approximate `self`
-        on off-grid elements. Negative side effect is that composing with inverse
-        will not necessarily lead to identity.
-
-        Parameters
-        ----------
-        other : DisplacementField
-            An inner DVF.
-        interpolation : str, {'nearest', 'linear', 'cubic', 'area', 'lanczos'}
-            Regular grid interpolation method to be used.
-        border_mode : str,
-        {'constant', 'replicate', 'reflect', 'wrap', 'reflect101', 'transparent'}
-            How to fill outside of the range values.
-            See references for detailed explanation.
-        c : float
-            Only used if `border_mode='constant'` and represents the fill value.
-
-        Returns
-        -------
-        composition : DisplacementField
-            Let F: x -> x + self and G: x -> x + other.
-            Then the composition represents x: F(G(x)) - x.
-        """
-        if not isinstance(other, DisplacementField):
-            raise TypeError(
-                "The inner object is not DisplacementField but {}".format(type(other))
-            )
-
-        if self.shape != other.shape:
-            raise ValueError("Cannot compose DVF of different shapes!")
-
-        # Think about self as 2 images delta_x and delta_y,
-        # and the final transformation also as 2 images with
-        # intentieties being equal to the output vector.
-
-        x, y = np.meshgrid(list(range(self.shape[1])), list(range(self.shape[0])))
-        delta_x = (
-            other.warp(
-                x + self.delta_x,
-                interpolation=interpolation,
-                border_mode=border_mode,
-                c=c,
-            )
-            - x
-        )
-        delta_y = (
-            other.warp(
-                y + self.delta_y,
-                interpolation=interpolation,
-                border_mode=border_mode,
-                c=c,
-            )
-            - y
-        )
-
-        return DisplacementField(delta_x, delta_y)
-
     def __mul__(self, c):
         """Multiplication by a constant from the right.
 
