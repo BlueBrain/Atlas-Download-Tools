@@ -14,13 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""Fundamental building blocks of the project.
-
-Notes
------
-This module does not import any other module except for zoo.
-Be careful to keep this logic in order to prevent cyclical imports.
-"""
+"""Fundamental building blocks of the project."""
 
 import math
 import pathlib
@@ -31,135 +25,6 @@ from scipy.interpolate import NearestNDInterpolator
 from skimage.transform import AffineTransform, SimilarityTransform, resize
 
 GLOBAL_CACHE_FOLDER = pathlib.Path.home() / ".atldld"
-
-
-def affine(shape, matrix=None):
-    """Affine transformation encoded in a 2 x 3 matrix.
-
-    Parameters
-    ----------
-    shape : tuple
-        Of the form (height, width).
-    matrix : np.ndarray
-        Transformation matrix of the shape 2 x 3.
-
-    Raises
-    ------
-    ValueError
-        In case the transformation matrix has a wrong shape.
-
-    Returns
-    -------
-    delta_x : np.ndarray
-        Displacement vector field of the x coordinates.
-    delta_y : np.ndarray
-        Displacement vector field of the y coordinates.
-    """
-    if matrix is None:
-        matrix = np.eye(3)
-
-    if matrix.shape == (2, 3):
-        matrix = np.vstack(
-            (matrix, [0, 0, 1])
-        )  # just add the homogeneous coordinates parts
-
-    if matrix.shape != (3, 3):
-        raise ValueError(
-            "The shape of affine transformation matrix is {}, correct is (3, 3)".format(
-                matrix.shape
-            )
-        )
-
-    tform = AffineTransform(matrix)
-
-    x, y = np.meshgrid(range(shape[1]), range(shape[0]))
-    coords = np.hstack((x.reshape(-1, 1), y.reshape(-1, 1))).astype(float)
-
-    coords_after = tform(coords)
-    coords_delta = coords_after - coords
-
-    delta_x = np.reshape(coords_delta[:, 0], shape)
-    delta_y = np.reshape(coords_delta[:, 1], shape)
-
-    return delta_x, delta_y
-
-
-def affine_simple(
-    shape,
-    scale_x=1,
-    scale_y=1,
-    rotation=0,
-    translation_x=0,
-    translation_y=0,
-    shear=0,
-    apply_centering=True,
-):
-    """Just a human version of affine mapping.
-
-    Notes
-    -----
-    Instead of specifying the whole matrix one can just specify
-    all the understandable quantities.
-
-    Parameters
-    ----------
-    shape : tuple
-        Of the form (height, width).
-    scale_x : float
-        Scale on the x axis. If scale_x < 1 then zoom out, if scale_x > 1 zoom in.
-    scale_y : float
-        Scale on the y axis. If scale_y < 1 then zoom out, if scale_y > 1 zoom in.
-    rotation : float
-          Rotation angle in counter-clockwise direction as radians.
-    translation_x : float
-        Translation in the x direction.
-        If translation_x > 0 then to the right, else to the left.
-    translation_y : float
-        Translation in the y direction. If translation_y > 0 then down, else to the up.
-    shear : float
-        Shear angle in counter-clockwise direction as radians.
-    apply_centering : bool
-        If True then (h // 2 - 0.5, w // 2 - 0.5) is considered a center of the image.
-        And before performing all the other operations the image is first
-        shifted so that the center corresponds to (0, 0). Then the actual
-        transformation is applied and after that the image is shifted
-        into the original center.
-
-    Returns
-    -------
-    delta_x : np.ndarray
-        Displacement vector field of the x coordinates.
-    delta_y : np.ndarray
-        Displacement vector field of the y coordinates.
-    """
-    matrix = np.array(
-        [
-            [
-                scale_x * math.cos(rotation),
-                -scale_y * math.sin(rotation + shear),
-                translation_x,
-            ],
-            [
-                scale_x * math.sin(rotation),
-                scale_y * math.cos(rotation + shear),
-                translation_y,
-            ],
-            [0, 0, 1],
-        ]
-    )
-
-    if not apply_centering:
-        return affine(shape, matrix)
-
-    center_rc = np.array([(shape[0] / 2) - 0.5, (shape[1] / 2) - 0.5])
-    center_xy = np.array([center_rc[1], center_rc[0]])
-
-    tform1 = SimilarityTransform(translation=center_xy)
-    tform2 = SimilarityTransform(matrix=matrix)
-    tform3 = SimilarityTransform(translation=-center_xy)
-    tform = tform3 + tform2 + tform1
-
-    return affine(shape, tform.params)
 
 
 class DisplacementField:
@@ -182,83 +47,6 @@ class DisplacementField:
         in the y coordinate (rows). Positive values move the pixel down,
         negative pixels move the pixels up.
     """
-
-    @classmethod
-    def generate(cls, shape, approach="identity", **kwargs):
-        """Construct different displacement vector fields (DVF) via factory method.
-
-        Parameters
-        ----------
-        shape : tuple
-            A tuple representing the (height, width) of the displacement field.
-            Note that if multiple channels passed then only the height
-            and width is extracted.
-        approach : str, {'affine', 'affine_simple', 'identity'}
-            What approach to use for generating the DVF.
-        kwargs : dict
-            Additional parameters that are passed into the the given approach function.
-
-        Returns
-        -------
-        DisplacementField
-            An instance of a Displacement field.
-        """
-        # Check - extremely important since no checks in the zoo
-        if len(shape) == 3:
-            shape_ = shape[
-                :2
-            ]  # to make it easier for the user who passes img.shape of an RGB image
-
-        elif len(shape) == 2:
-            shape_ = shape
-
-        else:
-            raise ValueError(
-                "The length of shape needs to be either 2 or 3, {} given".format(
-                    len(shape)
-                )
-            )
-
-        if approach == "affine":
-            kw = ["matrix"]
-            kwargs_affine = {
-                k: v for k, v in kwargs.items() if k in kw
-            }  # Check if passed any
-            delta_x, delta_y = affine(shape_, **kwargs_affine)
-
-        elif approach == "affine_simple":
-            kw = [
-                "scale_x",
-                "scale_y",
-                "rotation",
-                "translation_x",
-                "translation_y",
-                "shear",
-                "apply_centering",
-            ]
-            kwargs_affine_simple = {
-                k: v for k, v in kwargs.items() if k in kw
-            }  # Check if passed any
-            delta_x, delta_y = affine_simple(shape_, **kwargs_affine_simple)
-
-        elif approach == "identity":
-            kw = []
-            delta_x, delta_y = np.zeros(shape_), np.zeros(shape_)
-
-        else:
-            raise ValueError("The approach {} is not valid".format(approach))
-
-        # Check if no illegal arguments (now its too late but beter than never:D)
-        allowed_kw = set(kw)
-        passed_kw = set(kwargs)
-
-        if not passed_kw.issubset(allowed_kw):
-            diff = passed_kw - allowed_kw
-            raise ValueError(
-                "Illegal arguments passed for approach {}: {}".format(approach, diff)
-            )
-
-        return cls(delta_x=delta_x, delta_y=delta_y)
 
     @classmethod
     def from_file(cls, file_path):
@@ -713,3 +501,132 @@ class DisplacementField:
 
         else:
             raise ValueError("Unrecognized approach {}".format(approach))
+
+
+def affine(shape, matrix=None):
+    """Affine transformation encoded in a 2 x 3 matrix.
+
+    Parameters
+    ----------
+    shape : tuple
+        Of the form (height, width).
+    matrix : np.ndarray
+        Transformation matrix of the shape 2 x 3.
+
+    Raises
+    ------
+    ValueError
+        In case the transformation matrix has a wrong shape.
+
+    Returns
+    -------
+    delta_x : np.ndarray
+        Displacement vector field of the x coordinates.
+    delta_y : np.ndarray
+        Displacement vector field of the y coordinates.
+    """
+    if matrix is None:
+        matrix = np.eye(3)
+
+    if matrix.shape == (2, 3):
+        matrix = np.vstack(
+            (matrix, [0, 0, 1])
+        )  # just add the homogeneous coordinates parts
+
+    if matrix.shape != (3, 3):
+        raise ValueError(
+            "The shape of affine transformation matrix is {}, correct is (3, 3)".format(
+                matrix.shape
+            )
+        )
+
+    tform = AffineTransform(matrix)
+
+    x, y = np.meshgrid(range(shape[1]), range(shape[0]))
+    coords = np.hstack((x.reshape(-1, 1), y.reshape(-1, 1))).astype(float)
+
+    coords_after = tform(coords)
+    coords_delta = coords_after - coords
+
+    delta_x = np.reshape(coords_delta[:, 0], shape)
+    delta_y = np.reshape(coords_delta[:, 1], shape)
+
+    return delta_x, delta_y
+
+
+def affine_simple(
+    shape,
+    scale_x=1,
+    scale_y=1,
+    rotation=0,
+    translation_x=0,
+    translation_y=0,
+    shear=0,
+    apply_centering=True,
+):
+    """Just a human version of affine mapping.
+
+    Notes
+    -----
+    Instead of specifying the whole matrix one can just specify
+    all the understandable quantities.
+
+    Parameters
+    ----------
+    shape : tuple
+        Of the form (height, width).
+    scale_x : float
+        Scale on the x axis. If scale_x < 1 then zoom out, if scale_x > 1 zoom in.
+    scale_y : float
+        Scale on the y axis. If scale_y < 1 then zoom out, if scale_y > 1 zoom in.
+    rotation : float
+          Rotation angle in counter-clockwise direction as radians.
+    translation_x : float
+        Translation in the x direction.
+        If translation_x > 0 then to the right, else to the left.
+    translation_y : float
+        Translation in the y direction. If translation_y > 0 then down, else to the up.
+    shear : float
+        Shear angle in counter-clockwise direction as radians.
+    apply_centering : bool
+        If True then (h // 2 - 0.5, w // 2 - 0.5) is considered a center of the image.
+        And before performing all the other operations the image is first
+        shifted so that the center corresponds to (0, 0). Then the actual
+        transformation is applied and after that the image is shifted
+        into the original center.
+
+    Returns
+    -------
+    delta_x : np.ndarray
+        Displacement vector field of the x coordinates.
+    delta_y : np.ndarray
+        Displacement vector field of the y coordinates.
+    """
+    matrix = np.array(
+        [
+            [
+                scale_x * math.cos(rotation),
+                -scale_y * math.sin(rotation + shear),
+                translation_x,
+            ],
+            [
+                scale_x * math.sin(rotation),
+                scale_y * math.cos(rotation + shear),
+                translation_y,
+            ],
+            [0, 0, 1],
+        ]
+    )
+
+    if not apply_centering:
+        return affine(shape, matrix)
+
+    center_rc = np.array([(shape[0] / 2) - 0.5, (shape[1] / 2) - 0.5])
+    center_xy = np.array([center_rc[1], center_rc[0]])
+
+    tform1 = SimilarityTransform(translation=center_xy)
+    tform2 = SimilarityTransform(matrix=matrix)
+    tform3 = SimilarityTransform(translation=-center_xy)
+    tform = tform3 + tform2 + tform1
+
+    return affine(shape, tform.params)

@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 from skimage.transform import resize
 
-from atldld.base import DisplacementField
+from atldld.base import DisplacementField, affine, affine_simple
 
 SUPPORTED_DTYPES_ANNOTATIONS = ["int8", "int16", "int32"]
 SUPPORTED_APPROACHES_ANNOTATIONS = ["scipy", "opencv"]
@@ -323,7 +323,8 @@ class TestResize:
         )  # if not satisfied fixture image too small
 
         # Zoom in
-        df = DisplacementField.generate(shape, approach="affine_simple", scale_x=0.8)
+        deltas = affine_simple(shape, scale_x=0.8)
+        df = DisplacementField(*deltas)
 
         df_resized = df.resize(new_shape)
         img_1 = df_resized.warp(img)
@@ -481,7 +482,8 @@ class TestWarp:
 
         shape = img.shape[:2]
 
-        df = DisplacementField.generate(shape, approach="identity")
+        delta = np.zeros(shape, dtype=np.float32)
+        df = DisplacementField(delta, delta)
 
         img_warped = df.warp(img, interpolation=interpolation, border_mode=border_mode)
 
@@ -493,7 +495,8 @@ class TestWarp:
     def test_dtype_conversions(self, img, interpolation, border_mode):
         """Test that dtype is conserved (at least for uint8 and float32)"""
 
-        df = DisplacementField.generate(img.shape, approach="identity")
+        delta = np.zeros(img.shape, dtype=np.float32)
+        df = DisplacementField(delta, delta)
 
         warped_img = df.warp(img, interpolation=interpolation, border_mode=border_mode)
 
@@ -503,7 +506,8 @@ class TestWarp:
         shape = (10, 11)
         img = np.zeros(shape)
 
-        df = DisplacementField.generate(shape, approach="identity")
+        delta = np.zeros(shape, dtype=np.float32)
+        df = DisplacementField(delta, delta)
 
         with pytest.raises(KeyError):
             df.warp(img, interpolation="fake_interpolation")
@@ -543,10 +547,8 @@ class TestWarpAnnotation:
 
         shape = (9, 10)
 
-        df = DisplacementField.generate(
-            shape, approach="affine_simple", rotation=np.pi / 10
-        )
-
+        deltas = affine_simple(shape, rotation=np.pi / 10)
+        df = DisplacementField(*deltas)
         np.random.seed(random_state)
         img = np.random.randint(300, size=shape).astype(
             dtype
@@ -573,12 +575,12 @@ class TestWarpAnnotation:
         shape = (9, 10)
 
         random_state = 1
-        df = DisplacementField.generate(
+        deltas = affine_simple(
             shape,
-            approach="affine_simple",
             translation_x=translation_x,
             translation_y=translation_y,
         )
+        df = DisplacementField(*deltas)
 
         np.random.seed(random_state)
         img = np.random.randint(256, size=shape).astype(dtype)
@@ -645,9 +647,8 @@ class TestWarpAnnotation:
         shape = (10, 11)
 
         img = np.random.randint(1, 256, size=shape).astype(dtype)
-        df = DisplacementField.generate(
-            shape, approach="affine_simple", rotation=np.pi / 10
-        )
+        deltas = affine_simple(shape, rotation=np.pi / 10)
+        df = DisplacementField(*deltas)
 
         all_results = [
             df.warp_annotation(img, approach=x)
@@ -656,20 +657,3 @@ class TestWarpAnnotation:
 
         for i in range(len(all_results) - 1):
             assert np.array_equal(all_results[i], all_results[i + 1])
-
-
-@pytest.mark.parametrize(
-    "approach",
-    [
-        "affine",
-        "affine_simple",
-        "identity",
-    ],
-)
-def test_construction(approach):
-    """Just check default factory methods are able to construct the class."""
-
-    shape = (500, 500)
-    inst = DisplacementField.generate(shape, approach=approach)
-
-    assert isinstance(inst, DisplacementField)
