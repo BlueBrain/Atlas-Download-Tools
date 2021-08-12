@@ -249,69 +249,6 @@ class TestMultiplication:
         assert np.allclose(delta_y * c, df_mul.delta_y)
 
 
-class TestResize:
-    """A collection of tests focused on the resize method."""
-
-    def test_incorrect_input(self):
-        """Test that wrong inputs lead to an error."""
-
-        shape = (40, 10)
-
-        delta_x = np.zeros(shape)
-        delta_y = np.zeros(shape)
-
-        df = DisplacementField(delta_x, delta_y)
-
-        with pytest.raises(ValueError):
-            df.resize((1, 1, 2))
-
-        with pytest.raises(TypeError):
-            df.resize("some_str")
-
-    @pytest.mark.parametrize("new_shape", [(20, 25), (50, 40), (23, 33), (42, 20)])
-    def test_identity(self, new_shape):
-        """Resized dvf has the correct shape."""
-        shape = (40, 30)  # Needs to stay like this
-
-        delta_x = np.zeros(shape)
-        delta_y = np.zeros(shape)
-
-        df = DisplacementField(delta_x, delta_y)
-
-        assert df.resize(new_shape).shape == new_shape
-
-    @pytest.mark.parametrize("h_delta", [-50, 0, 100])
-    @pytest.mark.parametrize("w_delta", [-50, 0, 100])
-    def test_warp_invariance(self, img, h_delta, w_delta):
-        """Test that df_resized.warp(img) ~ resized(df.warp(img))."""
-        shape = img.shape
-        new_shape = (shape[0] + h_delta, shape[1] + w_delta)
-
-        assert (
-            new_shape[0] > 0 and new_shape[1] > 0
-        )  # if not satisfied fixture image too small
-
-        # Zoom in
-        deltas = affine_simple(shape, scale_x=0.8)
-        df = DisplacementField(*deltas)
-
-        df_resized = df.resize(new_shape)
-        img_1 = df_resized.warp(img)
-        img_2 = resize(df.warp(img), new_shape, preserve_range=True)  # preserving dtype
-
-        # WARNING MAKE SURE THAT DOES NOT RUN INTO OVERFLOW FOR UINT8
-        adiff = abs(np.subtract(img_1, img_2, dtype="float"))
-
-        if img.dtype == np.uint8:
-            eps: Union[int, float] = 25
-        elif img.dtype == np.float32:
-            eps = 1e-1
-        else:
-            raise ValueError("This test is only made for uint8 and float32 images.")
-
-        assert np.median(adiff) < eps
-
-
 class TestSave:
     """Collection of tests focused on the `save` method."""
 

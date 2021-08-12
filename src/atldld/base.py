@@ -242,65 +242,6 @@ class DisplacementField:
 
         return f_x, f_y
 
-    def resize(self, new_shape):
-        """Calculate a resized displacement vector field.
-
-        Goal: df_resized.warp(img) ~ resized(df.warp(img))
-
-        Parameters
-        ----------
-        new_shape : tuple
-            Represents (new_height, new_width) of the resized displacement field.
-
-        Returns
-        -------
-        DisplacementField
-            New DisplacementField with a shape of new_shape.
-        """
-        if not isinstance(new_shape, tuple):
-            raise TypeError("Incorrect type of new_shape: {}".format(type(new_shape)))
-
-        if not len(new_shape) == 2:
-            raise ValueError("The length of new shape must be 2")
-
-        f_x, f_y = self.transformation
-        new_f_x = resize(f_x, output_shape=new_shape)
-        new_f_y = resize(f_y, output_shape=new_shape)
-
-        return DisplacementField.from_transform(new_f_x, new_f_y)
-
-    def resize_constant(self, new_shape):
-        """Calculate the resized displacement vector field.
-
-        That will have the same effect on original image.
-        Goal:  upsampled(df.warp(img_downsampled)) ~  df_resized.warp(img).
-
-        Parameters
-        ----------
-        new_shape : tuple
-            Represents (new_height, new_width) of the resized displacement field.
-
-        Returns
-        -------
-        DisplacementField
-            New DisplacementField with a shape of new_shape.
-
-        Notes
-        -----
-        Very useful when we perform registration on a smaller resolution image
-        and then we want to resize it back to the original higher resolution shape.
-        """
-        fx, fy = self.transformation
-
-        x_ratio, y_ratio = new_shape[1] / self.shape[1], new_shape[0] / self.shape[0]
-
-        fx_, fy_ = fx * x_ratio, fy * y_ratio
-
-        new_f_x = resize(fx_, output_shape=new_shape)
-        new_f_y = resize(fy_, output_shape=new_shape)
-
-        return DisplacementField.from_transform(new_f_x, new_f_y)
-
     def save(self, path):
         """Save displacement field as a .npy file.
 
