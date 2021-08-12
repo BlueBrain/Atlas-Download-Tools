@@ -489,11 +489,6 @@ class DisplacementField:
         return self * c
 
     @property
-    def is_valid(self):
-        """Check whether both delta_x and delta_y finite."""
-        return np.all(np.isfinite(self.delta_x)) and np.all(np.isfinite(self.delta_y))
-
-    @property
     def jacobian(self):
         """Compute determinant of a Jacobian per each pixel."""
         delta_x = self.delta_x

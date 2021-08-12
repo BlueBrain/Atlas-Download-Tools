@@ -292,31 +292,6 @@ class TestDisplacementFieldEssentials:
     Mostly focused on the properties.
     """
 
-    def test_is_valid(self):
-        """Focused on the is_valid property"""
-        shape = (3, 4)
-
-        # 1 - valid
-        delta_x_1 = np.zeros(shape)
-        delta_y_1 = np.zeros(shape)
-        df_1 = DisplacementField(delta_x_1, delta_y_1)
-
-        # 2 - invalid
-        delta_x_2 = np.zeros(shape)
-        delta_y_2 = np.zeros(shape)
-        delta_x_2[0, 1] = np.nan
-        df_2 = DisplacementField(delta_x_2, delta_y_2)
-
-        # 3 - valid
-        delta_x_3 = np.zeros(shape)
-        delta_y_3 = np.zeros(shape)
-        delta_x_3[0, 2] = np.inf
-        df_3 = DisplacementField(delta_x_3, delta_y_3)
-
-        assert df_1.is_valid
-        assert not df_2.is_valid
-        assert not df_3.is_valid
-
     def test_norm(self):
         shape = (4, 5)
 
