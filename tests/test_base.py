@@ -563,25 +563,6 @@ class TestMultiplication:
         assert np.allclose(delta_y * c, df_mul.delta_y)
 
 
-class TestPlotRanges:
-    """Tests focused on the ``plot_ranges`` method."""
-
-    def test_basic(self, monkeypatch):
-        shape = (10, 11)
-        df = DisplacementField.generate(shape, approach="identity")
-
-        fake_ax = Mock()
-        fake_plt = Mock()
-        fake_plt.subplots = lambda *args, **kwargs: (None, fake_ax)
-
-        monkeypatch.setattr("atldld.base.plt", fake_plt)
-
-        df.plot_ranges()
-
-        assert fake_ax.scatter.call_count > 0
-        assert fake_ax.legend.call_count > 0
-
-
 class TestResize:
     """A collection of tests focused on the resize method."""
 

@@ -26,7 +26,6 @@ import math
 import pathlib
 
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import NearestNDInterpolator
 from skimage.transform import AffineTransform, SimilarityTransform, resize
@@ -689,100 +688,6 @@ class DisplacementField:
         delta_y_masked[~mask_matrix] = fill_value_y
 
         return DisplacementField(delta_x_masked, delta_y_masked)
-
-    def plot_dvf(self, ds_f=8, figsize=(15, 15), ax=None):
-        """Plot displacement vector field.
-
-        Notes
-        -----
-        Still works in a weird way.
-
-        Parameters
-        ----------
-        ds_f : int
-            Downsampling factor,
-            i.e if `ds_f=8` every 8-th row and every 8th column printed.
-        figsize : tuple
-            Size of the figure.
-        ax : matplotlib.Axes
-            Axes upon which to plot. If None, create a new one
-
-        Returns
-        -------
-        ax : matplotlib.Axes
-            Axes with the visualization.
-        """
-        x, y = np.meshgrid(list(range(self.shape[1])), list(range(self.shape[0])))
-
-        if ax is None:
-            _, ax_quiver = plt.subplots(figsize=figsize)
-
-        else:
-            ax_quiver = ax
-
-        ax_quiver.invert_yaxis()
-        ax_quiver.quiver(
-            x[::ds_f, ::ds_f],
-            y[::ds_f, ::ds_f],
-            self.delta_x[::ds_f, ::ds_f],
-            -self.delta_y[::ds_f, ::ds_f],
-        )  # matplotlib has positive delta y as up, in our case its down
-
-        return ax_quiver
-
-    def plot_ranges(
-        self, freq=10, figsize=(15, 10), kwargs_domain=None, kwargs_range=None, ax=None
-    ):
-        """Plot domain and the range of the mapping.
-
-        Parameters
-        ----------
-        freq : int
-            Take every freq-th pixel. The higher the more sparse.
-        figsize : tuple
-            Size of the figure.
-        kwargs_domain : dict or None
-            If ``dict`` then matplotlib kwargs to be passed into the domain scatter.
-        kwargs_range : dict or None
-            If ``dict`` then matplotlib kwargs to be passed into the range scatter.
-        ax : matplotlib.Axes
-            Axes upon which to plot. If None, create a new one.
-
-        Returns
-        -------
-        ax : matplotlib.Axes
-            Axes with the visualization.
-        """
-        # original range
-        h, w = self.shape
-        tx, ty = self.transformation
-
-        x, y = [], []
-        x_r, y_r = [], []
-
-        i = 0
-        for r in range(h):
-            for c in range(w):
-                i += 1
-                if i % freq == 0:
-                    x.append(c)
-                    y.append(h - r)
-                    x_r.append(tx[r, c])
-                    y_r.append(h - ty[r, c])
-
-        kwargs_domain = kwargs_domain or {"s": 0.1, "color": "blue"}
-        kwargs_range = kwargs_range or {"s": 0.1, "color": "green"}
-
-        if ax is None:
-            _, ax_ranges = plt.subplots(figsize=figsize)
-        else:
-            ax_ranges = ax
-
-        ax_ranges.scatter(x, y, label="Domain", **kwargs_domain)
-        ax_ranges.scatter(x_r, y_r, label="Range", **kwargs_range)
-        ax_ranges.legend()
-
-        return ax_ranges
 
     def resize(self, new_shape):
         """Calculate a resized displacement vector field.
