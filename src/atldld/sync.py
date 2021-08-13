@@ -25,7 +25,6 @@ functions that are called within this module.
 import collections
 
 import numpy as np
-from skimage.transform import resize, warp
 
 from atldld.base import DisplacementField
 from atldld.utils import (
@@ -518,114 +517,6 @@ def corners_sagittal(r, dataset_id):
     ]
 
     return section_number_corner_mode, image_id_corner_mode
-
-
-def warp_rs9(
-    p,
-    dataset_id,
-    ds_f=1,
-    invert_colors=False,
-    allow_resizing=True,
-    img_section_id=None,
-    skip_reference=False,
-):
-    """Given a fixed coronal section, map the closest section image of the dataset into CCF.
-
-    Parameters
-    ----------
-    p : int
-        Coronal slice coordinate in microns.
-        Note that p = section_thickness * section_number.
-        So in our case p = 10 * section number.
-    dataset_id : int
-        Id of the section dataset.
-    ds_f : int, optional
-        Downsampling factor. If set to 1 no downsampling takes place.
-        Note that if `ds_f` = 25, then we obtain the shape (320, 456).
-    invert_colors : bool, optional
-        If True, then img_section = 255 - img_section.
-    allow_resizing : bool, optional
-        If True, then both the reference and section image
-        are simply resized via `skimage.transform.resize`.
-        It allows us to see how simple resizing compares to sophisticated warping.
-        Note that sometimes the function gets stuck for large images
-        and that is why this boolean is introduced.
-    img_section_id : None or int
-        If None then using corners technique to find. Otherwise just use the passed one.
-    skip_reference : bool
-        If True, then not downloading the reference image.
-
-    Returns
-    -------
-    img_ref_resized : np.array or None
-        Image of shape (8000 // `ds_f`, 11400 // `ds_f`, ?) representing the
-        resized reference image. If `allow_resizing` == False then equals None.
-    img_section_resized : np.array or None
-        Image of shape (8000 // `ds_f`, 11400 // `ds_f`, ?) representing the
-        resized section image. If `allow_resizing` == False then equals None.
-    warped_section_image : np.array
-        Image of shape (8000 // `ds_f`, 11400 // `ds_f`, ?) representing
-        the warped section image.
-    """
-
-    def transformation(coords):
-        """Transform from (r, y) to (x, y).
-
-        Notes
-        -----
-        Warp of skimage is always using the convention that coords = (columns, rows).
-        So for our inputs this means (r, i) and output (x, y).
-
-        Parameters
-        ----------
-        coords : np.array, shape = (N, 2)
-            (r, i) coordinates.
-
-        Returns
-        -------
-        output_coords : np.array, shape = (N, 2)
-            (x, y) coordinates.
-        """
-        i_list = list(coords[:, 1] * ds_f)
-        r_list = list(coords[:, 0] * ds_f)
-        p_list = [p] * len(i_list)
-
-        output_coords = np.empty_like(coords)
-
-        x_list, y_list, _, _ = pir_to_xy_local_with_axis(
-            p_list, i_list, r_list, dataset_id=dataset_id
-        )
-
-        output_coords[:, 1] = y_list
-        output_coords[:, 0] = x_list
-
-        return output_coords
-
-    # Variables
-    if img_section_id is None:
-        _, img_section_id = corners_coronal(p, dataset_id)
-    output_shape = (8000 // ds_f, 11400 // ds_f)
-
-    # Images
-    img_ref = get_reference_image(p) if not skip_reference else None
-    img_section = get_image(img_section_id)
-
-    if invert_colors:
-        img_section = 255 - img_section  # Assumes that dtype of img_section is uint8
-
-    # Computations
-    img_ref_resized = (
-        resize(img_ref, output_shape)
-        if (allow_resizing and not skip_reference)
-        else None
-    )
-    img_section_resized = resize(img_section, output_shape) if allow_resizing else None
-    warped_img_section = warp(
-        img_section, inverse_map=transformation, output_shape=output_shape
-    )
-
-    return img_ref_resized, img_section_resized, warped_img_section
-
 
 def get_transform(
     slice_coordinate, dataset_id, ds_f=1, reference_space=9, axis="coronal"
