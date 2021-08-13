@@ -626,6 +626,146 @@ def warp_rs9(
 
     return img_ref_resized, img_section_resized, warped_img_section
 
+def get_transform_simple(
+    slice_coordinate,
+    matrix_2d,
+    matrix_3d,
+    axis="coronal",
+    ds_f=1
+):
+    print("3D", matrix_3d)
+    print("2D", matrix_2d)
+    refspace = (  # order matters
+        ("coronal", 13200),
+        ("transverse", 8000),
+        ("sagittal", 11400),
+
+    )
+    axis_fixed = [i for i, a in enumerate(refspace) if a[0] == axis][0]
+    axes_variable = [i for i, a in enumerate(refspace) if a[0] != axis]
+    breakpoint()
+
+    grid_shape = [refspace[i][1] // ds_f for i in axes_variable]
+    n_pixels = np.prod(grid_shape)
+
+    coords_ref = np.ones((4, n_pixels))  # (p, i, r, homogeneous)
+    coords_ref[axis_fixed, :] *= slice_coordinate
+    coords_ref[axes_variable, :] = np.indices(grid_shape).reshape(2, -1) * ds_f
+
+    coords_temp = np.ones((3, n_pixels))
+    coords_temp[[0, 1]] = np.dot(matrix_3d, coords_ref)[:2]
+
+    coords_img = np.dot(matrix_2d, coords_temp)[:2]
+
+    tx = coords_img[0, :].reshape(grid_shape)
+    ty = coords_img[1, :].reshape(grid_shape)
+
+    df = DisplacementField.from_transform(tx, ty)
+
+    return df
+
+
+
+def download_dataset_simple(
+    dataset_id,
+    ds_f=25,
+    detection_xy=(0, 0),
+    order="sn",
+    verbose=True,
+    include_expression=False,
+):
+    """Download entire dataset.
+
+    Parameters
+    ----------
+    dataset_id : int
+        Id of the section dataset. Used to determine the 3D matrix.
+    ds_f : int, optional
+        Downsampling factor. If set to 1 no downsampling takes place.
+        Note that if `ds_f` = 25, then we obtain the shape (320, 456).
+    detection_xy : tuple
+        Represents the x and y coordinate in the image that will be
+        used for determining the slice number in the reference space.
+        `p` for coronal slices, `r` for sagittal slices.
+    order : str, {'id', 'sn'}
+        How to order the streamed pairs.
+        - 'id' : smallest image ids first
+        - 'sn' : highest section number
+        (equivalent to lowest p becase AB switched the order:) first
+    verbose : bool
+        If True, then printing information to standard output.
+    include_expression : bool
+        If True then the generator returns 5 objects
+        where the last one is the expression image.
+
+    Returns
+    -------
+    res_dict : generator
+        Generator yielding consecutive four tuples of
+        (image_id, constant_ref_coordinate, img, df).
+        The `constant_ref_coordinate` is the dimension in the given axis in microns.
+        The `img` is the raw gene expression image with dtype `uint8`.
+        The `df` is the displacement field of shape (8000 // `ds_f`, 11400 // `ds_f`).
+        Note that the sorting. If `include_expression=True` then last returned image
+        is the processed expression image.
+        That is the generator yield (image_id, p, img, df, img_expr).
+    """
+    metadata_2d = get_2d_bulk(
+        dataset_id,
+        ref2inp=True,
+        add_last=True,
+        )
+    matrix_3d = get_3d(
+        dataset_id,
+        ref2inp=True,
+        add_last=True,
+        return_meta=False,
+    )
+    axis = CommonQueries.get_axis(dataset_id)
+
+    if order == "id":
+        all_image_ids = sorted(metadata_2d.keys())
+
+    elif order == "sn":
+        all_image_ids = sorted(metadata_2d.keys(), key=lambda x: -int(metadata_2d[x][1]))
+
+    else:
+        raise ValueError("Unsupported order {}".format(order))
+
+    for image_id in all_image_ids:
+        if verbose:
+            print(image_id)
+        try:
+            det_x, det_y = detection_xy
+            p, i, r = xy_to_pir_API_single(det_x, det_y, image_id=image_id)
+
+            slice_ref_coordinate = p if axis == "coronal" else r
+            img = get_image(image_id)
+            matrix_2d = [v[0] for k, v in metadata_2d.items() if k == image_id][0]
+
+            df = get_transform_simple(
+                slice_ref_coordinate,
+                matrix_2d,
+                matrix_3d,
+                ds_f=ds_f,
+                axis=axis,
+            )
+
+            if not include_expression:
+                yield image_id, slice_ref_coordinate, img, df
+            else:
+                img_expression = get_image(image_id, expression=True)
+                yield image_id, slice_ref_coordinate, img, df, img_expression
+
+        except Exception as e:
+            print(e)
+            if not include_expression:
+                yield image_id, None, None, None
+            else:
+                yield image_id, None, None, None, None
+
+
+
 
 def get_transform(
     slice_coordinate, dataset_id, ds_f=1, reference_space=9, axis="coronal"
