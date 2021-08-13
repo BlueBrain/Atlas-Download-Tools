@@ -646,16 +646,16 @@ def get_transform_simple(
     n_pixels = np.prod(grid_shape)
 
     coords_ref = np.ones((4, n_pixels))  # (p, i, r, homogeneous)
-    coords_ref[axis_fixed, :] *= slice_coordinate
-    coords_ref[axes_variable, :] = np.indices(grid_shape).reshape(2, -1) * ds_f
+    coords_ref[axis_fixed] *= slice_coordinate
+    coords_ref[axes_variable] = np.indices(grid_shape).reshape(2, -1) * ds_f
 
     coords_temp = np.ones((3, n_pixels))
     coords_temp[[0, 1]] = np.dot(matrix_3d, coords_ref)[:2]
 
     coords_img = np.dot(matrix_2d, coords_temp)[:2]
 
-    tx = coords_img[0, :].reshape(grid_shape)
-    ty = coords_img[1, :].reshape(grid_shape)
+    tx = coords_img[0].reshape(grid_shape)
+    ty = coords_img[1].reshape(grid_shape)
 
     df = DisplacementField.from_transform(tx, ty)
 
