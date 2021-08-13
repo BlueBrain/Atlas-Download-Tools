@@ -633,8 +633,6 @@ def get_transform_simple(
     axis="coronal",
     ds_f=1
 ):
-    print("3D", matrix_3d)
-    print("2D", matrix_2d)
     refspace = (  # order matters
         ("coronal", 13200),
         ("transverse", 8000),
@@ -643,7 +641,6 @@ def get_transform_simple(
     )
     axis_fixed = [i for i, a in enumerate(refspace) if a[0] == axis][0]
     axes_variable = [i for i, a in enumerate(refspace) if a[0] != axis]
-    breakpoint()
 
     grid_shape = [refspace[i][1] // ds_f for i in axes_variable]
     n_pixels = np.prod(grid_shape)
