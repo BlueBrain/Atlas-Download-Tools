@@ -518,6 +518,7 @@ def corners_sagittal(r, dataset_id):
 
     return section_number_corner_mode, image_id_corner_mode
 
+
 def get_transform(
     slice_coordinate, dataset_id, ds_f=1, reference_space=9, axis="coronal"
 ):
