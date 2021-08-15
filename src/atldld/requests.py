@@ -42,12 +42,13 @@ class RMAParameters:
             flags.extend(self.include)
 
         # Options
-        if self.start_row is not None and self.num_rows is not None:
-            flags.append("rma::options")
+        if self.start_row is not None or self.num_rows is not None:
+            flag = "rma::options"
             if self.start_row is not None:
-                flags.append(f"[start_row$eq{self.start_row}]")
+                flag += f"[start_row$eq{self.start_row}]"
             if self.num_rows is not None:
-                flags.append(f"[num_rows$eq{self.num_rows}]")
+                flag += f"[num_rows$eq{self.num_rows}]"
+            flags.append(flag)
 
         return f'criteria={",".join(flags)}'
 
