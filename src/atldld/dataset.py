@@ -6,22 +6,17 @@ class PlaneOfSection(enum.Enum):
     SAGITTAL = 2
 
     def __str__(self):
-        if self == self.CORONAL:
-            return "coronal"
-        elif self == self.SAGITTAL:
-            return "sagittal"
-        else:
-            return f"unknown ({self})"
+        return self.name.lower()
 
 
 class ReferenceSpace(enum.Enum):
     P56 = 9
     P56_LR_FLIPPED = 10
 
+    __names__ = {
+        P56: "P56 Brain",
+        P56_LR_FLIPPED: "P56 Brain, L/R Flipped",
+    }
+
     def __str__(self):
-        if self == self.P56:
-            return "P56 Brain"
-        elif self == self.P56_LR_FLIPPED:
-            return "P56 Brain, L/R Flipped"
-        else:
-            return f"unknown ({self})"
+        return self.__names__[self.value]
