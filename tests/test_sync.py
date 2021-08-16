@@ -16,6 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Test for sync.py module."""
 
+from fractions import gcd
 from unittest.mock import Mock
 
 import numpy as np
@@ -25,6 +26,7 @@ import requests
 from atldld.sync import (
     corners_coronal,
     get_reference_image,
+    get_transform_simple,
     pir_to_xy_API,
     pir_to_xy_local,
     pir_to_xy_local_with_axis,
@@ -297,3 +299,55 @@ class TestSync:
         assert np.all(np.isfinite(img_ref_resized))
         assert np.all(np.isfinite(img_section_resized))
         assert np.all(np.isfinite(warped_img_section))
+
+
+class TestGetTransformSimple:
+    def test(self, pir_to_xy_response):
+        p = pir_to_xy_response["p"]
+        i = pir_to_xy_response["i"]
+        r = pir_to_xy_response["r"]
+
+        axis = pir_to_xy_response["axis"]
+
+        x = pir_to_xy_response["x"]
+        y = pir_to_xy_response["y"]
+
+
+        matrix_2d = np.array(pir_to_xy_response["matrix_2d"])
+        matrix_3d = np.array(pir_to_xy_response["matrix_3d"])
+
+
+        if axis == "coronal":
+            slice_coordinate = p
+            ds_f = gcd(i, r)
+
+        elif axis == "sagittal":
+            slice_coordinate = r
+            ds_f = gcd(p, i)
+
+        else:
+            raise ValueError
+
+        df = get_transform_simple(
+            slice_coordinate,
+            matrix_2d,
+            matrix_3d,
+            axis=axis,
+            ds_f=ds_f,  # the goal is to reduce computation as much as possible
+        )
+
+        tx, ty = df.transformation
+
+        if axis == "coronal":
+            i_ = int(i // ds_f)
+            r_ = int(r // ds_f)
+
+            x_pred, y_pred = tx[i_, r_], ty[i_, r_]
+        elif axis == "sagittal":
+            p_ = int(p // ds_f)
+            i_ = int(i // ds_f)
+
+            x_pred, y_pred = tx[p_, i_], ty[p_, i_]
+
+        assert x_pred == pytest.approx(x, abs=1e-2)
+        assert y_pred == pytest.approx(y, abs=1e-2)

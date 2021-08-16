@@ -16,9 +16,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Define all fixtures."""
 
+import json
+import pathlib
+
 import numpy as np
 import pytest
 
+DATA_FOLDER = pathlib.Path(__file__).parent / "data"
+PIR_TO_XY_FOLDER = DATA_FOLDER / "sync" / "pir_to_xy"
+PIR_TO_XY_RESPONSES = sorted(PIR_TO_XY_FOLDER.rglob("*json"))
 
 @pytest.fixture(scope="function")
 def img_dummy():
@@ -31,3 +37,16 @@ def img():
     """Generate a grayscale image with dtype float32."""
     img = np.random.rand(200, 300)
     return img.astype(np.float32)
+
+@pytest.fixture(
+    scope="session",
+    params=PIR_TO_XY_RESPONSES,
+    ids=[p.stem for p in PIR_TO_XY_RESPONSES],
+)
+def pir_to_xy_response(request):
+    path = request.param
+
+    with path.open() as f:
+        data = json.load(f)
+
+    return data
