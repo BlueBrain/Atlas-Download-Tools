@@ -24,9 +24,9 @@ import requests
 
 from atldld.sync import (
     corners_coronal,
-    download_dataset_simple,
+    download_dataset_parallel,
     get_reference_image,
-    get_transform_simple,
+    get_transform_parallel,
     pir_to_xy_API,
     pir_to_xy_local,
     pir_to_xy_local_with_axis,
@@ -301,7 +301,7 @@ class TestSync:
         assert np.all(np.isfinite(warped_img_section))
 
 
-class TestGetTransformSimple:
+class TestGetTransformParallel:
     @pytest.mark.parametrize("ds_f", [25, 50])  # p, i, r are divisble by these
     def test_local_equals_API(self, pir_to_xy_response, ds_f):
         p = pir_to_xy_response["p"]
@@ -312,6 +312,7 @@ class TestGetTransformSimple:
 
         x = pir_to_xy_response["x"]
         y = pir_to_xy_response["y"]
+
 
         matrix_2d = np.array(pir_to_xy_response["matrix_2d"])
         matrix_3d = np.array(pir_to_xy_response["matrix_3d"])
@@ -333,7 +334,7 @@ class TestGetTransformSimple:
         else:
             raise ValueError
 
-        df = get_transform_simple(
+        df = get_transform_parallel(
             slice_coordinate,
             matrix_2d,
             matrix_3d,
@@ -362,8 +363,7 @@ class TestGetTransformSimple:
         assert x_pred == pytest.approx(x, abs=1e-3)
         assert y_pred == pytest.approx(y, abs=1e-3)
 
-
-class TestDownloadDatasetSimple:
+class TestDownloadDatasetParallel:
     @pytest.mark.parametrize("include_expression", [True, False])
     @pytest.mark.parametrize("ds_f", [25, 50])
     @pytest.mark.parametrize("axis", ["coronal", "sagittal"])
@@ -405,7 +405,7 @@ class TestDownloadDatasetSimple:
         monkeypatch.setattr("atldld.sync.xy_to_pir_API_single", xy_to_pir_fake)
 
         # Call the function
-        gen = download_dataset_simple(
+        gen = download_dataset_parallel(
             dataset_id=dataset_id,
             include_expression=include_expression,
             ds_f=ds_f,

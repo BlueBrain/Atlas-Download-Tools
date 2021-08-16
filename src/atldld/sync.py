@@ -627,7 +627,7 @@ def warp_rs9(
     return img_ref_resized, img_section_resized, warped_img_section
 
 
-def get_transform_simple(
+def get_transform_parallel(
     slice_coordinate, matrix_2d, matrix_3d, axis="coronal", ds_f=1
 ):
     refspace = (  # order matters
@@ -658,7 +658,7 @@ def get_transform_simple(
     return df
 
 
-def download_dataset_simple(
+def download_dataset_parallel(
     dataset_id,
     ds_f=25,
     detection_xy=(0, 0),
@@ -666,7 +666,20 @@ def download_dataset_simple(
 ):
     """Download entire dataset.
 
-    The order is derived from the section number (highest first).
+    This function performs the following steps:
+
+    1. Get metadata for the entire dataset (e.g. `matrix_3d`)
+    2. Get metadata for all images inside of the dataset (e.g. `matrix_2d`)
+    3. For each image in the dataset do the following
+        3.1 Query the API to get the `p, i, r` coordinate of the `detection_xy`.
+        3.2 One of the `p, i, r` will become the `slice_coordinate`. For
+            coronal datasets it is the `p` and for sagittal ones it is the `r`.
+            In other words we assume that the dataset is parallel to
+            one of the axes.
+        3.3 Use `get_transform_parallel` to get a full mapping between the
+            reference space and the image.
+        3.4 Download the image (+ potentially the expression image)
+        3.5 Yield result (order derived from section numbers - highest first)
 
     Parameters
     ----------
@@ -721,7 +734,7 @@ def download_dataset_simple(
         img = get_image(image_id)
         matrix_2d = [v[0] for k, v in metadata_2d.items() if k == image_id][0]
 
-        df = get_transform_simple(
+        df = get_transform_parallel(
             slice_ref_coordinate,
             matrix_2d,
             matrix_3d,
