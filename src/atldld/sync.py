@@ -641,18 +641,14 @@ def get_transform_parallel(
     ----------
     slice_coordainte : float
         Value of the `axis` coordinate at which the image was sliced.
-
     matrix_2d : np.array
         Matrix of shape `(3, 3)` representing a 2D linear transformation.
         Note that the last row contains the `homogeneous` coordinates.
-
     matrix_3d : np.array
         Matrix of shape `(4, 4)` represnting a 3D linear transformation.
         Note that the last row contains the `homogeneous` coordinates.
-
     axis : str, {"coronal", "sagittal", "transverse"}
         Axis along which the slice was made.
-
     ds_f : int
         Downsampling factor. If set to 1 no downsampling takes place.
         The higher the value the smaller the grid in the reference space and
@@ -730,7 +726,6 @@ def download_dataset_parallel(
         Id of the section dataset. Used to determine the 3D matrix.
     ds_f : int, optional
         Downsampling factor. If set to 1 no downsampling takes place.
-        Note that if `ds_f` = 25, then we obtain the shape (320, 456).
     detection_xy : tuple
         Represents the x and y coordinate in the image that will be
         used for determining the slice number in the reference space.
