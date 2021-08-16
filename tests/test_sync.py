@@ -278,8 +278,8 @@ class TestSync:
 
 
 class TestGetTransformParallel:
-    @pytest.mark.parametrize("ds_f", [25, 50])  # p, i, r are divisble by these
-    def test_local_equals_API(self, pir_to_xy_response, ds_f):
+    @pytest.mark.parametrize("ds_r", [25, 50])  # p, i, r are divisble by these
+    def test_local_equals_API(self, pir_to_xy_response, ds_r):
         p = pir_to_xy_response["p"]
         i = pir_to_xy_response["i"]
         r = pir_to_xy_response["r"]
@@ -293,18 +293,18 @@ class TestGetTransformParallel:
         matrix_3d = np.array(pir_to_xy_response["matrix_3d"])
 
         if axis == "coronal":
-            assert i % ds_f == 0
-            assert r % ds_f == 0
+            assert i % ds_r == 0
+            assert r % ds_r == 0
 
             slice_coordinate = p
-            grid_shape = (8000 / ds_f, 11400 / ds_f)
+            grid_shape = (8000 / ds_r, 11400 / ds_r)
 
         elif axis == "sagittal":
-            assert p % ds_f == 0
-            assert i % ds_f == 0
+            assert p % ds_r == 0
+            assert i % ds_r == 0
 
             slice_coordinate = r
-            grid_shape = (13200 / ds_f, 8000 / ds_f)
+            grid_shape = (13200 / ds_r, 8000 / ds_r)
 
         else:
             raise ValueError
@@ -314,7 +314,7 @@ class TestGetTransformParallel:
             matrix_2d,
             matrix_3d,
             axis=axis,
-            ds_f=ds_f,  # the goal is to reduce computation as much as possible
+            ds_r=ds_r,  # the goal is to reduce computation as much as possible
         )
 
         tx, ty = df.transformation
@@ -325,13 +325,13 @@ class TestGetTransformParallel:
         # Asserts single pixel
 
         if axis == "coronal":
-            i_ = int(i // ds_f)
-            r_ = int(r // ds_f)
+            i_ = int(i // ds_r)
+            r_ = int(r // ds_r)
 
             x_pred, y_pred = tx[i_, r_], ty[i_, r_]
         elif axis == "sagittal":
-            p_ = int(p // ds_f)
-            i_ = int(i // ds_f)
+            p_ = int(p // ds_r)
+            i_ = int(i // ds_r)
 
             x_pred, y_pred = tx[p_, i_], ty[p_, i_]
 
@@ -341,9 +341,9 @@ class TestGetTransformParallel:
 
 class TestDownloadDatasetParallel:
     @pytest.mark.parametrize("include_expression", [True, False])
-    @pytest.mark.parametrize("ds_f", [25, 50])
+    @pytest.mark.parametrize("ds_r", [25, 50])
     @pytest.mark.parametrize("axis", ["coronal", "sagittal"])
-    def test_patched(self, include_expression, ds_f, axis, monkeypatch):
+    def test_patched(self, include_expression, ds_r, axis, monkeypatch):
         """Does not requires internet, everything is patched.
 
         The only thing that is unpatched is the `get_transform_simple`.
@@ -384,16 +384,16 @@ class TestDownloadDatasetParallel:
         gen = download_dataset_parallel(
             dataset_id=dataset_id,
             include_expression=include_expression,
-            ds_f=ds_f,
+            ds_r=ds_r,
         )
 
         # Asserts - preparation
         slice_coordinate_true = 1200 if axis == "coronal" else 242
 
         if axis == "coronal":
-            grid_shape = (8000 / ds_f, 11400 / ds_f)
+            grid_shape = (8000 / ds_r, 11400 / ds_r)
         else:
-            grid_shape = (13200 / ds_f, 8000 / ds_f)
+            grid_shape = (13200 / ds_r, 8000 / ds_r)
 
         # Asserts - first iteration
         x = next(gen)

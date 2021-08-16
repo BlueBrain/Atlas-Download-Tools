@@ -525,7 +525,8 @@ def get_transform_parallel(
     matrix_2d: np.ndarray,
     matrix_3d: np.ndarray,
     axis: str = "coronal",
-    ds_f: int = 1,
+    ds_r: int = 1,
+    ds_i: int = 0,
 ) -> DisplacementField:
     """Compute displacement field between the reference space and the image.
 
@@ -541,10 +542,13 @@ def get_transform_parallel(
         Note that the last row contains the `homogeneous` coordinates.
     axis : str, {"coronal", "sagittal", "transverse"}
         Axis along which the slice was made.
-    ds_f : int
-        Downsampling factor. If set to 1 no downsampling takes place.
-        The higher the value the smaller the grid in the reference space and
-        the faster the matrix multiplication.
+    ds_r : int
+        Downscaling of the reference space grid. If set to 1 no
+        downsampling takes place. The higher the value the smaller the grid
+        in the reference space and the faster the matrix multiplication.
+    ds_i : int
+        The downloaded image will have both the height and the width
+        downsampled by `2 ** ds_i`.
 
     Returns
     -------
@@ -561,20 +565,20 @@ def get_transform_parallel(
     axis_fixed = [i for i, a in enumerate(refspace) if a[0] == axis][0]
     axes_variable = [i for i, a in enumerate(refspace) if a[0] != axis]
 
-    grid_shape = [refspace[i][1] // ds_f for i in axes_variable]
+    grid_shape = [refspace[i][1] // ds_r for i in axes_variable]
     n_pixels = np.prod(grid_shape)
 
     coords_ref = np.ones((4, n_pixels))  # (p, i, r, homogeneous)
     coords_ref[axis_fixed] *= slice_coordinate
-    coords_ref[axes_variable] = np.indices(grid_shape).reshape(2, -1) * ds_f
+    coords_ref[axes_variable] = np.indices(grid_shape).reshape(2, -1) * ds_r
 
     coords_temp = np.ones((3, n_pixels))
     coords_temp[[0, 1]] = np.dot(matrix_3d, coords_ref)[:2]
 
     coords_img = np.dot(matrix_2d, coords_temp)[:2]
 
-    tx = coords_img[0].reshape(grid_shape)
-    ty = coords_img[1].reshape(grid_shape)
+    tx = coords_img[0].reshape(grid_shape) / (2 ** ds_i)
+    ty = coords_img[1].reshape(grid_shape) / (2 ** ds_i)
 
     df = DisplacementField.from_transform(tx, ty)  # `from_transform` not annotated
 
@@ -583,9 +587,10 @@ def get_transform_parallel(
 
 def download_dataset_parallel(
     dataset_id: int,
-    ds_f: int = 25,
+    ds_r: int = 25,
     detection_xy: Tuple[Union[int, float], Union[int, float]] = (0, 0),
     include_expression: bool = False,
+    ds_i: int = 0,
 ) -> Generator[
     Union[
         Tuple[int, float, np.ndarray, DisplacementField],
@@ -616,8 +621,10 @@ def download_dataset_parallel(
     ----------
     dataset_id : int
         Id of the section dataset. Used to determine the 3D matrix.
-    ds_f : int, optional
-        Downsampling factor. If set to 1 no downsampling takes place.
+    ds_r : int, optional
+        Downsampling factor of the reference
+        space. If set to 1 no downsampling takes place. The reference
+        space shape will be divided by `ds_r`.
     detection_xy : tuple
         Represents the x and y coordinate in the image that will be
         used for determining the slice number in the reference space.
@@ -625,6 +632,9 @@ def download_dataset_parallel(
     include_expression : bool
         If True then the generator returns 5 objects
         where the last one is the expression image.
+    ds_i : int
+        The downloaded image will have both the height and the width
+        downsampled by `2 ** ds_i`.
 
     Returns
     -------
@@ -633,7 +643,7 @@ def download_dataset_parallel(
         (image_id, constant_ref_coordinate, img, df).
         The `constant_ref_coordinate` is the dimension in the given axis in microns.
         The `img` is the raw gene expression image with dtype `uint8`.
-        The `df` is the displacement field of shape (8000 // `ds_f`, 11400 // `ds_f`).
+        The `df` is the displacement field of shape (8000 // `ds_r`, 11400 // `ds_r`).
         Note that the sorting. If `include_expression=True` then last returned image
         is the processed expression image.
         That is the generator yield (image_id, p, img, df, img_expr).
@@ -666,11 +676,12 @@ def download_dataset_parallel(
             slice_ref_coordinate,
             matrix_2d,
             matrix_3d,
-            ds_f=ds_f,
+            ds_r=ds_r,
             axis=axis,
+            ds_i=ds_i,
         )
 
-        img = get_image(image_id)
+        img = get_image(image_id, downsample=ds_i)
 
         if not include_expression:
             yield image_id, slice_ref_coordinate, img, df
