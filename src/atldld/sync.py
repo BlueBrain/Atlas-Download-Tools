@@ -23,6 +23,7 @@ functions that are called within this module.
 """
 
 import collections
+from typing import Generator, Tuple, Union
 
 import numpy as np
 from skimage.transform import resize, warp
@@ -628,17 +629,16 @@ def warp_rs9(
 
 
 def get_transform_parallel(
-    slice_coordinate,
-    matrix_2d,
-    matrix_3d,
-    axis="coronal",
-    ds_f=1,
-):
+    slice_coordinate: float,
+    matrix_2d: np.ndarray,
+    matrix_3d: np.ndarray,
+    axis: str = "coronal",
+    ds_f: int = 1,
+) -> DisplacementField:
     """Compute displacement field between the reference and image.
 
-
-    Parameteter
-    -----------
+    Parameters
+    ----------
     slice_coordainte : float
         Value of the `axis` coordinate at which the image was sliced.
 
@@ -689,17 +689,22 @@ def get_transform_parallel(
     tx = coords_img[0].reshape(grid_shape)
     ty = coords_img[1].reshape(grid_shape)
 
-    df = DisplacementField.from_transform(tx, ty)
+    df = DisplacementField.from_transform(tx, ty)  # `from_transform` not annotated
 
-    return df
+    return df  # type: ignore
 
 
 def download_dataset_parallel(
-    dataset_id,
-    ds_f=25,
-    detection_xy=(0, 0),
-    include_expression=False,
-):
+    dataset_id: int,
+    ds_f: int = 25,
+    detection_xy: Tuple[Union[int, float], Union[int, float]] = (0, 0),
+    include_expression: bool = False,
+) -> Generator[Union[
+        Tuple[int, float, np.ndarray, DisplacementField],
+        Tuple[int, float, np.ndarray, DisplacementField, np.ndarray],
+        ],
+        None,
+        None]:
     """Download entire dataset.
 
     This function performs the following steps:
