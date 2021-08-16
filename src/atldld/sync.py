@@ -527,7 +527,7 @@ def get_transform_parallel(
     axis: str = "coronal",
     ds_f: int = 1,
 ) -> DisplacementField:
-    """Compute displacement field between the reference and image.
+    """Compute displacement field between the reference space and the image.
 
     Parameters
     ----------
@@ -553,7 +553,6 @@ def get_transform_parallel(
         reference space and the image. Note that one can directly use it
         to register raw histological images to the reference space.
     """
-
     refspace = (  # order matters
         ("coronal", 13200),
         ("transverse", 8000),
@@ -605,7 +604,7 @@ def download_dataset_parallel(
         3.1 Query the API to get the `p, i, r` coordinates of the `detection_xy`.
         3.2 One of the `p, i, r` will become the `slice_coordinate`. For
             coronal datasets it is the `p` and for sagittal ones it is the `r`.
-            In other words we assume that the dataset is parallel to
+            In other words we assume that the slice is parallel to
             one of the axes.
         3.3 Use `get_transform_parallel` to get a full mapping between the
             reference space and the image.
