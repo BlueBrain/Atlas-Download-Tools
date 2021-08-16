@@ -628,8 +628,44 @@ def warp_rs9(
 
 
 def get_transform_parallel(
-    slice_coordinate, matrix_2d, matrix_3d, axis="coronal", ds_f=1
+    slice_coordinate,
+    matrix_2d,
+    matrix_3d,
+    axis="coronal",
+    ds_f=1,
 ):
+    """Compute displacement field between the reference and image.
+
+
+    Parameteter
+    -----------
+    slice_coordainte : float
+        Value of the `axis` coordinate at which the image was sliced.
+
+    matrix_2d : np.array
+        Matrix of shape `(3, 3)` representing a 2D linear transformation.
+        Note that the last row contains the `homogeneous` coordinates.
+
+    matrix_3d : np.array
+        Matrix of shape `(4, 4)` represnting a 3D linear transformation.
+        Note that the last row contains the `homogeneous` coordinates.
+
+    axis : str, {"coronal", "sagittal", "transverse"}
+        Axis along which the slice was made.
+
+    ds_f : int
+        Downsampling factor. If set to 1 no downsampling takes place.
+        The higher the value the smaller the grid in the reference space and
+        the faster the matrix multiplication.
+
+    Returns
+    -------
+    DisplacementField
+        Displacement field representing the transformation between the
+        reference space and the image. Note that one can directly use it
+        to register raw histological images to the reference space.
+    """
+
     refspace = (  # order matters
         ("coronal", 13200),
         ("transverse", 8000),
@@ -671,7 +707,7 @@ def download_dataset_parallel(
     1. Get metadata for the entire dataset (e.g. `matrix_3d`)
     2. Get metadata for all images inside of the dataset (e.g. `matrix_2d`)
     3. For each image in the dataset do the following
-        3.1 Query the API to get the `p, i, r` coordinate of the `detection_xy`.
+        3.1 Query the API to get the `p, i, r` coordinates of the `detection_xy`.
         3.2 One of the `p, i, r` will become the `slice_coordinate`. For
             coronal datasets it is the `p` and for sagittal ones it is the `r`.
             In other words we assume that the dataset is parallel to
@@ -727,11 +763,9 @@ def download_dataset_parallel(
     )
 
     for image_id in all_image_ids:
-        det_x, det_y = detection_xy
-        p, i, r = xy_to_pir_API_single(det_x, det_y, image_id=image_id)
+        p, i, r = xy_to_pir_API_single(*detection_xy, image_id=image_id)
 
         slice_ref_coordinate = p if axis == "coronal" else r
-        img = get_image(image_id)
         matrix_2d = [v[0] for k, v in metadata_2d.items() if k == image_id][0]
 
         df = get_transform_parallel(
@@ -741,6 +775,8 @@ def download_dataset_parallel(
             ds_f=ds_f,
             axis=axis,
         )
+
+        img = get_image(image_id)
 
         if not include_expression:
             yield image_id, slice_ref_coordinate, img, df
