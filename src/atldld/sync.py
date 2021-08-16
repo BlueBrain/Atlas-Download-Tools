@@ -626,18 +626,14 @@ def warp_rs9(
 
     return img_ref_resized, img_section_resized, warped_img_section
 
+
 def get_transform_simple(
-    slice_coordinate,
-    matrix_2d,
-    matrix_3d,
-    axis="coronal",
-    ds_f=1
+    slice_coordinate, matrix_2d, matrix_3d, axis="coronal", ds_f=1
 ):
     refspace = (  # order matters
         ("coronal", 13200),
         ("transverse", 8000),
         ("sagittal", 11400),
-
     )
     axis_fixed = [i for i, a in enumerate(refspace) if a[0] == axis][0]
     axes_variable = [i for i, a in enumerate(refspace) if a[0] != axis]
@@ -660,7 +656,6 @@ def get_transform_simple(
     df = DisplacementField.from_transform(tx, ty)
 
     return df
-
 
 
 def download_dataset_simple(
@@ -704,7 +699,7 @@ def download_dataset_simple(
         dataset_id,
         ref2inp=True,
         add_last=True,
-        )
+    )
     matrix_3d = get_3d(
         dataset_id,
         ref2inp=True,

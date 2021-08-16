@@ -313,7 +313,6 @@ class TestGetTransformSimple:
         x = pir_to_xy_response["x"]
         y = pir_to_xy_response["y"]
 
-
         matrix_2d = np.array(pir_to_xy_response["matrix_2d"])
         matrix_3d = np.array(pir_to_xy_response["matrix_3d"])
 
@@ -362,6 +361,7 @@ class TestGetTransformSimple:
 
         assert x_pred == pytest.approx(x, abs=1e-3)
         assert y_pred == pytest.approx(y, abs=1e-3)
+
 
 class TestDownloadDatasetSimple:
     @pytest.mark.parametrize("include_expression", [True, False])

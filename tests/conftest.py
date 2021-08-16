@@ -26,6 +26,7 @@ DATA_FOLDER = pathlib.Path(__file__).parent / "data"
 PIR_TO_XY_FOLDER = DATA_FOLDER / "sync" / "pir_to_xy"
 PIR_TO_XY_RESPONSES = sorted(PIR_TO_XY_FOLDER.rglob("*json"))
 
+
 @pytest.fixture(scope="function")
 def img_dummy():
     """Generate a dummy image made out of all zeros."""
@@ -37,6 +38,7 @@ def img():
     """Generate a grayscale image with dtype float32."""
     img = np.random.rand(200, 300)
     return img.astype(np.float32)
+
 
 @pytest.fixture(
     scope="session",
