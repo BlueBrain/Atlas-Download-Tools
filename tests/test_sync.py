@@ -27,7 +27,6 @@ from atldld.sync import (
     pir_to_xy_API,
     pir_to_xy_local,
     pir_to_xy_local_with_axis,
-    warp_rs9,
     xy_to_pir_API,
 )
 
@@ -274,25 +273,3 @@ class TestSync:
         assert isinstance(closest_section_image_id, int)
         assert np.isfinite(section_number)
         assert np.isfinite(closest_section_image_id)
-
-    @pytest.mark.internet
-    @pytest.mark.slow
-    @pytest.mark.parametrize("dataset_id", EXISTING_DATASET_IDS)
-    @pytest.mark.parametrize("p", [10, 2000])
-    @pytest.mark.parametrize("ds_f", [16, 32])
-    def test_warp_rs9(self, p, dataset_id, ds_f):
-        """Test that warping works correctly."""
-
-        img_ref_resized, img_section_resized, warped_img_section = warp_rs9(
-            p=p, dataset_id=dataset_id, ds_f=ds_f
-        )
-
-        expected_shape = (8000 // ds_f, 11400 // ds_f)
-
-        assert img_ref_resized.shape[:2] == expected_shape
-        assert img_section_resized.shape[:2] == expected_shape
-        assert warped_img_section.shape[:2] == expected_shape
-
-        assert np.all(np.isfinite(img_ref_resized))
-        assert np.all(np.isfinite(img_section_resized))
-        assert np.all(np.isfinite(warped_img_section))
