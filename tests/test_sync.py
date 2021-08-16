@@ -16,7 +16,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Test for sync.py module."""
 
-from fractions import gcd
 from unittest.mock import Mock
 
 import numpy as np
@@ -302,7 +301,8 @@ class TestSync:
 
 
 class TestGetTransformSimple:
-    def test(self, pir_to_xy_response):
+    @pytest.mark.parametrize("ds_f", [25, 50])  # p, i, r are divisble by these
+    def test(self, pir_to_xy_response, ds_f):
         p = pir_to_xy_response["p"]
         i = pir_to_xy_response["i"]
         r = pir_to_xy_response["r"]
@@ -316,14 +316,17 @@ class TestGetTransformSimple:
         matrix_2d = np.array(pir_to_xy_response["matrix_2d"])
         matrix_3d = np.array(pir_to_xy_response["matrix_3d"])
 
-
         if axis == "coronal":
             slice_coordinate = p
-            ds_f = gcd(i, r)
+
+            assert i % ds_f == 0
+            assert r % ds_f == 0
 
         elif axis == "sagittal":
             slice_coordinate = r
-            ds_f = gcd(p, i)
+
+            assert p % ds_f == 0
+            assert i % ds_f == 0
 
         else:
             raise ValueError
