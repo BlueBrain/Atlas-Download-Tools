@@ -667,11 +667,11 @@ def download_dataset_simple(
     dataset_id,
     ds_f=25,
     detection_xy=(0, 0),
-    order="sn",
-    verbose=True,
     include_expression=False,
 ):
     """Download entire dataset.
+
+    The order is derived from the section number (highest first).
 
     Parameters
     ----------
@@ -684,13 +684,6 @@ def download_dataset_simple(
         Represents the x and y coordinate in the image that will be
         used for determining the slice number in the reference space.
         `p` for coronal slices, `r` for sagittal slices.
-    order : str, {'id', 'sn'}
-        How to order the streamed pairs.
-        - 'id' : smallest image ids first
-        - 'sn' : highest section number
-        (equivalent to lowest p becase AB switched the order:) first
-    verbose : bool
-        If True, then printing information to standard output.
     include_expression : bool
         If True then the generator returns 5 objects
         where the last one is the expression image.
@@ -720,48 +713,32 @@ def download_dataset_simple(
     )
     axis = CommonQueries.get_axis(dataset_id)
 
-    if order == "id":
-        all_image_ids = sorted(metadata_2d.keys())
-
-    elif order == "sn":
-        all_image_ids = sorted(metadata_2d.keys(), key=lambda x: -int(metadata_2d[x][1]))
-
-    else:
-        raise ValueError("Unsupported order {}".format(order))
+    all_image_ids = sorted(
+        metadata_2d.keys(),
+        key=lambda x: -int(metadata_2d[x][1]),
+    )
 
     for image_id in all_image_ids:
-        if verbose:
-            print(image_id)
-        try:
-            det_x, det_y = detection_xy
-            p, i, r = xy_to_pir_API_single(det_x, det_y, image_id=image_id)
+        det_x, det_y = detection_xy
+        p, i, r = xy_to_pir_API_single(det_x, det_y, image_id=image_id)
 
-            slice_ref_coordinate = p if axis == "coronal" else r
-            img = get_image(image_id)
-            matrix_2d = [v[0] for k, v in metadata_2d.items() if k == image_id][0]
+        slice_ref_coordinate = p if axis == "coronal" else r
+        img = get_image(image_id)
+        matrix_2d = [v[0] for k, v in metadata_2d.items() if k == image_id][0]
 
-            df = get_transform_simple(
-                slice_ref_coordinate,
-                matrix_2d,
-                matrix_3d,
-                ds_f=ds_f,
-                axis=axis,
-            )
+        df = get_transform_simple(
+            slice_ref_coordinate,
+            matrix_2d,
+            matrix_3d,
+            ds_f=ds_f,
+            axis=axis,
+        )
 
-            if not include_expression:
-                yield image_id, slice_ref_coordinate, img, df
-            else:
-                img_expression = get_image(image_id, expression=True)
-                yield image_id, slice_ref_coordinate, img, df, img_expression
-
-        except Exception as e:
-            print(e)
-            if not include_expression:
-                yield image_id, None, None, None
-            else:
-                yield image_id, None, None, None, None
-
-
+        if not include_expression:
+            yield image_id, slice_ref_coordinate, img, df
+        else:
+            img_expression = get_image(image_id, expression=True)
+            yield image_id, slice_ref_coordinate, img, df, img_expression
 
 
 def get_transform(

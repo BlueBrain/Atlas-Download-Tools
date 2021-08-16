@@ -24,6 +24,7 @@ import requests
 
 from atldld.sync import (
     corners_coronal,
+    download_dataset_simple,
     get_reference_image,
     get_transform_simple,
     pir_to_xy_API,
@@ -302,7 +303,7 @@ class TestSync:
 
 class TestGetTransformSimple:
     @pytest.mark.parametrize("ds_f", [25, 50])  # p, i, r are divisble by these
-    def test(self, pir_to_xy_response, ds_f):
+    def test_local_equals_API(self, pir_to_xy_response, ds_f):
         p = pir_to_xy_response["p"]
         i = pir_to_xy_response["i"]
         r = pir_to_xy_response["r"]
@@ -317,16 +318,18 @@ class TestGetTransformSimple:
         matrix_3d = np.array(pir_to_xy_response["matrix_3d"])
 
         if axis == "coronal":
-            slice_coordinate = p
-
             assert i % ds_f == 0
             assert r % ds_f == 0
 
-        elif axis == "sagittal":
-            slice_coordinate = r
+            slice_coordinate = p
+            grid_shape = (8000 / ds_f, 11400 / ds_f)
 
+        elif axis == "sagittal":
             assert p % ds_f == 0
             assert i % ds_f == 0
+
+            slice_coordinate = r
+            grid_shape = (13200 / ds_f, 8000 / ds_f)
 
         else:
             raise ValueError
@@ -341,6 +344,11 @@ class TestGetTransformSimple:
 
         tx, ty = df.transformation
 
+        assert tx.shape == grid_shape
+        assert ty.shape == grid_shape
+
+        # Asserts single pixel
+
         if axis == "coronal":
             i_ = int(i // ds_f)
             r_ = int(r // ds_f)
@@ -354,3 +362,103 @@ class TestGetTransformSimple:
 
         assert x_pred == pytest.approx(x, abs=1e-3)
         assert y_pred == pytest.approx(y, abs=1e-3)
+
+class TestDownloadDatasetSimple:
+    @pytest.mark.parametrize("include_expression", [True, False])
+    @pytest.mark.parametrize("ds_f", [25, 50])
+    @pytest.mark.parametrize("axis", ["coronal", "sagittal"])
+    def test_patched(self, include_expression, ds_f, axis, monkeypatch):
+        """Does not requires internet, everything is patched.
+
+        The only thing that is unpatched is the `get_transform_simple`.
+        """
+
+        # Parameters
+        dataset_id = 12345
+
+        # Mocking
+        get_2d_bulk_fake = Mock(
+            return_value={
+                11111: (np.ones((3, 3)), 20),
+                22222: (np.ones((3, 3)), 50),
+            }
+        )
+
+        get_3d_fake = Mock(
+            return_value=np.ones((4, 4)),
+        )
+
+        common_queries_fake = Mock()
+        common_queries_fake.get_axis.return_value = axis
+
+        get_image_fake = Mock(
+            return_value=np.zeros((10, 10)),
+        )
+
+        xy_to_pir_fake = Mock(return_value=(1200, 235, 242))
+
+        # Patching
+        monkeypatch.setattr("atldld.sync.get_2d_bulk", get_2d_bulk_fake)
+        monkeypatch.setattr("atldld.sync.get_3d", get_3d_fake)
+        monkeypatch.setattr("atldld.sync.get_image", get_image_fake)
+        monkeypatch.setattr("atldld.sync.CommonQueries", common_queries_fake)
+        monkeypatch.setattr("atldld.sync.xy_to_pir_API_single", xy_to_pir_fake)
+
+        # Call the function
+        gen = download_dataset_simple(
+            dataset_id=dataset_id,
+            include_expression=include_expression,
+            ds_f=ds_f,
+        )
+
+        # Asserts - preparation
+        slice_coordinate_true = 1200 if axis == "coronal" else 242
+
+        if axis == "coronal":
+            grid_shape = (8000 / ds_f, 11400 / ds_f)
+        else:
+            grid_shape = (13200 / ds_f, 8000 / ds_f)
+
+        # Asserts - first iteration
+        x = next(gen)
+
+        if include_expression:
+            assert len(x) == 5
+
+        else:
+            assert len(x) == 4
+
+        img_id, slice_coordinate, img, df, *_ = x
+
+        assert img_id == 22222
+        assert slice_coordinate == slice_coordinate_true
+        assert np.allclose(img, np.zeros((10, 10)))
+        assert df.delta_x.shape == grid_shape
+        assert df.delta_y.shape == grid_shape
+
+        # Asserts - second iteration
+        x = next(gen)
+
+        if include_expression:
+            assert len(x) == 5
+
+        else:
+            assert len(x) == 4
+
+        img_id, slice_coordinate, img, df, *_ = x
+
+        assert img_id == 11111
+        assert slice_coordinate == slice_coordinate_true
+        assert np.allclose(img, np.zeros((10, 10)))
+        assert df.delta_x.shape == grid_shape
+        assert df.delta_y.shape == grid_shape
+
+        # Asserts remaining
+        with pytest.raises(StopIteration):
+            next(gen)
+
+        assert get_image_fake.call_count == (4 if include_expression else 2)
+        assert get_2d_bulk_fake.call_count == 1
+        assert get_3d_fake.call_count == 1
+        assert common_queries_fake.get_axis.call_count == 1
+        assert xy_to_pir_fake.call_count == 2
