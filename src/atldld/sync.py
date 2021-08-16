@@ -699,12 +699,14 @@ def download_dataset_parallel(
     ds_f: int = 25,
     detection_xy: Tuple[Union[int, float], Union[int, float]] = (0, 0),
     include_expression: bool = False,
-) -> Generator[Union[
+) -> Generator[
+    Union[
         Tuple[int, float, np.ndarray, DisplacementField],
         Tuple[int, float, np.ndarray, DisplacementField, np.ndarray],
-        ],
-        None,
-        None]:
+    ],
+    None,
+    None,
+]:
     """Download entire dataset.
 
     This function performs the following steps:
