@@ -14,18 +14,38 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""Everything related to section image datasets."""
 import enum
 
 
 class PlaneOfSection(enum.Enum):
+    """The plane of section in a section image dataset.
+
+    The values correspond to the IDs used by the AIBS and can be found here:
+    http://api.brain-map.org/api/v2/data/PlaneOfSection/query.json
+
+    Only a subset of values of interest are included. For the full list see the
+    URL above.
+    """
+
     CORONAL = 1
     SAGITTAL = 2
 
     def __str__(self):
+        """Get the name of the plane of section."""
         return self.name.lower()
 
 
 class ReferenceSpace(enum.Enum):
+    """The reference space of a section image.
+
+    The values correspond to the IDs used by the AIBS and can be found here:
+    http://api.brain-map.org/api/v2/data/ReferenceSpace/query.json
+
+    Only a subset of values of interest are included. For the full list see the
+    URL above.
+    """
+
     P56 = 9
     P56_LR_FLIPPED = 10
 
@@ -35,4 +55,5 @@ class ReferenceSpace(enum.Enum):
     }
 
     def __str__(self):
+        """Get the the name of the reference space."""
         return self.__names__[self.value]
