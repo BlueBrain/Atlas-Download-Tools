@@ -649,12 +649,10 @@ def download_dataset_parallel(
     metadata_2d = get_2d_bulk(
         dataset_id,
         ref2inp=True,
-        add_last=False,
     )
     matrix_3d = get_3d(
         dataset_id,
         ref2inp=True,
-        add_last=False,
         return_meta=False,
     )
     axis = CommonQueries.get_axis(dataset_id)
