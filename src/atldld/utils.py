@@ -139,7 +139,7 @@ def get_image(image_id, folder=None, expression=False, downsample=0):
         if downsample:
             options.append(f"downsample={downsample}")
 
-        image_url += "?" + "$".join(options)
+        image_url += "?" + "&".join(options)
 
         response = requests.get(image_url, stream=True)
         if not response.ok:
