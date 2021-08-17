@@ -53,20 +53,20 @@ class TestRMAParameters:
 
 
 class TestRma:
-
     @responses.activate
     def test_request_works(self):
         params = RMAParameters("my-model")
         url_params = "criteria=model::my-model"
         msg = [1, 2, 3]
-        status = {
+        return_json = {
             "success": True,
             "id": 0,
             "start_row": 0,
             "num_rows": len(msg),
             "total_rows": len(msg),
+            "msg": msg,
         }
-        return_json = {**status, "msg": msg}
+        status = {k: v for k, v in return_json.items() if k != "msg"}
 
         responses.add(
             responses.GET,
@@ -91,7 +91,6 @@ class TestRma:
 
 
 class TestRmaAll:
-
     @responses.activate
     def test_single_request_rma_works(self):
         params = RMAParameters("my-model")
