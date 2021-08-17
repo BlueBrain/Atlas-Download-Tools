@@ -289,8 +289,8 @@ class TestGetTransformParallel:
         x = pir_to_xy_response["x"]
         y = pir_to_xy_response["y"]
 
-        matrix_2d = np.array(pir_to_xy_response["matrix_2d"])
-        matrix_3d = np.array(pir_to_xy_response["matrix_3d"])
+        affine_2d = np.array(pir_to_xy_response["affine_2d"])
+        affine_3d = np.array(pir_to_xy_response["affine_3d"])
 
         if axis == "coronal":
             assert i % ds_r == 0
@@ -311,8 +311,8 @@ class TestGetTransformParallel:
 
         df = get_transform_parallel(
             slice_coordinate,
-            matrix_2d,
-            matrix_3d,
+            affine_2d,
+            affine_3d,
             axis=axis,
             ds_r=ds_r,  # the goal is to reduce computation as much as possible
         )

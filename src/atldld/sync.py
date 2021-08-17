@@ -522,8 +522,8 @@ def corners_sagittal(r, dataset_id):
 
 def get_transform_parallel(
     slice_coordinate: float,
-    matrix_2d: np.ndarray,
-    matrix_3d: np.ndarray,
+    affine_2d: np.ndarray,
+    affine_3d: np.ndarray,
     axis: str = "coronal",
     ds_r: int = 1,
     ds_i: int = 0,
@@ -532,19 +532,19 @@ def get_transform_parallel(
 
     Parameters
     ----------
-    slice_coordainte : float
+    slice_coordinate
         Value of the `axis` coordinate at which the image was sliced.
-    matrix_2d : np.array
-        Matrix of shape `(2, 3)` representing a 2D linear transformation.
-    matrix_3d : np.array
-        Matrix of shape `(3, 4)` representing a 3D linear transformation.
+    affine_2d
+        Matrix of shape `(2, 3)` representing a 2D affine transformation.
+    affine_3d
+        Matrix of shape `(3, 4)` representing a 3D affine transformation.
     axis : str, {"coronal", "sagittal", "transverse"}
         Axis along which the slice was made.
-    ds_r : int
+    ds_r
         Downscaling of the reference space grid. If set to 1 no
         downsampling takes place. The higher the value the smaller the grid
         in the reference space and the faster the matrix multiplication.
-    ds_i : int
+    ds_i
         The downloaded image will have both the height and the width
         downsampled by `2 ** ds_i`.
 
@@ -571,9 +571,9 @@ def get_transform_parallel(
     coords_ref[axes_variable] = np.indices(grid_shape).reshape(2, -1) * ds_r
 
     coords_temp = np.ones((3, n_pixels))
-    coords_temp[[0, 1]] = (matrix_3d @ coords_ref)[:2]  # (3, 4) x (4, n_pixels)
+    coords_temp[[0, 1]] = (affine_3d @ coords_ref)[:2]  # (3, 4) x (4, n_pixels)
 
-    coords_img = matrix_2d @ coords_temp  # (2, 3) x (3, n_pixels)
+    coords_img = affine_2d @ coords_temp  # (2, 3) x (3, n_pixels)
 
     tx = coords_img[0].reshape(grid_shape) / (2 ** ds_i)
     ty = coords_img[1].reshape(grid_shape) / (2 ** ds_i)
@@ -601,8 +601,8 @@ def download_dataset_parallel(
 
     This function performs the following steps:
 
-    1. Get metadata for the entire dataset (e.g. `matrix_3d`)
-    2. Get metadata for all images inside of the dataset (e.g. `matrix_2d`)
+    1. Get metadata for the entire dataset (e.g. `affine_3d`)
+    2. Get metadata for all images inside of the dataset (e.g. `affine_2d`)
     3. For each image in the dataset do the following
 
         a. Query the API to get the `p, i, r` coordinates of the `detection_xy`.
@@ -617,20 +617,20 @@ def download_dataset_parallel(
 
     Parameters
     ----------
-    dataset_id : int
+    dataset_id
         Id of the section dataset. Used to determine the 3D matrix.
-    ds_r : int, optional
+    ds_r
         Downsampling factor of the reference
         space. If set to 1 no downsampling takes place. The reference
         space shape will be divided by `ds_r`.
-    detection_xy : tuple
+    detection_xy
         Represents the x and y coordinate in the image that will be
         used for determining the slice number in the reference space.
         `p` for coronal slices, `r` for sagittal slices.
-    include_expression : bool
+    include_expression
         If True then the generator returns 5 objects
         where the last one is the expression image.
-    ds_i : int
+    ds_i
         The downloaded image will have both the height and the width
         downsampled by `2 ** ds_i`.
 
@@ -650,7 +650,7 @@ def download_dataset_parallel(
         dataset_id,
         ref2inp=True,
     )
-    matrix_3d = get_3d(
+    affine_3d = get_3d(
         dataset_id,
         ref2inp=True,
         return_meta=False,
@@ -666,12 +666,12 @@ def download_dataset_parallel(
         p, i, r = xy_to_pir_API_single(*detection_xy, image_id=image_id)
 
         slice_ref_coordinate = p if axis == "coronal" else r
-        matrix_2d = [v[0] for k, v in metadata_2d.items() if k == image_id][0]
+        affine_2d = [v[0] for k, v in metadata_2d.items() if k == image_id][0]
 
         df = get_transform_parallel(
             slice_ref_coordinate,
-            matrix_2d,
-            matrix_3d,
+            affine_2d,
+            affine_3d,
             ds_r=ds_r,
             axis=axis,
             ds_i=ds_i,
