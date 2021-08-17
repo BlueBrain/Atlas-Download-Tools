@@ -586,7 +586,7 @@ def get_transform_parallel(
 def download_dataset_parallel(
     dataset_id: int,
     ds_r: int = 25,
-    detection_xy: Tuple[Union[int, float], Union[int, float]] = (0, 0),
+    detection_xy: Tuple[float, float] = (0, 0),
     include_expression: bool = False,
     ds_i: int = 0,
 ) -> Generator[
