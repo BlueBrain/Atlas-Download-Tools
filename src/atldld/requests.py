@@ -147,10 +147,11 @@ def rma(rma_parameters: RMAParameters) -> Tuple[dict, list]:
 
     status = response.json()
     msg = status.pop("msg")
-    logger.debug("Total rows: %d", status["total_rows"])
 
     # If success = False then msg is a string with the error description
     if not status["success"]:
         raise RMAError(f"{msg}\nURL: {url}")
+
+    logger.debug("Total rows: %d", status["total_rows"])
 
     return status, msg
