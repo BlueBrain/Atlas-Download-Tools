@@ -641,7 +641,7 @@ def download_dataset_parallel(
         (image_id, constant_ref_coordinate, img, df).
         The `constant_ref_coordinate` is the dimension in the given axis in microns.
         The `img` is the raw gene expression image with dtype `uint8`.
-        The `df` is the displacement field of shape (8000 // `downsample_ref`, 11400 // `downsample_ref`).
+        The `df` is the displacement field.
         Note that the sorting. If `include_expression=True` then last returned image
         is the processed expression image.
         That is the generator yield (image_id, p, img, df, img_expr).

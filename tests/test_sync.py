@@ -316,7 +316,7 @@ class TestGetTransformParallel:
             affine_2d,
             affine_3d,
             axis=axis,
-            downsample_ref=downsample_ref,  # the goal is to reduce computation as much as possible
+            downsample_ref=downsample_ref,  # the goal is to reduce computation
         )
 
         tx, ty = df.transformation
