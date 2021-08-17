@@ -20,7 +20,6 @@ from atldld.requests import RMAParameters
 
 
 class TestRMAParameters:
-
     def test_model(self):
         params = RMAParameters("my-model")
         assert str(params) == "criteria=model::my-model"
@@ -42,7 +41,7 @@ class TestRMAParameters:
             (5, 20, "[start_row$eq5][num_rows$eq20]"),
             (5, None, "[start_row$eq5]"),
             (None, 20, "[num_rows$eq20]"),
-        )
+        ),
     )
     def test_options(self, start_row, num_rows, expected_url_part):
         params = RMAParameters("my-model", start_row=start_row, num_rows=num_rows)
