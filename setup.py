@@ -33,6 +33,7 @@ extras_require = {
         "black",
         "flake8",
         "isort",
+        "mypy",
         "pydocstyle",
         "pytest",
         "pytest-cov",
