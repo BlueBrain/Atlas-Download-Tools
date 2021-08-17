@@ -19,7 +19,7 @@ import re
 import pytest
 import responses
 
-from atldld.requests import RMAError, RMAParameters, rma
+from atldld.requests import RMAError, RMAParameters, rma, rma_all
 
 
 class TestRMAParameters:
@@ -88,3 +88,126 @@ class TestRma:
         responses.add(responses.GET, re.compile(""), json=return_json)
         with pytest.raises(RMAError, match=msg):
             rma(params)
+
+
+class TestRmaAll:
+
+    @responses.activate
+    def test_single_request_rma_works(self):
+        params = RMAParameters("my-model")
+        msg = [1, 2, 3]
+        return_json = {
+            "success": True,
+            "id": 0,
+            "start_row": 0,
+            "num_rows": len(msg),
+            "total_rows": len(msg),
+            "msg": msg,
+        }
+        responses.add(responses.GET, re.compile(""), json=return_json)
+
+        msg_got = rma_all(params)
+        assert msg_got == msg
+
+    @responses.activate
+    def test_start_row_not_zero(self):
+        params = RMAParameters("my-model")
+        return_json = {
+            "success": True,
+            "id": 0,
+            "start_row": 1,  # should be zero!
+            "num_rows": 0,
+            "total_rows": 0,
+            "msg": [],
+        }
+        responses.add(responses.GET, re.compile(""), json=return_json)
+
+        with pytest.raises(RuntimeError, match=r"start_row"):
+            rma_all(params)
+
+    @responses.activate
+    def test_multi_page_response(self):
+        params = RMAParameters("my-model")
+        # Can at most fetch 25_000 in one request
+        msg = list(range(26_000))
+        msg_1 = msg[:25_000]
+        msg_2 = msg[25_000:]
+        return_json_1 = {
+            "success": True,
+            "id": 0,
+            "start_row": 0,
+            "num_rows": len(msg_1),
+            "total_rows": len(msg),
+            "msg": msg_1,
+        }
+        return_json_2 = {
+            "success": True,
+            "id": 0,
+            "start_row": len(msg_1),
+            "num_rows": len(msg_2),
+            "total_rows": len(msg),
+            "msg": msg_2,
+        }
+        responses.add(responses.GET, re.compile(""), json=return_json_1)
+        responses.add(responses.GET, re.compile(""), json=return_json_2)
+
+        msg_got = rma_all(params)
+        assert msg_got == msg
+
+    @responses.activate
+    def test_inconsistent_total_rows(self):
+        params = RMAParameters("my-model")
+        # Can at most fetch 25_000 in one request
+        msg = list(range(26_000))
+        msg_1 = msg[:25_000]
+        msg_2 = msg[25_000:]
+        return_json_1 = {
+            "success": True,
+            "id": 0,
+            "start_row": 0,
+            "num_rows": len(msg_1),
+            "total_rows": len(msg),
+            "msg": msg_1,
+        }
+        return_json_2 = {
+            "success": True,
+            "id": 0,
+            "start_row": len(msg_1),
+            "num_rows": len(msg_2),
+            "total_rows": 1,  # should be the same as in the first response, but isn't!
+            "msg": msg_2,
+        }
+        responses.add(responses.GET, re.compile(""), json=return_json_1)
+        responses.add(responses.GET, re.compile(""), json=return_json_2)
+
+        with pytest.raises(RuntimeError, match="total_rows"):
+            rma_all(params)
+
+    @responses.activate
+    def test_no_data_received(self):
+        params = RMAParameters("my-model")
+        # Can at most fetch 25_000 in one request
+        msg = list(range(26_000))
+        msg_1 = msg[:25_000]
+        msg_2 = msg[25_000:]
+        return_json_1 = {
+            "success": True,
+            "id": 0,
+            "start_row": 0,
+            "num_rows": len(msg_1),
+            "total_rows": len(msg),
+            "msg": msg_1,
+        }
+        return_json_2 = {
+            "success": True,
+            "id": 0,
+            "start_row": len(msg_1),
+            "num_rows": 0,  # this should always be greater than 0
+            "total_rows": len(msg),
+            "msg": msg_2,
+        }
+        responses.add(responses.GET, re.compile(""), json=return_json_1)
+        responses.add(responses.GET, re.compile(""), json=return_json_2)
+
+        with pytest.raises(RuntimeError, match="No data received"):
+            rma_all(params)
