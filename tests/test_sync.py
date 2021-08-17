@@ -278,7 +278,9 @@ class TestSync:
 
 
 class TestGetTransformParallel:
-    @pytest.mark.parametrize("downsample_ref", [25, 50])  # p, i, r are divisble by these
+    @pytest.mark.parametrize(
+        "downsample_ref", [25, 50]
+    )  # p, i, r are divisble by these
     def test_local_equals_API(self, pir_to_xy_response, downsample_ref):
         p = pir_to_xy_response["p"]
         i = pir_to_xy_response["i"]
