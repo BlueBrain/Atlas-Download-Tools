@@ -355,13 +355,13 @@ class TestDownloadDatasetParallel:
         # Mocking
         get_2d_bulk_fake = Mock(
             return_value={
-                11111: (np.ones((3, 3)), 20),
-                22222: (np.ones((3, 3)), 50),
+                11111: (np.ones((2, 3)), 20),
+                22222: (np.ones((2, 3)), 50),
             }
         )
 
         get_3d_fake = Mock(
-            return_value=np.ones((4, 4)),
+            return_value=np.ones((3, 4)),
         )
 
         common_queries_fake = Mock()
