@@ -14,9 +14,12 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import pytest
+import re
 
-from atldld.requests import RMAParameters
+import pytest
+import responses
+
+from atldld.requests import RMAError, RMAParameters, rma
 
 
 class TestRMAParameters:
@@ -47,3 +50,41 @@ class TestRMAParameters:
         params = RMAParameters("my-model", start_row=start_row, num_rows=num_rows)
         url_params = f"criteria=model::my-model,rma::options{expected_url_part}"
         assert str(params) == url_params
+
+
+class TestRma:
+
+    @responses.activate
+    def test_request_works(self):
+        params = RMAParameters("my-model")
+        url_params = "criteria=model::my-model"
+        msg = [1, 2, 3]
+        status = {
+            "success": True,
+            "id": 0,
+            "start_row": 0,
+            "num_rows": len(msg),
+            "total_rows": len(msg),
+        }
+        return_json = {**status, "msg": msg}
+
+        responses.add(
+            responses.GET,
+            re.compile(fr"https://api.brain-map.org/api/.*/query.json\?{url_params}"),
+            json=return_json,
+        )
+        status_got, msg_got = rma(params)
+        assert status_got == status
+        assert msg_got == msg
+
+    @responses.activate
+    def test_rma_error_raised(self):
+        params = RMAParameters("my-model")
+        msg = "some error occurred"
+        return_json = {
+            "success": False,
+            "msg": msg,
+        }
+        responses.add(responses.GET, re.compile(""), json=return_json)
+        with pytest.raises(RMAError, match=msg):
+            rma(params)
