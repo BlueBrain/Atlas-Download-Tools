@@ -20,6 +20,7 @@ from setuptools import find_packages, setup
 python_requires = ">=3.6"
 install_requires = [
     "click",
+    "dataclasses; python_version<'3.7'",
     "matplotlib",
     "numpy",
     "opencv-python",
