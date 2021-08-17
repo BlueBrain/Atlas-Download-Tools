@@ -682,7 +682,11 @@ def download_dataset_parallel(
         if not include_expression:
             yield image_id, slice_ref_coordinate, img, df
         else:
-            img_expression = get_image(image_id, expression=True)
+            img_expression = get_image(
+                image_id,
+                expression=True,
+                downsample=downsample_img,
+            )
             yield image_id, slice_ref_coordinate, img, df, img_expression
 
 
