@@ -24,7 +24,7 @@ import pytest
 
 DATA_FOLDER = pathlib.Path(__file__).parent / "data"
 PIR_TO_XY_FOLDER = DATA_FOLDER / "sync" / "pir_to_xy"
-PIR_TO_XY_RESPONSES = sorted(PIR_TO_XY_FOLDER.rglob("*json"))
+PIR_TO_XY_RESPONSES = sorted(PIR_TO_XY_FOLDER.iterdir())
 
 
 @pytest.fixture(scope="function")
