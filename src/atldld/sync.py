@@ -646,10 +646,18 @@ def download_dataset_parallel(
         is the processed expression image.
         That is the generator yield (image_id, p, img, df, img_expr).
     """
-    metadata_2d = get_2d_bulk(
+    metadata_2d_dict = get_2d_bulk(
         dataset_id,
         ref2inp=True,
     )
+    metadata_2d = sorted(
+        [
+            (image_id, affine_2d, section_number)
+            for image_id, (affine_2d, section_number) in metadata_2d_dict.items()
+        ],
+        key=lambda x: -int(x[2]),  # we use section_number for sorting
+    )
+
     affine_3d = get_3d(
         dataset_id,
         ref2inp=True,
@@ -657,16 +665,9 @@ def download_dataset_parallel(
     )
     axis = CommonQueries.get_axis(dataset_id)
 
-    all_image_ids = sorted(
-        metadata_2d.keys(),
-        key=lambda x: -int(metadata_2d[x][1]),
-    )
-
-    for image_id in all_image_ids:
+    for image_id, affine_2d, _ in metadata_2d:
         p, i, r = xy_to_pir_API_single(*detection_xy, image_id=image_id)
-
         slice_ref_coordinate = p if axis == "coronal" else r
-        affine_2d = [v[0] for k, v in metadata_2d.items() if k == image_id][0]
 
         df = get_transform_parallel(
             slice_ref_coordinate,
