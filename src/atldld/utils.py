@@ -107,21 +107,17 @@ def get_image(
     queries.image_download_api.ImageDownloadApi>`_
     """
     folder = folder or CACHE_FOLDER
-    folder = str(
-        folder
-    )  # this should guarantee that also LocalPath works (pytest uses it)
-
-    # Check the folder exists
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+    folder = pathlib.Path(folder)
+    folder.mkdir(exist_ok=True, parents=True)
 
     # Create full path
-    additional_specifier = "_expression" if expression else ""
-    additional_specifier += f"_{downsample}"
-    path = "{}{}{}.jpg".format(folder, image_id, additional_specifier)
+    file_name = f"{image_id}-{downsample}"
+    if expression:
+        file_name += "-expression"
+    image_path = folder / (file_name + ".jpg")
 
     # Check image exists
-    if not os.path.exists(path):
+    if not image_path.exists():
         image_url = (
             f"https://api.brain-map.org/api/v2/section_image_download/{image_id}"
         )
@@ -139,11 +135,11 @@ def get_image(
         if not response.ok:
             raise ValueError("Request failed!")
 
-        with open(path, "wb") as f:
+        with image_path.open("wb") as f:
             for chunk in response.iter_content(1024):
                 f.write(chunk)
 
-    img = plt.imread(path)
+    img = plt.imread(image_path)
     if not img.dtype == np.uint8:
         raise ValueError("The dtype needs to be uint8")
 
