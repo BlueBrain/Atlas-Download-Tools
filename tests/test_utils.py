@@ -24,7 +24,6 @@ import pytest
 import requests
 
 from atldld.utils import (
-    CACHE_FOLDER,
     CommonQueries,
     get_2d,
     get_2d_bulk,
@@ -40,10 +39,6 @@ EXISTING_DATASET_IDS = [479, 1357]  # [Gad, Gfap]
 
 
 class TestUtils:
-    def test_cache_folder_default(self):
-        """Test whether default cache path ends with '/'."""
-        assert CACHE_FOLDER.endswith("/")
-
     @pytest.mark.parametrize("image_id", EXISTING_IMAGE_IDS)  # too slow to try more
     def test_get_image_online(self, image_id, tmpdir, mocker):
         """A test for the get_image function"""
