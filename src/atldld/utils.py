@@ -110,33 +110,26 @@ def get_image(
     folder = pathlib.Path(folder)
     folder.mkdir(exist_ok=True, parents=True)
 
-    # Create full path
+    # Construct the image file name and the full path
     file_name = f"{image_id}-{downsample}"
     if expression:
         file_name += "-expression"
     image_path = folder / (file_name + ".jpg")
 
-    # Check image exists
+    # Download the image if not already in the cache
     if not image_path.exists():
-        image_url = (
-            f"https://api.brain-map.org/api/v2/section_image_download/{image_id}"
-        )
-        options = []
-
+        base_url = "https://api.brain-map.org/api/v2/section_image_download"
+        url = f"{base_url}/{image_id}?downsample={downsample}"
         if expression:
-            options.append("view=expression")
-
-        if downsample:
-            options.append(f"downsample={downsample}")
-
-        image_url += "?" + "&".join(options)
+            url += "&view=expression"
 
         # Download the image
-        response = requests.get(image_url)
+        response = requests.get(url)
         response.raise_for_status()
         with image_path.open("wb") as fp:
             fp.write(response.content)
 
+    # Read the cached image from disk
     img = plt.imread(image_path)
     if not img.dtype == np.uint8:
         raise ValueError("The dtype needs to be uint8")
