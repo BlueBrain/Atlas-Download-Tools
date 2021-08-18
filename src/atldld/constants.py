@@ -19,3 +19,7 @@ import pathlib
 
 GLOBAL_CACHE_FOLDER = pathlib.Path.home() / ".atldld"
 GLOBAL_CACHE_FOLDER.mkdir(exist_ok=True)
+
+# Volume dimensions
+REF_DIM_1UM = (13200, 8000, 11400)
+REF_DIM_25UM = (528, 320, 456)
