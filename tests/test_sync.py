@@ -20,10 +20,7 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from atldld.sync import (
-    download_dataset_parallel,
-    get_transform_parallel,
-)
+from atldld.sync import download_dataset_parallel, get_transform_parallel
 
 
 class TestGetTransformParallel:
