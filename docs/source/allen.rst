@@ -70,20 +70,21 @@ Single image download
 
 Full-blown registration
 ~~~~~~~~~~~~~~~~~~~~~~~
-The most useful function is the :code:`download_dataset`. It expects the user to specify the unique
-:code:`dataset_id`. It returns a generator. Each iteration then yields
+The most useful function is the :code:`download_dataset_parallel`.
+It expects the user to specify the unique :code:`dataset_id`. It returns a
+generator. Each iteration then yields
 
 1. **Image id** (unique identifier)
 2. **Coronal section** (a number in [0, 13200])
 3. **Original image** (high resolution before registration)
-4. **Displacement field** (its shape depends on the :code:`ds_f` downsampling factor)
+4. **Displacement field** (its shape depends on the :code:`downsample_ref` downsampling factor)
 
 .. testcode::
 
-    from atldld.sync import download_dataset
+    from atldld.sync import download_dataset_parallel
 
     dataset_id = 909
-    data_gen = download_dataset(dataset_id, ds_f=25, verbose=False)
+    data_gen = download_dataset_parallel(dataset_id, downsample_ref=25)
 
     image_id, p, img, df = next(iter(data_gen))
     img_reg = df.warp(img)
