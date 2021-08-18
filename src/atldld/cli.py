@@ -127,9 +127,3 @@ def dataset_info(dataset_id):
 
 root.add_command(dataset)
 dataset.add_command(dataset_info)
-
-
-# ============================= Entry point=====================================
-
-if __name__ == "__main__":
-    root()
