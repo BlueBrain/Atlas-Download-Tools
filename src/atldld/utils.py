@@ -24,6 +24,8 @@ Each function here is independent and performs a very specific lower level opera
 """
 
 import os
+import pathlib
+from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -61,7 +63,12 @@ def abi_get_request(url):
     return response
 
 
-def get_image(image_id, folder=None, expression=False, downsample=0):
+def get_image(
+    image_id: int,
+    folder: Optional[Union[str, pathlib.Path]] = None,
+    expression: bool = False,
+    downsample: int = 0,
+) -> np.ndarray:
     """Get any image from Allen's database just by its id.
 
     Notes
@@ -71,19 +78,15 @@ def get_image(image_id, folder=None, expression=False, downsample=0):
 
     Parameters
     ----------
-    image_id : int
+    image_id
         Integer representing an id of the section image.
-
-    folder : str or LocalPath or None
-        Local folder where image saved.
-        If None then automatically defaults to `CACHE_FOLDER`.
-
-    expression : bool
+    folder
+        Local folder where image saved. If None then automatically defaults
+        to `CACHE_FOLDER`.
+    expression
         If True, retrieve the specified SectionImage's expression mask image.
-        Otherwise, retrieve the specified SectionImage.
-        See references for details.
-
-    downsample : int or None
+        Otherwise, retrieve the specified SectionImage. See references for details.
+    downsample
        Downsampling coefficient. Both the height and width are divided
        by `2 ** downsample`.
 
@@ -102,7 +105,6 @@ def get_image(image_id, folder=None, expression=False, downsample=0):
     [1] `AllenSDK API: ImageDownloadApi <https://allensdk.readthedocs.io/
     en/latest/allensdk.api.queries.image_download_api.html#allensdk.api.
     queries.image_download_api.ImageDownloadApi>`_
-
     """
     folder = folder or CACHE_FOLDER
     folder = str(
