@@ -86,7 +86,7 @@ dataset = download_dataset_parallel(dataset_id=DATASET_ID, **kwargs)
 image_id, section_number, img, df = next(dataset)
 ```
 Note that this functionality makes a simplifying assumption that
-the image slices are perfectly parallel to one of the 3 axes.
+the slices are perfectly parallel to one of the 3 axes.
 
 - One can obtain metadata of a dataset:
 ```python
