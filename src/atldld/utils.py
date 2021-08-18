@@ -27,9 +27,9 @@ import os
 import pathlib
 from typing import Optional, Union
 
-import matplotlib.pyplot as plt
 import numpy as np
 import requests
+from PIL import Image
 
 CACHE_FOLDER = os.path.expanduser("~/.atldld/")
 
@@ -128,7 +128,8 @@ def get_image(
             fp.write(response.content)
 
     # Read the cached image from disk
-    img = plt.imread(image_path)
+    with Image.open(image_path) as lazy_img:
+        img = np.asarray(lazy_img)
     if not img.dtype == np.uint8:
         raise ValueError("The dtype needs to be uint8")
 

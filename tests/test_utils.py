@@ -18,11 +18,11 @@
 
 from unittest.mock import Mock
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pathlib
 import pytest
 import requests
+from PIL import Image
 
 from atldld.utils import (
     CACHE_FOLDER,
@@ -50,16 +50,19 @@ class TestUtils:
         """A test for the get_image function"""
 
         mocker.patch("pathlib.Path.exists", return_value=True)
+        fake_img = Image.fromarray(np.zeros((100, 200), dtype=np.uint8))
         mocker.patch(
             "matplotlib.pyplot.imread",
             return_value=np.zeros((100, 200), dtype=np.uint8),
         )
 
+        fake_img.save(pathlib.Path(tmpdir) / f"{image_id}-0.jpg")
         img = get_image(image_id, tmpdir)
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 
         # Retrieve expression of the specified image
+        fake_img.save(pathlib.Path(tmpdir) / f"{image_id}-0-expression.jpg")
         img = get_image(image_id, tmpdir, expression=True)
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
@@ -69,7 +72,7 @@ class TestUtils:
         image_id_fake = 123456
 
         img_path = pathlib.Path(tmpdir) / f"{image_id_fake}-0.jpg"
-        plt.imsave(img_path, img)
+        Image.fromarray(img, mode="L").save(img_path)
 
         img = get_image(image_id_fake, str(tmpdir))
         assert isinstance(img, np.ndarray)

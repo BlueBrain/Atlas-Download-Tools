@@ -15,12 +15,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Test for sync.py module."""
+import pathlib
 import re
 from unittest.mock import Mock
 
 import numpy as np
 import pytest
 import responses
+from PIL import Image
 
 from atldld.sync import (
     corners_coronal,
@@ -44,15 +46,15 @@ class TestSync:
     @responses.activate
     def test_get_reference_image(self, tmpdir, mocker):
         """Test that it is possible to get reference images"""
-
+        image_id = 576989001
         p = 400  # to fit the mocked query
 
+        # Mocks so that get_image works correctly
         mocker.patch("os.path.exists", return_value=True)
-        mocker.patch(
-            "matplotlib.pyplot.imread",
-            return_value=np.zeros((8000, 11400), dtype=np.uint8),
-        )
+        fake_img = Image.fromarray(np.zeros((8000, 11400), dtype=np.uint8))
+        fake_img.save(pathlib.Path(tmpdir) / f"{image_id}-0.jpg")
 
+        # Mock the AIBS server response in get_reference_image
         response_json = {
             "success": True,
             "id": 0,
@@ -68,7 +70,7 @@ class TestSync:
                     "expression_path": None,
                     "failed": False,
                     "height": 8000,
-                    "id": 576989001,
+                    "id": image_id,
                     "image_height": 8000,
                     "image_type": "Primary",
                     "image_width": 11400,
