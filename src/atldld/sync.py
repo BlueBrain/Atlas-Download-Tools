@@ -94,7 +94,7 @@ def get_reference_image(p, folder=None):
         p = 10 * section number.
     folder : str or LocalPath or None
         Local folder where image saved.
-        If None then automatically defaults to `CACHE_FOLDER`.
+        If None then automatically defaults to `GLOBAL_CACHE_FOLDER`.
 
     Returns
     -------
@@ -102,7 +102,7 @@ def get_reference_image(p, folder=None):
         An image of shape (8000, 11400, 3). The dtype is np.uint8.
     folder : str or LocalPath or None
         Local folder where image saved.
-        If None then automatically defaults to `CACHE_FOLDER`.
+        If None then automatically defaults to `GLOBAL_CACHE_FOLDER`.
     """
     if p % 10 != 0:
         raise ValueError(
