@@ -133,8 +133,7 @@ def get_image(
 
         # Download the image
         response = requests.get(image_url)
-        if not response.ok:
-            raise ValueError("Request failed!")
+        response.raise_for_status()
         with image_path.open("wb") as fp:
             fp.write(response.content)
 
