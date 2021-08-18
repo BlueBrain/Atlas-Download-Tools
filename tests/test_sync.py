@@ -15,11 +15,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Test for sync.py module."""
+import re
 from unittest.mock import Mock
 
 import numpy as np
 import pytest
-import requests
+import responses
 
 from atldld.sync import (
     corners_coronal,
@@ -40,6 +41,7 @@ EXISTING_DATASET_IDS = [479, 1357]  # [Gad, Gfap]
 class TestSync:
     """Collections of methods testing the sync module."""
 
+    @responses.activate
     def test_get_reference_image(self, tmpdir, mocker):
         """Test that it is possible to get reference images"""
 
@@ -51,9 +53,7 @@ class TestSync:
             return_value=np.zeros((8000, 11400), dtype=np.uint8),
         )
 
-        fake_response = Mock(spec=requests.Request)
-
-        rv = {
+        response_json = {
             "success": True,
             "id": 0,
             "start_row": 0,
@@ -90,10 +90,7 @@ class TestSync:
                 }
             ],
         }
-
-        fake_response.json = Mock(return_value=rv)
-        fake_response.ok = True
-        mocker.patch("requests.get", return_value=fake_response)
+        responses.add(responses.GET, re.compile(""), json=response_json)
 
         if p % 10 == 0 and 0 <= p < 13200:
             img = get_reference_image(p, tmpdir)
