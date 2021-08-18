@@ -69,12 +69,10 @@ def get_image(
     expression: bool = False,
     downsample: int = 0,
 ) -> np.ndarray:
-    """Get any image from Allen's database just by its id.
+    """Download an image from AIBS' servers given an image ID.
 
-    Notes
-    -----
-    All requested images are stored in the `CACHED_FOLDER` and then read.
-
+    Note that all requested images are stored in the `CACHED_FOLDER`
+    and then read.
 
     Parameters
     ----------
@@ -84,8 +82,8 @@ def get_image(
         Local folder where image saved. If None then automatically defaults
         to `CACHE_FOLDER`.
     expression
-        If True, retrieve the specified SectionImage's expression mask image.
-        Otherwise, retrieve the specified SectionImage. See references for details.
+        If True, retrieve the specified expression mask image. Otherwise,
+        retrieve the specified image. See references for details.
     downsample
        Downsampling coefficient. Both the height and width are divided
        by `2 ** downsample`.
@@ -98,7 +96,7 @@ def get_image(
     Raises
     ------
     ValueError
-        If request to download the image failed.
+        If the image has a wrong format (determined by the dtype).
 
     References
     ----------
