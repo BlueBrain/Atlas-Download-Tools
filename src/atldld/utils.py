@@ -131,13 +131,12 @@ def get_image(
 
         image_url += "?" + "&".join(options)
 
-        response = requests.get(image_url, stream=True)
+        # Download the image
+        response = requests.get(image_url)
         if not response.ok:
             raise ValueError("Request failed!")
-
-        with image_path.open("wb") as f:
-            for chunk in response.iter_content(1024):
-                f.write(chunk)
+        with image_path.open("wb") as fp:
+            fp.write(response.content)
 
     img = plt.imread(image_path)
     if not img.dtype == np.uint8:
