@@ -20,6 +20,7 @@ from unittest.mock import Mock
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pathlib
 import pytest
 import requests
 
@@ -48,7 +49,7 @@ class TestUtils:
     def test_get_image_online(self, image_id, tmpdir, mocker):
         """A test for the get_image function"""
 
-        mocker.patch("os.path.exists", return_value=True)
+        mocker.patch("pathlib.Path.exists", return_value=True)
         mocker.patch(
             "matplotlib.pyplot.imread",
             return_value=np.zeros((100, 200), dtype=np.uint8),
@@ -65,17 +66,12 @@ class TestUtils:
 
     def test_get_image_offline(self, tmpdir, img):
         """Test whether offline loading works"""
-
         image_id_fake = 123456
 
-        tmpdir_str = str(tmpdir)
-        tmpdir_str += "" if tmpdir_str.endswith("/") else "/"
+        img_path = pathlib.Path(tmpdir) / f"{image_id_fake}-0.jpg"
+        plt.imsave(img_path, img)
 
-        path_str = "{}{}_0.jpg".format(tmpdir_str, image_id_fake)
-
-        plt.imsave(path_str, img)
-
-        img = get_image(image_id_fake, tmpdir_str, downsample=0)
+        img = get_image(image_id_fake, str(tmpdir))
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 
