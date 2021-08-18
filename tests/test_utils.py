@@ -71,11 +71,11 @@ class TestUtils:
         tmpdir_str = str(tmpdir)
         tmpdir_str += "" if tmpdir_str.endswith("/") else "/"
 
-        path_str = "{}{}.jpg".format(tmpdir_str, image_id_fake)
+        path_str = "{}{}_0.jpg".format(tmpdir_str, image_id_fake)
 
         plt.imsave(path_str, img)
 
-        img = get_image(image_id_fake, tmpdir_str)
+        img = get_image(image_id_fake, tmpdir_str, downsample=0)
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 

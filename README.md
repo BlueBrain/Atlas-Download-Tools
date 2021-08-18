@@ -81,7 +81,7 @@ dataset_ids = get_experiment_list_from_gene("Pvalb", axis='sagittal')
 
 - One can download any dataset from a dataset ID:
 ```python
-from atldld.sync import download_dataset
+from atldld.sync import download_dataset_parallel
 dataset = download_dataset(dataset_id=DATASET_ID, **kwargs)
 image_id, section_number, img, df = next(dataset)
 ```
@@ -95,18 +95,6 @@ axis = CommonQueries.get_axis(dataset_id=DATASET_ID)
 ref_space = CommonQueries.get_reference_space(dataset_id=DATASET_ID)
 # The 3d transformation of the dataset
 matrix_3d = get_3d(dataset_id=DATASET_ID)
-```
-
-- One can download any image from an image ID and the given 2D transformation:
-```python
-from atldld.sync import get_transform
-from atldld.utils import get_image
-img = get_image(image_id=IMAGE_ID)
-p, i, r = xy_to_pir_API_single(0, 0, image_id=IMAGE_ID)
-# For coronal image
-df = get_transform(p, dataset_id=DATASET_ID)
-# For sagittal image
-df = get_transform(r, dataset_id=DATASET_ID)
 ```
 
 ## Funding & Acknowledgment

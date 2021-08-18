@@ -61,7 +61,7 @@ def abi_get_request(url):
     return response
 
 
-def get_image(image_id, folder=None, expression=False):
+def get_image(image_id, folder=None, expression=False, downsample=0):
     """Get any image from Allen's database just by its id.
 
     Notes
@@ -82,6 +82,10 @@ def get_image(image_id, folder=None, expression=False):
         If True, retrieve the specified SectionImage's expression mask image.
         Otherwise, retrieve the specified SectionImage.
         See references for details.
+
+    downsample : int or None
+       Downsampling coefficient. Both the height and width are divided
+       by `2 ** downsample`.
 
     Returns
     -------
@@ -111,6 +115,7 @@ def get_image(image_id, folder=None, expression=False):
 
     # Create full path
     additional_specifier = "_expression" if expression else ""
+    additional_specifier += f"_{downsample}"
     path = "{}{}{}.jpg".format(folder, image_id, additional_specifier)
 
     # Check image exists
@@ -126,8 +131,15 @@ def get_image(image_id, folder=None, expression=False):
         image_url = (
             f"https://api.brain-map.org/api/v2/section_image_download/{image_id}"
         )
+        options = []
+
         if expression:
-            image_url += "?view=expression"
+            options.append("view=expression")
+
+        if downsample:
+            options.append(f"downsample={downsample}")
+
+        image_url += "?" + "&".join(options)
 
         response = requests.get(image_url, stream=True)
         if not response.ok:
@@ -136,7 +148,7 @@ def get_image(image_id, folder=None, expression=False):
         with open(path, "wb") as f:
             for chunk in response.iter_content(1024):
                 f.write(chunk)
-        return get_image(image_id, expression=expression)
+        return get_image(image_id, expression=expression, downsample=downsample)
 
 
 def get_experiment_list_from_gene(gene_name, axis="sagittal"):
