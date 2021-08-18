@@ -18,3 +18,4 @@
 import pathlib
 
 GLOBAL_CACHE_FOLDER = pathlib.Path.home() / ".atldld"
+GLOBAL_CACHE_FOLDER.mkdir(exist_ok=True)
