@@ -121,15 +121,7 @@ def get_image(
     path = "{}{}{}.jpg".format(folder, image_id, additional_specifier)
 
     # Check image exists
-    if os.path.exists(path):
-        img = plt.imread(path)
-
-        if not img.dtype == np.uint8:
-            raise ValueError("The dtype needs to be uint8")
-
-        return img
-
-    else:
+    if not os.path.exists(path):
         image_url = (
             f"https://api.brain-map.org/api/v2/section_image_download/{image_id}"
         )
@@ -150,7 +142,12 @@ def get_image(
         with open(path, "wb") as f:
             for chunk in response.iter_content(1024):
                 f.write(chunk)
-        return get_image(image_id, expression=expression, downsample=downsample)
+
+    img = plt.imread(path)
+    if not img.dtype == np.uint8:
+        raise ValueError("The dtype needs to be uint8")
+
+    return img
 
 
 def get_experiment_list_from_gene(gene_name, axis="sagittal"):
