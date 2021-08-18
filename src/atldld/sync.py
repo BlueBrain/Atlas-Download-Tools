@@ -578,9 +578,11 @@ def get_transform_parallel(
     tx = coords_img[0].reshape(grid_shape) / (2 ** downsample_img)
     ty = coords_img[1].reshape(grid_shape) / (2 ** downsample_img)
 
-    df = DisplacementField.from_transform(tx, ty)  # `from_transform` not annotated
+    df: DisplacementField = DisplacementField.from_transform(
+        tx, ty
+    )  # `from_transform` not annotated
 
-    return df  # type: ignore
+    return df
 
 
 def download_dataset_parallel(
