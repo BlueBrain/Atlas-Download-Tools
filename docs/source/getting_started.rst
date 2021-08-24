@@ -1,7 +1,5 @@
-.. _allen:
-
-Allen Brain Institute
-=====================
+Getting started
+===============
 
 Allen Brain Institute hosts a rich database of gene expression images. Additionally, it provides metadata for
 each of them. We can leverage this metadata to extract initial registration.

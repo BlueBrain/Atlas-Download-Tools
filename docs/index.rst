@@ -11,7 +11,8 @@ Atlas Download Tools
    :caption: Contents:
 
    source/installation
-   source/allen
+   source/getting_started
+   source/synchronization
 
 .. toctree::
    :maxdepth: 2
