@@ -18,12 +18,10 @@
 
 Notes
 -----
-See the module `atldld.sync.py` for more elaborate functions that use these utils.
-Each function here is independent and performs a very specific lower level operation.
-
+See the module `atldld.sync` for more elaborate functions that use these utils.
+Each function here is independent and performs a very specific lower level
+operation.
 """
-
-import os
 import pathlib
 from typing import Optional, Union
 
@@ -31,7 +29,7 @@ import numpy as np
 import requests
 from PIL import Image
 
-CACHE_FOLDER = os.path.expanduser("~/.atldld/")
+from atldld.constants import GLOBAL_CACHE_FOLDER
 
 
 def abi_get_request(url):
@@ -71,8 +69,7 @@ def get_image(
 ) -> np.ndarray:
     """Download an image from AIBS' servers given an image ID.
 
-    Note that all requested images are stored in the `CACHED_FOLDER`
-    and then read.
+    All requested images are stored in the `folder` and then read.
 
     Parameters
     ----------
@@ -80,7 +77,7 @@ def get_image(
         Integer representing an id of the section image.
     folder
         Local folder where image saved. If None then automatically defaults
-        to `CACHE_FOLDER`.
+        to `GLOBAL_CACHE_FOLDER`.
     expression
         If True, retrieve the specified expression mask image. Otherwise,
         retrieve the specified image. See references for details.
@@ -104,7 +101,7 @@ def get_image(
     en/latest/allensdk.api.queries.image_download_api.html#allensdk.api.
     queries.image_download_api.ImageDownloadApi>`_
     """
-    folder = folder or CACHE_FOLDER
+    folder = folder or GLOBAL_CACHE_FOLDER
     folder = pathlib.Path(folder)
     folder.mkdir(exist_ok=True, parents=True)
 
