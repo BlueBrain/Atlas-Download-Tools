@@ -45,9 +45,7 @@ def version():
 @click.command(help="Location of the global cache folder.")
 def cache_folder():
     """Print the location of the global cache folder."""
-    # Slow import
-    # TODO: move this constant somewhere else where the import is fast.
-    from atldld.base import GLOBAL_CACHE_FOLDER
+    from atldld.constants import GLOBAL_CACHE_FOLDER
 
     click.echo("Location of the global cache folder:")
     click.echo(str(GLOBAL_CACHE_FOLDER.resolve()))

@@ -23,8 +23,6 @@ import cv2
 import numpy as np
 from skimage.transform import AffineTransform, SimilarityTransform
 
-GLOBAL_CACHE_FOLDER = pathlib.Path.home() / ".atldld"
-
 
 class DisplacementField:
     """

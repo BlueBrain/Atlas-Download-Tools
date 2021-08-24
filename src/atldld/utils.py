@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import requests
 
-CACHE_FOLDER = os.path.expanduser("~/.atldld/")
+from atldld.constants import GLOBAL_CACHE_FOLDER
 
 
 def abi_get_request(url):
@@ -66,7 +66,7 @@ def get_image(image_id, folder=None, expression=False, downsample=0):
 
     Notes
     -----
-    All requested images are stored in the `CACHED_FOLDER` and then read.
+    All requested images are stored in the `folder` and then read.
 
 
     Parameters
@@ -76,7 +76,7 @@ def get_image(image_id, folder=None, expression=False, downsample=0):
 
     folder : str or LocalPath or None
         Local folder where image saved.
-        If None then automatically defaults to `CACHE_FOLDER`.
+        If None then automatically defaults to `GLOBAL_CACHE_FOLDER`.
 
     expression : bool
         If True, retrieve the specified SectionImage's expression mask image.
@@ -104,7 +104,7 @@ def get_image(image_id, folder=None, expression=False, downsample=0):
     queries.image_download_api.ImageDownloadApi>`_
 
     """
-    folder = folder or CACHE_FOLDER
+    folder = folder or GLOBAL_CACHE_FOLDER
     folder = str(
         folder
     )  # this should guarantee that also LocalPath works (pytest uses it)
