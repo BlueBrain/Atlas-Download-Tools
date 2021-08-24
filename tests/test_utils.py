@@ -42,21 +42,16 @@ EXISTING_DATASET_IDS = [479, 1357]  # [Gad, Gfap]
 class TestUtils:
     @pytest.mark.parametrize("image_id", EXISTING_IMAGE_IDS)  # too slow to try more
     def test_get_image_online(self, image_id, tmpdir, mocker):
-        """A test for the get_image function"""
-
         mocker.patch("pathlib.Path.exists", return_value=True)
         fake_img = Image.fromarray(np.zeros((100, 200), dtype=np.uint8))
-        mocker.patch(
-            "matplotlib.pyplot.imread",
-            return_value=np.zeros((100, 200), dtype=np.uint8),
-        )
 
+        # Test getting the normal image
         fake_img.save(pathlib.Path(tmpdir) / f"{image_id}-0.jpg")
         img = get_image(image_id, tmpdir)
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 
-        # Retrieve expression of the specified image
+        # Test getting the expression image
         fake_img.save(pathlib.Path(tmpdir) / f"{image_id}-0-expression.jpg")
         img = get_image(image_id, tmpdir, expression=True)
         assert isinstance(img, np.ndarray)
