@@ -66,8 +66,8 @@ Single image download
 
 
 
-Full-blown registration
-~~~~~~~~~~~~~~~~~~~~~~~
+Full-blown synchronization
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 The most useful function is the :code:`download_parallel_dataset`.
 It expects the user to specify the unique :code:`dataset_id`. It returns a
 generator. Each iteration then yields
@@ -91,6 +91,6 @@ To register the image one simply warps the original image with the displacement 
 facts about the logic of :code:`download_dataset`.
 
 - Coronal section is approximate and is implied by a single point :code:`p_detection_xy`
-- The downsampling factor :code:`downsample_ref` determined the final shape the displacement field. By default its 25
-- The registration process is implemented locally to avoid extremely slow per pixel API calls
+- The downsampling factor :code:`downsample_ref` determines the final shape of the displacement field. By default it is 25.
+- The synchronization process is implemented locally to avoid extremely slow per pixel API calls
 
