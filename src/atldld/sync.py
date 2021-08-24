@@ -71,7 +71,7 @@ def get_parallel_transform(
         reference space and the image. Note that one can directly use it
         to register raw histological images to the reference space.
     """
-    dtype=np.float32
+    dtype = np.float32
 
     refspace = (  # order matters
         ("coronal", 13200),
