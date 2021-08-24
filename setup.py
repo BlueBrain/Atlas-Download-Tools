@@ -38,7 +38,6 @@ extras_require = {
         "pytest",
         "pytest-cov",
         "pytest-mock",
-        "responses",
         "tox",
     ],
     "docs": ["sphinx>=1.3", "sphinx-bluebrain-theme"],
