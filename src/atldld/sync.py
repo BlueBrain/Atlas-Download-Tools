@@ -36,7 +36,7 @@ from atldld.utils import (
 )
 
 
-def get_transform_parallel(
+def get_parallel_transform(
     slice_coordinate: float,
     affine_2d: np.ndarray,
     affine_3d: np.ndarray,
@@ -101,7 +101,7 @@ def get_transform_parallel(
     return df
 
 
-def download_dataset_parallel(
+def download_parallel_dataset(
     dataset_id: int,
     downsample_ref: int = 25,
     detection_xy: Tuple[float, float] = (0, 0),
@@ -128,7 +128,7 @@ def download_dataset_parallel(
            coronal datasets it is the `p` and for sagittal ones it is the `r`.
            In other words we assume that the slice is parallel to
            one of the axes.
-        c. Use `get_transform_parallel` to get a full mapping between the
+        c. Use `get_parallel_transform` to get a full mapping between the
            reference space and the image.
         d. Download the image (+ potentially the expression image)
         e. Yield result (order derived from section numbers - highest first)
@@ -187,7 +187,7 @@ def download_dataset_parallel(
         p, i, r = xy_to_pir_API_single(*detection_xy, image_id=image_id)
         slice_ref_coordinate = p if axis == "coronal" else r
 
-        df = get_transform_parallel(
+        df = get_parallel_transform(
             slice_ref_coordinate,
             affine_2d,
             affine_3d,

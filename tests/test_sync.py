@@ -20,10 +20,10 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from atldld.sync import download_dataset_parallel, get_transform_parallel
+from atldld.sync import download_parallel_dataset, get_parallel_transform
 
 
-class TestGetTransformParallel:
+class TestGetParallelTransform:
     @pytest.mark.parametrize(
         "downsample_ref", [25, 50]
     )  # p, i, r are divisble by these
@@ -57,7 +57,7 @@ class TestGetTransformParallel:
         else:
             raise ValueError
 
-        df = get_transform_parallel(
+        df = get_parallel_transform(
             slice_coordinate,
             affine_2d,
             affine_3d,
@@ -87,7 +87,7 @@ class TestGetTransformParallel:
         assert y_pred == pytest.approx(y, abs=1e-3)
 
 
-class TestDownloadDatasetParallel:
+class TestDownloadParallelDataset:
     @pytest.mark.parametrize("include_expression", [True, False])
     @pytest.mark.parametrize("downsample_ref", [25, 50])
     @pytest.mark.parametrize("axis", ["coronal", "sagittal"])
@@ -129,7 +129,7 @@ class TestDownloadDatasetParallel:
         monkeypatch.setattr("atldld.sync.xy_to_pir_API_single", xy_to_pir_fake)
 
         # Call the function
-        gen = download_dataset_parallel(
+        gen = download_parallel_dataset(
             dataset_id=dataset_id,
             include_expression=include_expression,
             downsample_ref=downsample_ref,

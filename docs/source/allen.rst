@@ -70,7 +70,7 @@ Single image download
 
 Full-blown registration
 ~~~~~~~~~~~~~~~~~~~~~~~
-The most useful function is the :code:`download_dataset_parallel`.
+The most useful function is the :code:`download_parallel_dataset`.
 It expects the user to specify the unique :code:`dataset_id`. It returns a
 generator. Each iteration then yields
 
@@ -81,10 +81,10 @@ generator. Each iteration then yields
 
 .. testcode::
 
-    from atldld.sync import download_dataset_parallel
+    from atldld.sync import download_parallel_dataset
 
     dataset_id = 909
-    data_gen = download_dataset_parallel(dataset_id, downsample_ref=25)
+    data_gen = download_parallel_dataset(dataset_id, downsample_ref=25)
 
     image_id, p, img, df = next(iter(data_gen))
     img_reg = df.warp(img)
@@ -93,6 +93,6 @@ To register the image one simply warps the original image with the displacement 
 facts about the logic of :code:`download_dataset`.
 
 - Coronal section is approximate and is implied by a single point :code:`p_detection_xy`
-- The downsampling factor :code:`ds_f` determined the final shape the displacement field. By default its 25
+- The downsampling factor :code:`downsample_ref` determined the final shape the displacement field. By default its 25
 - The registration process is implemented locally to avoid extremely slow per pixel API calls
 
