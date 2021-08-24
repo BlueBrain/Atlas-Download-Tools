@@ -71,32 +71,49 @@ def get_parallel_transform(
         reference space and the image. Note that one can directly use it
         to register raw histological images to the reference space.
     """
+    dtype=np.float32
+
     refspace = (  # order matters
         ("coronal", 13200),
         ("transverse", 8000),
         ("sagittal", 11400),
+    )
+
+    affine_2d_ = np.array(
+        [
+            [affine_2d[0, 0], affine_2d[0, 1], 0, affine_2d[0, 2]],
+            [affine_2d[1, 0], affine_2d[1, 1], 0, affine_2d[1, 2]],
+        ],
+        dtype=dtype,
+    )
+    affine_3d_ = np.concatenate(
+        [
+            affine_3d,
+            np.array([[0, 0, 0, 1]]),
+        ],
+        axis=0,
+        dtype=dtype,
     )
     axis_fixed = [i for i, a in enumerate(refspace) if a[0] == axis][0]
     axes_variable = [i for i, a in enumerate(refspace) if a[0] != axis]
 
     grid_shape = [refspace[i][1] // downsample_ref for i in axes_variable]
     n_pixels = np.prod(grid_shape)
+    grid = np.indices(grid_shape, dtype=dtype)
 
-    coords_ref = np.ones((4, n_pixels))
+    coords_ref = np.ones((4, n_pixels), dtype=dtype)
     coords_ref[axis_fixed] *= slice_coordinate
-    coords_ref[axes_variable] = np.indices(grid_shape).reshape(2, -1) * downsample_ref
+    coords_ref[axes_variable] = grid.reshape(2, n_pixels) * downsample_ref
 
-    coords_temp = np.ones((3, n_pixels))
-    coords_temp[[0, 1]] = (affine_3d @ coords_ref)[:2]  # (3, 4) x (4, n_pixels)
-
-    coords_img = affine_2d @ coords_temp  # (2, 3) x (3, n_pixels)
+    coords_img = (affine_2d_ @ affine_3d_) @ coords_ref
 
     tx = coords_img[0].reshape(grid_shape) / (2 ** downsample_img)
     ty = coords_img[1].reshape(grid_shape) / (2 ** downsample_img)
 
-    df: DisplacementField = DisplacementField.from_transform(
-        tx, ty
-    )  # `from_transform` not annotated
+    dx = tx - grid[1]
+    dy = ty - grid[0]
+
+    df = DisplacementField(dx, dy)
 
     return df
 
