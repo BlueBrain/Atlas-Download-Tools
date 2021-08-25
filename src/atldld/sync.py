@@ -92,8 +92,8 @@ def get_parallel_transform(
             np.array([[0, 0, 0, 1]]),
         ],
         axis=0,
-        dtype=dtype,
-    )
+    ).astype(dtype)
+
     axis_fixed = [i for i, a in enumerate(refspace) if a[0] == axis][0]
     axes_variable = [i for i, a in enumerate(refspace) if a[0] != axis]
 
