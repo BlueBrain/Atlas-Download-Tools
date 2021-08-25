@@ -39,7 +39,7 @@ EXISTING_IMAGE_IDS = [69750516, 101349546]
 EXISTING_DATASET_IDS = [479, 1357]  # [Gad, Gfap]
 
 
-class TestUtils:
+class TestGetImage:
     @pytest.mark.parametrize("image_id", EXISTING_IMAGE_IDS)  # too slow to try more
     def test_get_image_online(self, image_id, tmpdir, mocker):
         mocker.patch("pathlib.Path.exists", return_value=True)
@@ -68,6 +68,7 @@ class TestUtils:
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 
+class TestUtils:
     @pytest.mark.internet
     def test_get_experiment_list(self):
         """Test that experiment list is good."""
