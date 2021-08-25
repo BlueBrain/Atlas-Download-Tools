@@ -20,6 +20,7 @@ from setuptools import find_packages, setup
 python_requires = ">=3.6"
 install_requires = [
     "click",
+    "dataclasses; python_version < '3.7'",
     "matplotlib",
     "numpy",
     "opencv-python",
@@ -33,10 +34,12 @@ extras_require = {
         "black",
         "flake8",
         "isort",
+        "mypy",
         "pydocstyle",
         "pytest",
         "pytest-cov",
         "pytest-mock",
+        "responses",
         "tox",
     ],
     "docs": ["sphinx>=1.3", "sphinx-bluebrain-theme"],
