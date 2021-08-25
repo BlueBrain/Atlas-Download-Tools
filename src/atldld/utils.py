@@ -23,6 +23,7 @@ Each function here is independent and performs a very specific lower level
 operation.
 """
 import pathlib
+import warnings
 from typing import Optional, Union
 
 import numpy as np
@@ -124,9 +125,15 @@ def get_image(
         with image_path.open("wb") as fp:
             fp.write(response.content)
 
-    # Read the cached image from disk
-    with Image.open(image_path) as lazy_img:
-        img = np.asarray(lazy_img)
+    # Read the cached image from disk.
+    # PIL.Image issues warnings when loading images with more than ~90M pixels.
+    # This threshold can be surpassed by some section images (e.g.
+    # image_id=102167293), so we better ignore these warnings.
+    # After about ~180M pixels PIL.Image raises an error, we keep it.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=Image.DecompressionBombWarning)
+        with Image.open(image_path) as lazy_img:
+            img = np.asarray(lazy_img)
     if not img.dtype == np.uint8:
         raise ValueError("The dtype needs to be uint8")
 

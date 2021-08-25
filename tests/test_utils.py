@@ -68,6 +68,31 @@ class TestGetImage:
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 
+    def test_decompression_bomb_warning_suppressed(self, tmpdir):
+        image_id = 123
+
+        # Prepare a cached image. The decompression bomb warning is triggered
+        # at about 90M pixels, so we prepare an image with 100M pixels.
+        img = Image.fromarray(np.zeros((10_000, 10_000), dtype=np.uint8))
+        img.save(pathlib.Path(tmpdir) / f"{image_id}-0.jpg")
+
+        with pytest.warns(None) as records:
+            get_image(image_id, folder=str(tmpdir))
+
+        assert len(records) == 0
+
+    def test_decompression_bomb_error_triggered(self, tmpdir):
+        image_id = 123
+
+        # Prepare a cached image. The decompression bomb error is triggered
+        # at about 180M pixels, so we prepare an image with 200M pixels.
+        img = Image.fromarray(np.zeros((20_000, 10_000), dtype=np.uint8))
+        img.save(pathlib.Path(tmpdir) / f"{image_id}-0.jpg")
+
+        with pytest.raises(Image.DecompressionBombError):
+            get_image(image_id, folder=str(tmpdir))
+
+
 class TestUtils:
     @pytest.mark.internet
     def test_get_experiment_list(self):
