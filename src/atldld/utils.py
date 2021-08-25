@@ -130,6 +130,8 @@ def get_image(
     # This threshold can be surpassed by some section images (e.g.
     # image_id=102167293), so we better ignore these warnings.
     # After about ~180M pixels PIL.Image raises an error, we keep it.
+    # More info:
+    # https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.open
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=Image.DecompressionBombWarning)
         with Image.open(image_path) as lazy_img:
