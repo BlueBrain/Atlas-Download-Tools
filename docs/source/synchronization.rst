@@ -42,12 +42,12 @@ Specifically, the exact mapping looks like this
 	=
 	\begin{pmatrix}
 	 b_{1,1} & b_{1,2} & 0 & b_{1,3}\\ 
-	 b_{2,1} & b_{2,2} & 0 & b_{2, 3}\\
+	 b_{2,1} & b_{2,2} & 0 & b_{2,3}\\
 	 0 & 0 & 1 & 0\\ 
 	\end{pmatrix}
 	 \begin{pmatrix}
 	 a_{1,1} & a_{1,2} & a_{1,3} & a_{1,4}\\ 
-	 a_{2,1} & a_{2,2} & a_{2, 3}& a_{2,4}\\ 
+	 a_{2,1} & a_{2,2} & a_{2,3} & a_{2,4}\\
 	 a_{3,1} & a_{3,2} & a_{3,3} & a_{3,4}\\
 	 0 & 0 & 0 & 1 \\
 	\end{pmatrix}
