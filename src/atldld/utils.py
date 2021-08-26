@@ -143,7 +143,7 @@ def get_image(
 
 
 def get_corners_in_ref_space(
-    image_id: Union[str, int],
+    image_id: int,
     image_width: int,
     image_height: int,
 ) -> np.ndarray:
