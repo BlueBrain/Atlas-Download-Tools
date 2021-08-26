@@ -19,7 +19,8 @@ def dataset_preview(
     all_corners
         The corners of all section images. Each element in this iterable should
         be a NumPy array of shape (4, 3). The format of this array corresponds
-        to that returned by the `atldld.requests.get_ref_corners` function.
+        to that returned by the `atldld.utils.get_corners_in_ref_space`
+        function.
 
         The first axis refers to the four corners of a section image in the
         following order:

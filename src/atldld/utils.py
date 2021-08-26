@@ -142,7 +142,7 @@ def get_image(
     return img
 
 
-def get_ref_corners(
+def get_corners_in_ref_space(
         image_id: Union[str, int],
         image_width: int,
         image_height: int,

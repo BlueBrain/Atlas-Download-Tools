@@ -165,7 +165,7 @@ def dataset_preview(dataset_id):
     all_corners = []
     with click.progressbar(section_image_metas) as progress:
         for image_meta in progress:
-            corners = atldld.utils.get_ref_corners(
+            corners = atldld.utils.get_corners_in_ref_space(
                 image_meta["id"],
                 image_meta["image_width"],
                 image_meta["image_height"],
