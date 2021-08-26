@@ -18,16 +18,17 @@
 
 Notes
 -----
-See the module `atldld.sync.py` for more elaborate functions that use these utils.
-Each function here is independent and performs a very specific lower level operation.
-
+See the module `atldld.sync` for more elaborate functions that use these utils.
+Each function here is independent and performs a very specific lower level
+operation.
 """
+import pathlib
+import warnings
+from typing import Optional, Union
 
-import os
-
-import matplotlib.pyplot as plt
 import numpy as np
 import requests
+from PIL import Image
 
 from atldld.constants import GLOBAL_CACHE_FOLDER
 
@@ -61,29 +62,27 @@ def abi_get_request(url):
     return response
 
 
-def get_image(image_id, folder=None, expression=False, downsample=0):
-    """Get any image from Allen's database just by its id.
+def get_image(
+    image_id: int,
+    folder: Optional[Union[str, pathlib.Path]] = None,
+    expression: bool = False,
+    downsample: int = 0,
+) -> np.ndarray:
+    """Download an image from AIBS' servers given an image ID.
 
-    Notes
-    -----
     All requested images are stored in the `folder` and then read.
-
 
     Parameters
     ----------
-    image_id : int
+    image_id
         Integer representing an id of the section image.
-
-    folder : str or LocalPath or None
-        Local folder where image saved.
-        If None then automatically defaults to `GLOBAL_CACHE_FOLDER`.
-
-    expression : bool
-        If True, retrieve the specified SectionImage's expression mask image.
-        Otherwise, retrieve the specified SectionImage.
-        See references for details.
-
-    downsample : int or None
+    folder
+        Local folder where image saved. If None then automatically defaults
+        to `GLOBAL_CACHE_FOLDER`.
+    expression
+        If True, retrieve the specified expression mask image. Otherwise,
+        retrieve the specified image. See references for details.
+    downsample
        Downsampling coefficient. Both the height and width are divided
        by `2 ** downsample`.
 
@@ -95,60 +94,52 @@ def get_image(image_id, folder=None, expression=False, downsample=0):
     Raises
     ------
     ValueError
-        If request to download the image failed.
+        If the image has a wrong format (determined by the dtype).
 
     References
     ----------
     [1] `AllenSDK API: ImageDownloadApi <https://allensdk.readthedocs.io/
     en/latest/allensdk.api.queries.image_download_api.html#allensdk.api.
     queries.image_download_api.ImageDownloadApi>`_
-
     """
     folder = folder or GLOBAL_CACHE_FOLDER
-    folder = str(
-        folder
-    )  # this should guarantee that also LocalPath works (pytest uses it)
+    folder = pathlib.Path(folder)
+    folder.mkdir(exist_ok=True, parents=True)
 
-    # Check the folder exists
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+    # Construct the image file name and the full path
+    file_name = f"{image_id}-{downsample}"
+    if expression:
+        file_name += "-expression"
+    image_path = folder / (file_name + ".jpg")
 
-    # Create full path
-    additional_specifier = "_expression" if expression else ""
-    additional_specifier += f"_{downsample}"
-    path = "{}{}{}.jpg".format(folder, image_id, additional_specifier)
-
-    # Check image exists
-    if os.path.exists(path):
-        img = plt.imread(path)
-
-        if not img.dtype == np.uint8:
-            raise ValueError("The dtype needs to be uint8")
-
-        return img
-
-    else:
-        image_url = (
-            f"https://api.brain-map.org/api/v2/section_image_download/{image_id}"
-        )
-        options = []
-
+    # Download the image if not already in the cache
+    if not image_path.exists():
+        base_url = "https://api.brain-map.org/api/v2/section_image_download"
+        url = f"{base_url}/{image_id}?downsample={downsample}"
         if expression:
-            options.append("view=expression")
+            url += "&view=expression"
 
-        if downsample:
-            options.append(f"downsample={downsample}")
+        # Download the image
+        response = requests.get(url)
+        response.raise_for_status()
+        with image_path.open("wb") as fp:
+            fp.write(response.content)
 
-        image_url += "?" + "&".join(options)
+    # Read the cached image from disk.
+    # PIL.Image issues warnings when loading images with more than ~90M pixels.
+    # This threshold can be surpassed by some section images (e.g.
+    # image_id=102167293), so we better ignore these warnings.
+    # After about ~180M pixels PIL.Image raises an error, we keep it.
+    # More info:
+    # https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.open
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=Image.DecompressionBombWarning)
+        with Image.open(image_path) as lazy_img:
+            img = np.asarray(lazy_img)
+    if not img.dtype == np.uint8:
+        raise ValueError("The dtype needs to be uint8")
 
-        response = requests.get(image_url, stream=True)
-        if not response.ok:
-            raise ValueError("Request failed!")
-
-        with open(path, "wb") as f:
-            for chunk in response.iter_content(1024):
-                f.write(chunk)
-        return get_image(image_id, expression=expression, downsample=downsample)
+    return img
 
 
 def get_experiment_list_from_gene(gene_name, axis="sagittal"):

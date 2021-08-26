@@ -16,12 +16,13 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Test for utils.py module."""
 
+import pathlib
 from unittest.mock import Mock
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 import requests
+from PIL import Image
 
 from atldld.utils import (
     CommonQueries,
@@ -38,42 +39,61 @@ EXISTING_IMAGE_IDS = [69750516, 101349546]
 EXISTING_DATASET_IDS = [479, 1357]  # [Gad, Gfap]
 
 
-class TestUtils:
+class TestGetImage:
     @pytest.mark.parametrize("image_id", EXISTING_IMAGE_IDS)  # too slow to try more
     def test_get_image_online(self, image_id, tmpdir, mocker):
-        """A test for the get_image function"""
+        mocker.patch("pathlib.Path.exists", return_value=True)
+        fake_img = Image.fromarray(np.zeros((100, 200), dtype=np.uint8))
 
-        mocker.patch("os.path.exists", return_value=True)
-        mocker.patch(
-            "matplotlib.pyplot.imread",
-            return_value=np.zeros((100, 200), dtype=np.uint8),
-        )
-
+        # Test getting the normal image
+        fake_img.save(pathlib.Path(tmpdir) / f"{image_id}-0.jpg")
         img = get_image(image_id, tmpdir)
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 
-        # Retrieve expression of the specified image
+        # Test getting the expression image
+        fake_img.save(pathlib.Path(tmpdir) / f"{image_id}-0-expression.jpg")
         img = get_image(image_id, tmpdir, expression=True)
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 
     def test_get_image_offline(self, tmpdir, img):
         """Test whether offline loading works"""
-
         image_id_fake = 123456
 
-        tmpdir_str = str(tmpdir)
-        tmpdir_str += "" if tmpdir_str.endswith("/") else "/"
+        img_path = pathlib.Path(tmpdir) / f"{image_id_fake}-0.jpg"
+        Image.fromarray(img, mode="L").save(img_path)
 
-        path_str = "{}{}_0.jpg".format(tmpdir_str, image_id_fake)
-
-        plt.imsave(path_str, img)
-
-        img = get_image(image_id_fake, tmpdir_str, downsample=0)
+        img = get_image(image_id_fake, str(tmpdir))
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 
+    def test_decompression_bomb_warning_suppressed(self, tmpdir):
+        image_id = 123
+
+        # Prepare a cached image. The decompression bomb warning is triggered
+        # at about 90M pixels, so we prepare an image with 100M pixels.
+        img = Image.fromarray(np.zeros((10_000, 10_000), dtype=np.uint8))
+        img.save(pathlib.Path(tmpdir) / f"{image_id}-0.jpg")
+
+        with pytest.warns(None) as records:
+            get_image(image_id, folder=str(tmpdir))
+
+        assert len(records) == 0
+
+    def test_decompression_bomb_error_triggered(self, tmpdir):
+        image_id = 123
+
+        # Prepare a cached image. The decompression bomb error is triggered
+        # at about 180M pixels, so we prepare an image with 200M pixels.
+        img = Image.fromarray(np.zeros((20_000, 10_000), dtype=np.uint8))
+        img.save(pathlib.Path(tmpdir) / f"{image_id}-0.jpg")
+
+        with pytest.raises(Image.DecompressionBombError):
+            get_image(image_id, folder=str(tmpdir))
+
+
+class TestUtils:
     @pytest.mark.internet
     def test_get_experiment_list(self):
         """Test that experiment list is good."""
