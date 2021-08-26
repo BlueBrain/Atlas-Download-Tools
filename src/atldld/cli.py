@@ -84,6 +84,7 @@ def cache_dir():
     "--downsample-ref",
     type=int,
     default=25,
+    show_default=True,
     help="Downsampling coefficient for the reference space. Determines the size "
     "of the synchronized image."
 )
@@ -91,6 +92,7 @@ def cache_dir():
     "--downsample-img",
     type=int,
     default=0,
+    show_default=True,
     help="Downsampling coefficient for the image download."
 )
 def download(
@@ -106,14 +108,14 @@ def download(
     import matplotlib.pyplot as plt
     import tqdm
 
-    from atldld.sync import download_dataset_parallel
+    from atldld.sync import download_parallel_dataset
 
     # Prepare paths
     if not output_folder.exists():
         output_folder.mkdir(parents=True)
     metadata_path = output_folder / "metadata.json"
 
-    gen = download_dataset_parallel(
+    gen = download_parallel_dataset(
         dataset_id,
         downsample_ref=downsample_ref,
         downsample_img=downsample_img,
@@ -127,7 +129,7 @@ def download(
     }
 
     for image_id, section_coordinate, img, df in tqdm.tqdm(gen):
-        img_synced = df.warp(img, border_mode="transparent")
+        img_synced = df.warp(img)
         img_path = output_folder / f"{image_id}.png"
         plt.imsave(str(img_path), img_synced)  # stores alpha channel
 
