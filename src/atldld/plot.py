@@ -65,11 +65,20 @@ def dataset_preview(
     else:
         raise NotImplementedError(f"Unknown plane of section: {plane_of_section}")
 
-    # Figure size is arbitrary, maybe make it more clever at some point? The
-    # width ratios are based on the reference volume dimensions, this way the
-    # scales of the x-axes roughly match.
-    fig = Figure(figsize=(14, 4))
+    # The figure width is fixed and arbitrary. (Is there a more clever choice?)
+    # The figure height is computed to match the ratio between the total width
+    # and height of all subplots. This way the ratios of the x and y axes are
+    # roughly the same (but not quite since the in-between spaces, titles, etc.
+    # are not taken into account...)
+    plot_width = sum(ref_space_size[x_axis] for x_axis in x_axes)
+    plot_height = ref_space_size[y_axis]
+    fig_width_inches = 14
+    fig_height_inches = fig_width_inches * plot_height / plot_width
+
+    fig = Figure(figsize=(fig_width_inches, fig_height_inches))
     fig.set_tight_layout(True)
+    # The width ratios of subplots are based on the reference volume dimensions,
+    # this way the scales of the x-axes roughly match.
     axs = fig.subplots(
         ncols=4,
         sharey=True,
