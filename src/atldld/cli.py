@@ -178,7 +178,7 @@ def dataset_preview(dataset_id):
     fig.suptitle(f"Dataset ID {dataset_id}", fontsize=32)
     fig.set_dpi(200)
     fig.savefig(img_file_path)
-    click.secho(f"Figure was saved in ", fg="green", nl=False)
+    click.secho("Figure was saved in ", fg="green", nl=False)
     click.secho(f"{img_file_path.resolve()}", fg="yellow", bold=True)
 
 

@@ -143,22 +143,27 @@ def get_image(
 
 
 def get_corners_in_ref_space(
-        image_id: Union[str, int],
-        image_width: int,
-        image_height: int,
+    image_id: Union[str, int],
+    image_width: int,
+    image_height: int,
 ) -> np.ndarray:
-    """Get the corners of a section image to reference space.
+    """Get the corner coordinates of a section image in the reference space.
 
     Parameters
     ----------
     image_id
+        The section image ID.
     image_width
+        The width of the section image.
     image_height
+        The height of the section image.
 
     Returns
     -------
     ref_corners : np.ndarray
 
+    Notes
+    -----
     The x and y coordinates in the API requests refer to the mathematical
     axes with the origin in the lower left corner of the plotted image. This
     is not the same as the array indices of `image` since the element
