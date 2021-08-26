@@ -159,7 +159,6 @@ def dataset_preview(dataset_id):
     plane_of_section = atldld.dataset.PlaneOfSection(meta["plane_of_section_id"])
     section_image_metas = meta.pop("section_images")
     section_image_metas.sort(key=lambda image_meta_: image_meta_["section_number"])
-    section_image_metas = section_image_metas[:2]
 
     click.secho("Fetching the corner coordinates of the section images...", fg="green")
     all_corners = []
@@ -173,7 +172,7 @@ def dataset_preview(dataset_id):
             all_corners.append(np.array(corners))
 
     click.secho("Plotting...", fg="green")
-    fig = plot.preview_sagittal_dataset(all_corners, plane_of_section)
+    fig = plot.dataset_preview(all_corners, plane_of_section)
     fig.suptitle(f"Dataset ID {dataset_id}", fontsize=32)
     fig.set_dpi(200)
     fig.savefig(f"dataset-id-{dataset_id}-preview.png")

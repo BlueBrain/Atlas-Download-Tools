@@ -4,11 +4,11 @@ from typing import Iterable
 import numpy as np
 from matplotlib.figure import Figure
 
-from atldld import constants
+from atldld.constants import REF_DIM_25UM
 from atldld.dataset import PlaneOfSection
 
 
-def preview_sagittal_dataset(
+def dataset_preview(
     all_corners: Iterable[np.ndarray],
     plane_of_section: PlaneOfSection,
 ) -> Figure:
@@ -41,56 +41,49 @@ def preview_sagittal_dataset(
     fig
         The figure with the plot.
     """
-    scale = 25
-    n_p, n_i, n_r = np.array(constants.REF_DIM_1UM) / scale
+    ref_space_size = np.array(REF_DIM_25UM)
     p, i, r = 0, 1, 2
+    labels = {
+        p: "p (coronal)",
+        i: "i (transversal)",
+        r: "r (sagittal)",
+    }
+    edges = [[0, 1], [1, 2], [2, 3], [3, 0]]
+    titles = ["Bottom Edges", "Right Edges", "Top Edges", "Left Edges"]
+    inverts = [False, False, True, True]
+
+    if plane_of_section == PlaneOfSection.CORONAL:
+        y_axis = p
+        x_axes = [r, i, r, i]
+    elif plane_of_section == PlaneOfSection.SAGITTAL:
+        y_axis = r
+        x_axes = [p, i, p, i]
+    else:
+        raise NotImplementedError(f"Unknown plane of section: {plane_of_section}")
 
     fig = Figure(figsize=(14, 4))
     fig.set_tight_layout(True)
     axs = fig.subplots(
         ncols=4,
         sharey=True,
-        gridspec_kw={"width_ratios": [16 / 7, 1, 16 / 7, 1]},
+        gridspec_kw={
+            "width_ratios": [ref_space_size[x_axis] for x_axis in x_axes]
+        },
     )
-    for ax in axs.ravel():
+    axs[0].set_ylabel(labels[y_axis], fontsize=16)
+    for ax, edge, x_axis, invert, title in zip(axs, edges, x_axes, inverts, titles):
         ax.grid(True, linestyle=":", color="gray")
-        ax.set_ylim((0, n_r))
-    ax1, ax2, ax3, ax4 = axs.ravel()
-
-    def draw_slice_2d(ax, points):
-        coords = points.T
-        ax.plot(*coords, color="green")
-        ax.scatter(*coords, color="red")
-
-    ax1.set_title("$-i$")
-    ax1.set_xlabel("p (coronal)", fontsize=16)
-    ax1.set_ylabel("r (sagittal)", fontsize=16)
-    ax1.axvline(0, color="blue", linestyle=":")
-    ax1.axvline(n_p, color="blue", linestyle=":")
-    for corners in all_corners:
-        draw_slice_2d(ax1, corners[np.ix_([0, 1], [p, r])] / scale)
-
-    ax2.set_title("$-p$")
-    ax2.set_xlabel("i (transversal)", fontsize=16)
-    ax2.axvline(0, color="blue", linestyle=":")
-    ax2.axvline(n_i, color="blue", linestyle=":")
-    for corners in all_corners:
-        draw_slice_2d(ax2, corners[np.ix_([1, 2], [i, r])] / scale)
-
-    ax3.set_title("$+i$")
-    ax3.set_xlabel("p (coronal)", fontsize=16)
-    for corners in all_corners:
-        draw_slice_2d(ax3, corners[np.ix_([2, 3], [p, r])] / scale)
-    ax3.axvline(0, color="blue", linestyle=":")
-    ax3.axvline(n_p, color="blue", linestyle=":")
-    ax3.invert_xaxis()
-
-    ax4.set_title("$+p$")
-    ax4.set_xlabel("i (transversal)", fontsize=16)
-    for corners in all_corners:
-        draw_slice_2d(ax4, corners[np.ix_([3, 0], [i, r])] / scale)
-    ax4.axvline(0, color="blue", linestyle=":")
-    ax4.axvline(n_i, color="blue", linestyle=":")
-    ax4.invert_xaxis()
+        ax.set_ylim((0, ref_space_size[y_axis]))
+        ax.set_title(title)
+        ax.set_xlabel(labels[x_axis], fontsize=16)
+        ax.axvline(0, color="blue", linestyle=":")
+        ax.axvline(ref_space_size[x_axis], color="blue", linestyle=":")
+        for corners in all_corners:
+            points = corners[np.ix_(edge, [x_axis, y_axis])]
+            coords = points.T / 25
+            ax.plot(*coords, color="green")
+            ax.scatter(*coords, color="red")
+        if invert:
+            ax.invert_xaxis()
 
     return fig
