@@ -128,6 +128,8 @@ def dataset_info(dataset_id):
 @click.argument("dataset_id", type=int)
 def dataset_preview(dataset_id):
     """Plot a sketch of section images mapped into the reference space."""
+    import pathlib
+
     import numpy as np
 
     import atldld.dataset
@@ -172,10 +174,12 @@ def dataset_preview(dataset_id):
             all_corners.append(np.array(corners))
 
     click.secho("Plotting...", fg="green")
+    img_file_path = pathlib.Path.cwd() / f"dataset-id-{dataset_id}-preview.png"
     fig = plot.dataset_preview(all_corners, plane_of_section)
     fig.suptitle(f"Dataset ID {dataset_id}", fontsize=32)
     fig.set_dpi(200)
-    fig.savefig(f"dataset-id-{dataset_id}-preview.png")
+    fig.savefig(img_file_path)
+    click.secho(f"Figure was saved in {img_file_path.resolve()}", fg="green")
 
 
 root.add_command(dataset)
