@@ -48,10 +48,14 @@ def dataset_preview(
         i: "i (transversal)",
         r: "r (sagittal)",
     }
+    # We'll plot the views of all four edges in counterclockwise order starting
+    # with the bottom edge. The last two x-axes are inverted so that the edge
+    # vertices on the right of a plot appear on the left of the following plot.
     edges = [[0, 1], [1, 2], [2, 3], [3, 0]]
     titles = ["Bottom Edges", "Right Edges", "Top Edges", "Left Edges"]
     inverts = [False, False, True, True]
 
+    # Depending on the plane of section the views are different
     if plane_of_section == PlaneOfSection.CORONAL:
         y_axis = p
         x_axes = [r, i, r, i]
@@ -61,6 +65,9 @@ def dataset_preview(
     else:
         raise NotImplementedError(f"Unknown plane of section: {plane_of_section}")
 
+    # Figure size is arbitrary, maybe make it more clever at some point? The
+    # width ratios are based on the reference volume dimensions, this way the
+    # scales of the x-axes roughly match.
     fig = Figure(figsize=(14, 4))
     fig.set_tight_layout(True)
     axs = fig.subplots(
@@ -70,7 +77,10 @@ def dataset_preview(
             "width_ratios": [ref_space_size[x_axis] for x_axis in x_axes]
         },
     )
+    # Y-label only on the left-most plot because it's the same for all plots
     axs[0].set_ylabel(labels[y_axis], fontsize=16)
+
+    # The actual plotting
     for ax, edge, x_axis, invert, title in zip(axs, edges, x_axes, inverts, titles):
         ax.grid(True, linestyle=":", color="gray")
         ax.set_ylim((0, ref_space_size[y_axis]))
