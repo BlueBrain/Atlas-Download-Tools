@@ -130,9 +130,8 @@ def dataset_preview(dataset_id):
     """Plot a sketch of section images mapped into the reference space."""
     import pathlib
 
-    import numpy as np
-
     import atldld.dataset
+    import atldld.utils
     from atldld import plot, requests
 
     # Send request
@@ -166,12 +165,12 @@ def dataset_preview(dataset_id):
     all_corners = []
     with click.progressbar(section_image_metas) as progress:
         for image_meta in progress:
-            corners = requests.get_ref_corners(
+            corners = atldld.utils.get_ref_corners(
                 image_meta["id"],
                 image_meta["image_width"],
                 image_meta["image_height"],
             )
-            all_corners.append(np.array(corners))
+            all_corners.append(corners)
 
     click.secho("Plotting...", fg="green")
     img_file_path = pathlib.Path.cwd() / f"dataset-id-{dataset_id}-preview.png"

@@ -155,38 +155,3 @@ def rma(rma_parameters: RMAParameters) -> Tuple[dict, list]:
     logger.debug("Total rows: %d", status["total_rows"])
 
     return status, msg
-
-
-def get_ref_corners(image_id, image_width, image_height):
-    """Get the corners of a section image to reference space.
-
-    The x and y coordinates in the API requests refer to the mathematical
-    axes with the origin in the lower left corner of the plotted image. This
-    is not the same as the array indices of `image` since the element
-    `image[0, 0]` is mapped to the upper left corner, `image[i_max, 0]` to
-    the lower left corner, etc.
-
-    Mathematical coordinates:
-
-    ^ (0, 1)            (1, 1)
-    |
-    |
-    +------------------------->
-      (0, 0)            (1, 0)
-
-    Corresponding elements of the `image` array:
-    ^ image[0, 0]       image[0, j_max]
-    |
-    |
-    +------------------------->
-      image[i_max, 0]   image[i_max, j_max]
-
-    """
-    from atldld.sync import xy_to_pir_API_single
-
-    ny, nx = image_height, image_width
-    ref_corners = []
-    for x, y in ((0, 0), (nx, 0), (nx, ny), (0, ny)):
-        pir = xy_to_pir_API_single(x, y, image_id)
-        ref_corners.append(pir)
-    return ref_corners
