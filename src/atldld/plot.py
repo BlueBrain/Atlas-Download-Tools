@@ -82,9 +82,7 @@ def dataset_preview(
     axs = fig.subplots(
         ncols=4,
         sharey=True,
-        gridspec_kw={
-            "width_ratios": [ref_space_size[x_axis] for x_axis in x_axes]
-        },
+        gridspec_kw={"width_ratios": [ref_space_size[x_axis] for x_axis in x_axes]},
     )
     # Y-label only on the left-most plot because it's the same for all plots
     axs[0].set_ylabel(labels[y_axis], fontsize=16)
