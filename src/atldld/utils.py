@@ -181,6 +181,9 @@ def get_corners_in_ref_space(
       image[i_max, 0]   image[i_max, j_max]
 
     """
+    # Can we do this with affine transforms without sending a separate query
+    # for each corner???
+
     # Can't move this import to module level because
     # - it creates a circular import
     # - atldld.sync imports atldld.base and it's slow
