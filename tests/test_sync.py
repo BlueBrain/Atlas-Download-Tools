@@ -83,8 +83,8 @@ class TestGetParallelTransform:
 
             x_pred, y_pred = tx[p_, i_], ty[p_, i_]
 
-        assert x_pred == pytest.approx(x, abs=1e-3)
-        assert y_pred == pytest.approx(y, abs=1e-3)
+        assert x_pred == pytest.approx(x, abs=1e-2)
+        assert y_pred == pytest.approx(y, abs=1e-2)
 
 
 class TestDownloadParallelDataset:

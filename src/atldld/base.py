@@ -59,8 +59,8 @@ class DisplacementField:
                 "{} vs {}".format(shape_x, shape_y)
             )
 
-        self.delta_x = delta_x.astype(np.float32)  # for warping
-        self.delta_y = delta_y.astype(np.float32)
+        self.delta_x = delta_x.astype(np.float32, copy=False)  # for warping
+        self.delta_y = delta_y.astype(np.float32, copy=False)
 
         # Define more attributes
         self.shape = shape_x
@@ -140,7 +140,7 @@ class DisplacementField:
 
         shape = shape_x
 
-        x, y = np.meshgrid(list(range(shape[1])), list(range(shape[0])))
+        y, x = np.indices(shape, dtype=np.float32)
 
         delta_x = f_x - x
         delta_y = f_y - y
