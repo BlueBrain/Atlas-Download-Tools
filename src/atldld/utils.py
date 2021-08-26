@@ -24,7 +24,7 @@ operation.
 """
 import pathlib
 import warnings
-from typing import Optional, Union, List
+from typing import Optional, Union
 
 import numpy as np
 import requests
@@ -181,6 +181,9 @@ def get_ref_corners(
       image[i_max, 0]   image[i_max, j_max]
 
     """
+    # Can't move this import to module level because
+    # - it creates a circular import
+    # - atldld.sync imports atldld.base and it's slow
     from atldld.sync import xy_to_pir_API_single
 
     ny, nx = image_height, image_width
