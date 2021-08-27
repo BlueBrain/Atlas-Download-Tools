@@ -3,12 +3,20 @@ import subprocess
 import textwrap
 from typing import Any, Dict
 
+import click
 import pytest
 import responses
 from click.testing import CliRunner
 
 import atldld
-from atldld.cli import dataset, dataset_info, dataset_preview, info, root
+from atldld.cli import (
+    dataset,
+    dataset_info,
+    dataset_preview,
+    get_dataset_meta_or_abort,
+    info,
+    root,
+)
 
 
 def test_cli_entrypoint_is_installed():
@@ -55,6 +63,66 @@ class TestDatasetSubgroup:
         result = runner.invoke(dataset)
         assert result.exit_code == 0
         assert result.output.startswith("Usage:")
+
+
+class TestGetDatasetMetaOrAbortHelper:
+    @responses.activate
+    def test_it_works_like_intended(self):
+        meta = {"info": "This would be the dataset metadata"}
+        response_json = {
+            "id": 0,
+            "success": True,
+            "start_row": 0,
+            "num_rows": 1,
+            "total_rows": 1,
+            "msg": [meta],
+        }
+        responses.add(responses.GET, re.compile(""), json=response_json)
+        meta_got = get_dataset_meta_or_abort(0)
+        assert meta_got == meta
+
+    @responses.activate
+    def test_rma_errors_are_caught(self, capsys):
+        # this should lead to an RMAError in atldld.requests.rma_all
+        response_json = {"success": False, "msg": "Some error"}
+        responses.add(responses.GET, re.compile(""), json=response_json)
+        with pytest.raises(click.Abort):
+            get_dataset_meta_or_abort(0)
+        out, err = capsys.readouterr()
+        assert re.search(r"an error occurred", out, re.I)
+
+    def test_invalid_dataset_id_aborts(self, mocker, capsys):
+        # An empty msg=[] means the dataset ID was not found
+        mocker.patch("atldld.requests.rma_all", return_value=[])
+        with pytest.raises(click.Abort):
+            get_dataset_meta_or_abort(0)
+        out, err = capsys.readouterr()
+        assert re.search(r"does not exist", out, re.I)
+
+    def test_multiple_datasets_returned_aborts(self, mocker, capsys):
+        # Return two datasets for one query - something is wrong.
+        msg = ["dataset1", "dataset2"]
+        mocker.patch("atldld.requests.rma_all", return_value=msg)
+        with pytest.raises(click.Abort):
+            get_dataset_meta_or_abort(0)
+        out, err = capsys.readouterr()
+        assert re.search(r"more than one dataset", out, re.I)
+
+    def test_metadata_not_a_dict_aborts(self, mocker, capsys):
+        msg = ["This should be a dict"]
+        mocker.patch("atldld.requests.rma_all", return_value=msg)
+        with pytest.raises(click.Abort):
+            get_dataset_meta_or_abort(0)
+        out, err = capsys.readouterr()
+        assert re.search(r"unexpected dataset information format", out, re.I)
+
+    def test_metadata_keys_not_strings_aborts(self, mocker, capsys):
+        msg = [{1: "The keys should all be strings!"}]
+        mocker.patch("atldld.requests.rma_all", return_value=msg)
+        with pytest.raises(click.Abort):
+            get_dataset_meta_or_abort(0)
+        out, err = capsys.readouterr()
+        assert re.search(r"unexpected dataset information format", out, re.I)
 
 
 class TestDatasetInfo:
@@ -110,49 +178,6 @@ class TestDatasetInfo:
         assert result.exit_code == 0
         assert result.output.strip() == textwrap.dedent(expected_output).strip()
 
-    @responses.activate
-    def test_rma_errors_are_caught(self):
-        # this should lead to an RMAError
-        response_json = {"success": False, "msg": "Some error"}
-        responses.add(responses.GET, re.compile(""), json=response_json)
-        runner = CliRunner()
-        result = runner.invoke(dataset_info, ["111"])
-        assert result.exit_code == 1
-        assert isinstance(result.exception, SystemExit)  # means exception was caught
-        assert "an error occurred" in result.output.lower()
-
-    @responses.activate
-    def test_invalid_dataset_id_is_reported(self):
-        response_json = {
-            "success": True,
-            "start_row": 0,
-            "num_rows": 0,
-            "total_rows": 0,
-            "msg": [],
-        }
-        responses.add(responses.GET, re.compile(""), json=response_json)
-        runner = CliRunner()
-        result = runner.invoke(dataset_info, ["0"])
-        assert result.exit_code == 1
-        assert isinstance(result.exception, SystemExit)  # means exception was caught
-        assert "does not exist" in result.output.lower()
-
-    @responses.activate
-    def test_multiple_datasets_returned_is_reported(self):
-        response_json = {
-            "success": True,
-            "start_row": 0,
-            "num_rows": 2,
-            "total_rows": 2,
-            "msg": ["dataset1", "dataset2"],
-        }
-        responses.add(responses.GET, re.compile(""), json=response_json)
-        runner = CliRunner()
-        result = runner.invoke(dataset_info, ["0"])
-        assert result.exit_code == 1
-        assert isinstance(result.exception, SystemExit)  # means exception was caught
-        assert "more than one dataset" in result.output.lower()
-
 
 class TestDatasetPreview:
     def test_calling_without_parameters_prints_usage(self):
@@ -192,46 +217,3 @@ class TestDatasetPreview:
         assert mocked_dataset_preview.call_count == 1
         fig = mocked_dataset_preview.return_value
         fig.savefig.assert_called_once()
-
-    @responses.activate
-    def test_rma_errors_are_caught(self):
-        # this should lead to an RMAError
-        response_json = {"success": False, "msg": "Some error"}
-        responses.add(responses.GET, re.compile(""), json=response_json)
-        runner = CliRunner()
-        result = runner.invoke(dataset_preview, ["111"])
-        assert result.exit_code == 1
-        assert isinstance(result.exception, SystemExit)  # means exception was caught
-        assert "an error occurred" in result.output.lower()
-
-    @responses.activate
-    def test_invalid_dataset_id_is_reported(self):
-        response_json = {
-            "success": True,
-            "start_row": 0,
-            "num_rows": 0,
-            "total_rows": 0,
-            "msg": [],
-        }
-        responses.add(responses.GET, re.compile(""), json=response_json)
-        runner = CliRunner()
-        result = runner.invoke(dataset_preview, ["0"])
-        assert result.exit_code == 1
-        assert isinstance(result.exception, SystemExit)  # means exception was caught
-        assert "does not exist" in result.output.lower()
-
-    @responses.activate
-    def test_multiple_datasets_returned_is_reported(self):
-        response_json = {
-            "success": True,
-            "start_row": 0,
-            "num_rows": 2,
-            "total_rows": 2,
-            "msg": ["dataset1", "dataset2"],
-        }
-        responses.add(responses.GET, re.compile(""), json=response_json)
-        runner = CliRunner()
-        result = runner.invoke(dataset_preview, ["0"])
-        assert result.exit_code == 1
-        assert isinstance(result.exception, SystemExit)  # means exception was caught
-        assert "more than one dataset" in result.output.lower()

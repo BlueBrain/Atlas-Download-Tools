@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """The command line interface (CLI) for Atlas-Download-Tools."""
+from typing import Any, Dict, Optional, Sequence
+
 import click
 
 import atldld
@@ -60,27 +62,35 @@ info.add_command(cache_folder)
 
 
 # ============================= Dataset subcommand =============================
+def get_dataset_meta_or_abort(
+    dataset_id: int, include: Optional[Sequence[str]] = None
+) -> Dict[str, Any]:
+    """Download the dataset metadata.
 
+    Parameters
+    ----------
+    dataset_id
+        The dataset ID.
+    include
+        The include keys to use in the RMA query.
 
-@click.group(help="Commands related to atlas datasets")
-def dataset():
-    """Run dataset subcommands."""
+    Returns
+    -------
+    meta : dict
+        The dataset metadata.
 
-
-@click.command("info", help="Get information for a given dataset ID")
-@click.argument("dataset_id", type=int)
-def dataset_info(dataset_id):
-    """Get information for a given dataset ID."""
-    import textwrap
-
-    import atldld.dataset
+    Raises
+    ------
+    click.Abort
+        Whenever the metadata download fails or yields unexpected results.
+    """
     from atldld import requests
 
     # Send request
     rma_parameters = requests.RMAParameters(
         "SectionDataSet",
         criteria={"id": dataset_id},
-        include=("genes", "section_images"),
+        include=include,
     )
     try:
         msg = requests.rma_all(rma_parameters)
@@ -99,8 +109,31 @@ def dataset_info(dataset_id):
         click.secho("Something went wrong: got more than one dataset", fg="red")
         raise click.Abort
 
-    # Print response
     meta = msg[0]
+    if not isinstance(meta, dict) or not all(isinstance(key, str) for key in meta):
+        click.secho("Got an unexpected dataset information format", fg="red")
+        raise click.Abort
+
+    return meta
+
+
+@click.group(help="Commands related to atlas datasets")
+def dataset():
+    """Run dataset subcommands."""
+
+
+@click.command("info", help="Get information for a given dataset ID")
+@click.argument("dataset_id", type=int)
+def dataset_info(dataset_id):
+    """Get information for a given dataset ID."""
+    import textwrap
+
+    import atldld.dataset
+
+    # Download the dataset metadata
+    meta = get_dataset_meta_or_abort(dataset_id, include=["genes", "section_images"])
+
+    # Print response
     section_images = meta.pop("section_images")
     r_str = meta["red_channel"] or "-"
     g_str = meta["green_channel"] or "-"
@@ -132,32 +165,10 @@ def dataset_preview(dataset_id):
 
     import atldld.dataset
     import atldld.utils
-    from atldld import plot, requests
+    from atldld import plot
 
-    # Send request
-    rma_parameters = requests.RMAParameters(
-        "SectionDataSet",
-        criteria={"id": dataset_id},
-        include=("section_images",),
-    )
-    try:
-        msg = requests.rma_all(rma_parameters)
-    except requests.RMAError as exc:
-        click.secho(
-            f"An error occurred while querying the AIBS servers: {str(exc)}",
-            fg="red",
-        )
-        raise click.Abort
-
-    # Check response
-    if len(msg) == 0:
-        click.secho(f"Dataset with ID {dataset_id} does not exist", fg="red")
-        raise click.Abort
-    elif len(msg) > 1:
-        click.secho("Something went wrong: got more than one dataset", fg="red")
-        raise click.Abort
-
-    meta = msg[0]
+    # Download the dataset metadata
+    meta = get_dataset_meta_or_abort(dataset_id, include=["section_images"])
     plane_of_section = atldld.dataset.PlaneOfSection(meta["plane_of_section_id"])
     section_image_metas = meta.pop("section_images")
     section_image_metas.sort(key=lambda image_meta_: image_meta_["section_number"])
