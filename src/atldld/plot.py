@@ -62,7 +62,7 @@ def dataset_preview(
     p, i, r = 0, 1, 2
     labels = {
         p: "p (coronal)",
-        i: "i (transversal)",
+        i: "i (transverse)",
         r: "r (sagittal)",
     }
     # We'll plot the views of all four edges in counterclockwise order starting
