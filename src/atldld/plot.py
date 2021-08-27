@@ -19,6 +19,7 @@ from typing import Iterable
 
 import numpy as np
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
 
 from atldld.constants import REF_DIM_25UM
 from atldld.dataset import PlaneOfSection
@@ -104,14 +105,32 @@ def dataset_preview(
     # Y-label only on the left-most plot because it's the same for all plots
     axs[0].set_ylabel(labels[y_axis], fontsize=16)
 
+    # Add the legend for the reference space lines
+    ref_space_line_style = {"color": "blue", "linestyle": ":"}
+    line = Line2D([], [], **ref_space_line_style)
+    axs[0].legend(
+        [line],
+        ["Reference space boundary"],
+        loc="upper left",
+        bbox_to_anchor=(0, -0.2),
+        borderaxespad=0,
+        frameon=False,
+    )
+
     # The actual plotting
     for ax, edge, x_axis, invert, title in zip(axs, edges, x_axes, inverts, titles):
+        # Axes setup
         ax.grid(True, linestyle=":", color="gray")
-        ax.set_ylim((0, ref_space_size[y_axis]))
         ax.set_title(title)
         ax.set_xlabel(labels[x_axis], fontsize=16)
-        ax.axvline(0, color="blue", linestyle=":")
-        ax.axvline(ref_space_size[x_axis], color="blue", linestyle=":")
+
+        # Reference space boundary lines
+        ax.axvline(0, **ref_space_line_style)
+        ax.axvline(ref_space_size[x_axis], **ref_space_line_style)
+        ax.axhline(0, **ref_space_line_style)
+        ax.axhline(ref_space_size[y_axis], **ref_space_line_style)
+
+        # Plot the section image edges
         for corners in all_corners:
             points = corners[np.ix_(edge, [x_axis, y_axis])]
             coords = points.T / 25
