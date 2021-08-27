@@ -147,6 +147,7 @@ def dataset_preview(dataset_id):
             f"An error occurred while querying the AIBS servers: {str(exc)}",
             fg="red",
         )
+        raise click.Abort
 
     # Check response
     if len(msg) == 0:

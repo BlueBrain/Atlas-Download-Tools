@@ -8,7 +8,7 @@ import responses
 from click.testing import CliRunner
 
 import atldld
-from atldld.cli import dataset, dataset_info, info, root
+from atldld.cli import dataset, dataset_info, dataset_preview, info, root
 
 
 def test_cli_entrypoint_is_installed():
@@ -149,6 +149,89 @@ class TestDatasetInfo:
         responses.add(responses.GET, re.compile(""), json=response_json)
         runner = CliRunner()
         result = runner.invoke(dataset_info, ["0"])
+        assert result.exit_code == 1
+        assert isinstance(result.exception, SystemExit)  # means exception was caught
+        assert "more than one dataset" in result.output.lower()
+
+
+class TestDatasetPreview:
+    def test_calling_without_parameters_prints_usage(self):
+        runner = CliRunner()
+        result = runner.invoke(dataset_preview)
+        assert result.exit_code != 0  # should exit with an error code
+        assert result.output.startswith("Usage:")
+
+    @responses.activate
+    def test_normal_usage_works_as_intended(self, mocker):
+        mocked_get_corners_in_ref_space = mocker.patch(
+            "atldld.utils.get_corners_in_ref_space"
+        )
+        mocked_dataset_preview = mocker.patch("atldld.plot.dataset_preview")
+
+        dataset_info_json: Dict[str, Any] = {
+            "plane_of_section_id": 1,
+            "section_images": [
+                {"id": 1, "section_number": 1, "image_width": 200, "image_height": 100},
+                {"id": 2, "section_number": 2, "image_width": 200, "image_height": 100},
+                {"id": 3, "section_number": 3, "image_width": 200, "image_height": 100},
+            ],
+        }
+        response_json = {
+            "id": 0,
+            "success": True,
+            "start_row": 0,
+            "num_rows": 1,
+            "total_rows": 1,
+            "msg": [dataset_info_json],
+        }
+        responses.add(responses.GET, re.compile(""), json=response_json)
+        runner = CliRunner()
+        result = runner.invoke(dataset_preview, ["123"])
+        assert result.exit_code == 0
+        assert mocked_get_corners_in_ref_space.call_count == 3
+        assert mocked_dataset_preview.call_count == 1
+        fig = mocked_dataset_preview.return_value
+        fig.savefig.assert_called_once()
+
+    @responses.activate
+    def test_rma_errors_are_caught(self):
+        # this should lead to an RMAError
+        response_json = {"success": False, "msg": "Some error"}
+        responses.add(responses.GET, re.compile(""), json=response_json)
+        runner = CliRunner()
+        result = runner.invoke(dataset_preview, ["111"])
+        assert result.exit_code == 1
+        assert isinstance(result.exception, SystemExit)  # means exception was caught
+        assert "an error occurred" in result.output.lower()
+
+    @responses.activate
+    def test_invalid_dataset_id_is_reported(self):
+        response_json = {
+            "success": True,
+            "start_row": 0,
+            "num_rows": 0,
+            "total_rows": 0,
+            "msg": [],
+        }
+        responses.add(responses.GET, re.compile(""), json=response_json)
+        runner = CliRunner()
+        result = runner.invoke(dataset_preview, ["0"])
+        assert result.exit_code == 1
+        assert isinstance(result.exception, SystemExit)  # means exception was caught
+        assert "does not exist" in result.output.lower()
+
+    @responses.activate
+    def test_multiple_datasets_returned_is_reported(self):
+        response_json = {
+            "success": True,
+            "start_row": 0,
+            "num_rows": 2,
+            "total_rows": 2,
+            "msg": ["dataset1", "dataset2"],
+        }
+        responses.add(responses.GET, re.compile(""), json=response_json)
+        runner = CliRunner()
+        result = runner.invoke(dataset_preview, ["0"])
         assert result.exit_code == 1
         assert isinstance(result.exception, SystemExit)  # means exception was caught
         assert "more than one dataset" in result.output.lower()
