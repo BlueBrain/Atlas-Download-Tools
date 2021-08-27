@@ -179,7 +179,7 @@ def dataset_preview(dataset_id):
     fig.set_dpi(200)
     fig.savefig(img_file_path)
     click.secho("Figure was saved in ", fg="green", nl=False)
-    click.secho(f"{img_file_path.resolve()}", fg="yellow", bold=True)
+    click.secho(f"{img_file_path.resolve().as_uri()}", fg="yellow", bold=True)
 
 
 root.add_command(dataset)
