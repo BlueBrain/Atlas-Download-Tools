@@ -79,7 +79,7 @@ def dataset_preview(
     elif plane_of_section == PlaneOfSection.SAGITTAL:
         y_axis = r
         x_axes = [p, i, p, i]
-    else:   # pragma: no cover
+    else:  # pragma: no cover
         raise NotImplementedError(f"Unknown plane of section: {plane_of_section}")
 
     # The figure width is fixed and arbitrary. (Is there a more clever choice?)
