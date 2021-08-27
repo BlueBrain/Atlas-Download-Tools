@@ -218,6 +218,31 @@ def dataset_preview(dataset_id, output_dir):
     click.secho(f"{img_path.resolve().as_uri()}", fg="yellow", bold=True)
 
 
+@click.command(
+    "download-faithful",
+    help="""
+    Download all section images of a given dataset and map them into the
+    reference space.
+    
+    More precisely, the section images are mapped into the 25µm version of the
+    reference space while exactly following the correct image-to-reference
+    synchronization. Hence the name "faithful", as opposed to a "parallel"
+    mapping where the section images end up parallel to one of the reference
+    space axes.
+    
+    Because of the faithful mapping and the fact that section images might
+    present a varying amount of tilt against the slicing axis the mapping into
+    the reference space will distribute the image data of one image across
+    different parallel slices of the reference space.
+    """)
+@click.argument("dataset_id", type=int)
+def download_faithful_dataset(dataset_id):
+    # Download the dataset metadata
+    meta = get_dataset_meta_or_abort(dataset_id, include=["section_images"])
+    print(meta)
+
+
 root.add_command(dataset)
 dataset.add_command(dataset_info)
 dataset.add_command(dataset_preview)
+dataset.add_command(download_faithful_dataset)
