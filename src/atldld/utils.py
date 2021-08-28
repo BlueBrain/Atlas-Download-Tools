@@ -166,24 +166,26 @@ def get_corners_in_ref_space(
     -----
     The x and y coordinates in the API requests refer to the mathematical
     axes with the origin in the lower left corner of the plotted image. This
-    is not the same as the array indices of `image` since the element
-    `image[0, 0]` is mapped to the upper left corner, `image[i_max, 0]` to
+    is not the same as the array indices of ``image`` since the element
+    ``image[0, 0]`` is mapped to the upper left corner, ``image[i_max, 0]`` to
     the lower left corner, etc.
 
     Mathematical coordinates:
 
-    ^ (0, 1)            (1, 1)
-    |
-    |
-    +------------------------->
-      (0, 0)            (1, 0)
+    .. code-block:: text
 
-    Corresponding elements of the `image` array:
-    ^ image[0, 0]       image[0, j_max]
-    |
-    |
-    +------------------------->
-      image[i_max, 0]   image[i_max, j_max]
+        ^ (0, 1)            (1, 1)
+        |
+        |
+        +------------------------->
+          (0, 0)            (1, 0)
+
+        Corresponding elements of the image array:
+        ^ image[0, 0]       image[0, j_max]
+        |
+        |
+        +------------------------->
+          image[i_max, 0]   image[i_max, j_max]
 
     """
     # Can we do this with affine transforms without sending a separate query
