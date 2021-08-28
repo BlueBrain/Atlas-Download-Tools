@@ -159,7 +159,16 @@ def dataset_info(dataset_id):
 
 @click.command("preview", help="Plot a preview of dataset slices")
 @click.argument("dataset_id", type=int)
-def dataset_preview(dataset_id):
+@click.option(
+    "-o",
+    "--output-dir",
+    type=click.Path(file_okay=False, writable=True, resolve_path=True),
+    help="""
+    The output directory for the plot figure. If not provided the current
+    working directory will be used.
+    """,
+)
+def dataset_preview(dataset_id, output_dir):
     """Plot a sketch of section images mapped into the reference space."""
     import pathlib
 
@@ -185,13 +194,18 @@ def dataset_preview(dataset_id):
             all_corners.append(corners)
 
     click.secho("Plotting...", fg="green")
-    img_file_path = pathlib.Path.cwd() / f"dataset-id-{dataset_id}-preview.png"
+    img_file_name = f"dataset-id-{dataset_id}-preview.png"
+    if output_dir is None:
+        img_path = pathlib.Path.cwd() / img_file_name
+    else:
+        img_path = pathlib.Path(output_dir) / img_file_name
+        img_path.parent.mkdir(exist_ok=True, parents=True)
     fig = plot.dataset_preview(all_corners, plane_of_section)
     fig.suptitle(f"Dataset ID {dataset_id}", fontsize=32)
     fig.set_dpi(200)
-    fig.savefig(img_file_path)
+    fig.savefig(img_path)
     click.secho("Figure was saved in ", fg="green", nl=False)
-    click.secho(f"{img_file_path.resolve().as_uri()}", fg="yellow", bold=True)
+    click.secho(f"{img_path.resolve().as_uri()}", fg="yellow", bold=True)
 
 
 root.add_command(dataset)

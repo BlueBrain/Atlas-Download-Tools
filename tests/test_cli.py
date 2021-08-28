@@ -1,3 +1,4 @@
+import pathlib
 import re
 import subprocess
 import textwrap
@@ -180,19 +181,8 @@ class TestDatasetInfo:
 
 
 class TestDatasetPreview:
-    def test_calling_without_parameters_prints_usage(self):
-        runner = CliRunner()
-        result = runner.invoke(dataset_preview)
-        assert result.exit_code != 0  # should exit with an error code
-        assert result.output.startswith("Usage:")
-
-    @responses.activate
-    def test_normal_usage_works_as_intended(self, mocker):
-        mocked_get_corners_in_ref_space = mocker.patch(
-            "atldld.utils.get_corners_in_ref_space"
-        )
-        mocked_dataset_preview = mocker.patch("atldld.plot.dataset_preview")
-
+    @pytest.fixture
+    def dataset_meta_response(self):
         dataset_info_json: Dict[str, Any] = {
             "plane_of_section_id": 1,
             "section_images": [
@@ -209,7 +199,23 @@ class TestDatasetPreview:
             "total_rows": 1,
             "msg": [dataset_info_json],
         }
-        responses.add(responses.GET, re.compile(""), json=response_json)
+
+        return response_json
+
+    def test_calling_without_parameters_prints_usage(self):
+        runner = CliRunner()
+        result = runner.invoke(dataset_preview)
+        assert result.exit_code != 0  # should exit with an error code
+        assert result.output.startswith("Usage:")
+
+    @responses.activate
+    def test_normal_usage_works_as_intended(self, mocker, dataset_meta_response):
+        mocked_get_corners_in_ref_space = mocker.patch(
+            "atldld.utils.get_corners_in_ref_space"
+        )
+        mocked_dataset_preview = mocker.patch("atldld.plot.dataset_preview")
+        responses.add(responses.GET, re.compile(""), json=dataset_meta_response)
+
         runner = CliRunner()
         result = runner.invoke(dataset_preview, ["123"])
         assert result.exit_code == 0
@@ -217,3 +223,29 @@ class TestDatasetPreview:
         assert mocked_dataset_preview.call_count == 1
         fig = mocked_dataset_preview.return_value
         fig.savefig.assert_called_once()
+
+    @responses.activate
+    def test_custom_output_directory_works(self, mocker, dataset_meta_response, tmpdir):
+        mocked_get_corners_in_ref_space = mocker.patch(
+            "atldld.utils.get_corners_in_ref_space"
+        )
+        mocked_dataset_preview = mocker.patch("atldld.plot.dataset_preview")
+        responses.add(responses.GET, re.compile(""), json=dataset_meta_response)
+
+        # Create a subdirectory for the output to check if it will be created
+        output_dir = pathlib.Path(tmpdir) / "new-subdir"
+        assert not output_dir.exists()
+
+        runner = CliRunner()
+        result = runner.invoke(
+            dataset_preview, ["123", "--output-dir", str(output_dir)]
+        )
+
+        assert result.exit_code == 0
+        assert mocked_get_corners_in_ref_space.call_count == 3
+        assert mocked_dataset_preview.call_count == 1
+        fig = mocked_dataset_preview.return_value
+        fig.savefig.assert_called_with(
+            pathlib.Path(output_dir) / "dataset-id-123-preview.png"
+        )
+        assert output_dir.exists()
