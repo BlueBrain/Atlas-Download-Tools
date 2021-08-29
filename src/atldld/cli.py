@@ -248,7 +248,8 @@ def dataset_preview(dataset_id, output_dir):
 def download_faithful_dataset(dataset_id, output_dir):
     import pathlib
 
-    from atldld import utils
+    from atldld.constants import REF_DIM_25UM
+    from atldld.utils import get_image, get_corners_in_ref_space
 
     # Download the dataset metadata
     meta = get_dataset_meta_or_abort(dataset_id, include=["section_images"])
@@ -257,7 +258,7 @@ def download_faithful_dataset(dataset_id, output_dir):
     click.secho("Downloading the section images...", fg="green")
     with click.progressbar(meta["section_images"]) as image_metas:
         section_images = {
-            image_meta["id"]: utils.get_image(image_meta["id"])
+            image_meta["id"]: get_image(image_meta["id"])
             for image_meta in image_metas
         }
     click.secho(f"Successfully loaded {len(section_images)} section images", fg="green")
@@ -267,7 +268,7 @@ def download_faithful_dataset(dataset_id, output_dir):
     volume = np.zeros(REF_DIM_25UM)
     with click.progressbar(meta["section_images"]) as image_metas:
         for image_meta in image_metas:
-            corners = atldld.utils.get_corners_in_ref_space(
+            corners = get_corners_in_ref_space(
                 image_meta["id"],
                 image_meta["image_width"],
                 image_meta["image_height"],
@@ -294,8 +295,6 @@ from itertools import combinations
 import numpy as np
 from scipy import ndimage
 from skimage.color import rgb2gray
-
-from atldld.constants import REF_DIM_25UM
 
 
 def find_3d_affine(p_from, p_to):
