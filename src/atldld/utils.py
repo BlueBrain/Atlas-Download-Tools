@@ -190,12 +190,16 @@ def get_corners_in_ref_space(
     """
     # Can we do this with affine transforms without sending a separate query
     # for each corner???
-
-    ny, nx = image_height, image_width
     ref_corners = []
-    for x, y in ((0, 0), (nx, 0), (nx, ny), (0, ny)):
+    for x, y in (
+        (0, 0),
+        (image_width, 0),
+        (image_width, image_height),
+        (0, image_height),
+    ):
         pir = xy_to_pir_API_single(x, y, image_id)
         ref_corners.append(pir)
+
     return np.array(ref_corners)
 
 
