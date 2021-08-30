@@ -269,10 +269,12 @@ def download_faithful_dataset(dataset_id, output_dir, downsample_img):
 
     # Download the dataset metadata
     meta = get_dataset_meta_or_abort(dataset_id, include=["section_images"])
+    section_thickness = meta["section_thickness"]
+    section_image_meta = meta.pop("section_images")
 
     # Download the section images
     click.secho("Downloading the section images...", fg="green")
-    with click.progressbar(meta["section_images"]) as image_metas:
+    with click.progressbar(section_image_meta) as image_metas:
         section_images = {
             image_meta["id"]: get_image(image_meta["id"], downsample=downsample_img)
             for image_meta in image_metas
@@ -282,7 +284,7 @@ def download_faithful_dataset(dataset_id, output_dir, downsample_img):
     # Map the section images into the reference volume
     click.secho("Mapping section images into the reference space volume")
     volume = np.zeros(REF_DIM_25UM)
-    with click.progressbar(meta["section_images"]) as image_metas:
+    with click.progressbar(section_image_meta) as image_metas:
         for image_meta in image_metas:
             corners = get_corners_in_ref_space(
                 image_meta["id"],
@@ -290,7 +292,12 @@ def download_faithful_dataset(dataset_id, output_dir, downsample_img):
                 image_meta["image_height"],
             )
             image = section_images[image_meta["id"]]
-            out, out_bbox = get_true_ref_image(image, corners, downsample_img=downsample_img)
+            out, out_bbox = get_true_ref_image(
+                image,
+                corners,
+                section_thickness_um=section_thickness,
+                downsample_img=downsample_img,
+            )
             insert_subvolume(volume, out, out_bbox)
 
     # Save the volume to disk
@@ -341,7 +348,7 @@ def bbox_meshgrid(bbox):
     return np.mgrid[slices]
 
 
-def get_true_ref_image(image, corners, slice_width_um=25, downsample_img=0):
+def get_true_ref_image(image, corners, section_thickness_um=25, downsample_img=0):
     from atldld.maths import find_shearless_3d_affine
 
     # skip image download and corner queries because it would take too long.
@@ -383,9 +390,13 @@ def get_true_ref_image(image, corners, slice_width_um=25, downsample_img=0):
     # Add the z-axis
     input_img = np.expand_dims(input_img, axis=2)
 
-    # Rescale the z-coordinate to alleviate the ladder effect in the mapping
-    # TODO: remove hard-coded value, make this more clever
-    coords[2] = coords[2] * 2**downsample_img / slice_width_um
+    # Correctly take into account the scaling along the slicing axis. The affine
+    # transformation is computed from the dimensions of the full-resolution
+    # section images, so the scale along the section axis is the same as along
+    # the other axes, namely 1µm. We rescale the values for the section axis
+    # to take into account the true section thickness as well as the
+    # downsampling of the input images.
+    coords[2] = coords[2] * 2 ** downsample_img / section_thickness_um
 
     # Add padding to the z-coordinate to allow for interpolation
     pad = 3
