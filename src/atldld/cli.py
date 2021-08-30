@@ -15,11 +15,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """The command line interface (CLI) for Atlas-Download-Tools."""
+import logging
 from typing import Any, Dict, Optional, Sequence
 
 import click
 
 import atldld
+
+logger = logging.getLogger(__name__)
 
 
 @click.group(
@@ -253,6 +256,15 @@ def dataset_preview(dataset_id, output_dir):
     """,
 )
 @click.option(
+    "--output-scale",
+    "downsample_ref",
+    type=int,
+    default=25,
+    help="""
+    The size of the voxels of the output reference volume in micrometres.
+    """,
+)
+@click.option(
     "-o",
     "--output-dir",
     type=click.Path(file_okay=False, writable=True, resolve_path=True),
@@ -261,10 +273,10 @@ def dataset_preview(dataset_id, output_dir):
     working directory will be used.
     """,
 )
-def download_faithful_dataset(dataset_id, output_dir, downsample_img):
+def download_faithful_dataset(dataset_id, output_dir, downsample_img, downsample_ref):
     import pathlib
 
-    from atldld.constants import REF_DIM_25UM
+    from atldld.constants import REF_DIM_1UM
     from atldld.utils import get_image, get_corners_in_ref_space
 
     # Download the dataset metadata
@@ -283,7 +295,7 @@ def download_faithful_dataset(dataset_id, output_dir, downsample_img):
 
     # Map the section images into the reference volume
     click.secho("Mapping section images into the reference space volume")
-    volume = np.zeros(REF_DIM_25UM)
+    volume = np.zeros(tuple(dim // downsample_ref for dim in REF_DIM_1UM))
     with click.progressbar(section_image_meta) as image_metas:
         for image_meta in image_metas:
             corners = get_corners_in_ref_space(
@@ -297,16 +309,13 @@ def download_faithful_dataset(dataset_id, output_dir, downsample_img):
                 corners,
                 section_thickness_um=section_thickness,
                 downsample_img=downsample_img,
+                downsample_ref=downsample_ref,
             )
             insert_subvolume(volume, out, out_bbox)
 
     # Save the volume to disk
     click.secho("Saving...", fg="green")
-    if downsample_img > 0:
-        suffix = f"-downsample-{downsample_img}"
-    else:
-        suffix = ""
-    volume_file_name = f"dataset-id-{dataset_id}-faithful{suffix}.npy"
+    volume_file_name = f"dataset-id-{dataset_id}-faithful-downsample-{downsample_img}-scale-{downsample_ref}.npy"
     if output_dir is None:
         volume_path = pathlib.Path.cwd() / volume_file_name
     else:
@@ -348,7 +357,7 @@ def bbox_meshgrid(bbox):
     return np.mgrid[slices]
 
 
-def get_true_ref_image(image, corners, section_thickness_um=25, downsample_img=0):
+def get_true_ref_image(image, corners, section_thickness_um=25, downsample_img=0, downsample_ref=25):
     from atldld.maths import find_shearless_3d_affine
 
     # skip image download and corner queries because it would take too long.
@@ -356,8 +365,8 @@ def get_true_ref_image(image, corners, section_thickness_um=25, downsample_img=0
     # image = aibs.get_image(image_id)
     # corners = get_ref_corners(image_id, image)
 
-    # map corners to the 25 micron space
-    corners = corners / 25
+    # map corners from the 1µm reference space scale to the given one
+    corners = corners / downsample_ref
 
     # compute the affine transformation from the first three corner coordinates
     ny, nx = image.shape[:2]
@@ -433,6 +442,13 @@ def insert_subvolume(volume, subvolume, subvolume_bbox):
         np.max([subvolume_bbox[0], volume_bbox[0]], axis=0),
         np.min([subvolume_bbox[1], volume_bbox[1]], axis=0)
     ])
+    if not np.all(data_bbox[1] - data_bbox[0] > 0):
+        logger.warning(
+            "The volume and sub-volume don't intersect!\n"
+            f"Volume bounding box:\n{volume_bbox}\n"
+            f"Sub-volume bounding box:\n{subvolume_bbox}"
+        )
+        return
 
     # Convert bounding boxes to array slices
     subvolume_slices = bbox_to_slices(subvolume_bbox, data_bbox)
