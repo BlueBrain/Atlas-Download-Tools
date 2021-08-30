@@ -95,24 +95,19 @@ def get_dataset_meta_or_abort(
     try:
         msg = requests.rma_all(rma_parameters)
     except requests.RMAError as exc:
-        click.secho(
-            f"An error occurred while querying the AIBS servers: {str(exc)}",
-            fg="red",
+        raise click.ClickException(
+            f"An error occurred while querying the AIBS servers: {str(exc)}"
         )
-        raise click.Abort
 
     # Check response
     if len(msg) == 0:
-        click.secho(f"Dataset with ID {dataset_id} does not exist", fg="red")
-        raise click.Abort
+        raise click.ClickException(f"Dataset with ID {dataset_id} does not exist")
     elif len(msg) > 1:
-        click.secho("Something went wrong: got more than one dataset", fg="red")
-        raise click.Abort
+        raise click.ClickException("Something went wrong: got more than one dataset")
 
     meta = msg[0]
     if not isinstance(meta, dict) or not all(isinstance(key, str) for key in meta):
-        click.secho("Got an unexpected dataset information format", fg="red")
-        raise click.Abort
+        raise click.ClickException("Got an unexpected dataset information format")
 
     return meta
 

@@ -83,47 +83,41 @@ class TestGetDatasetMetaOrAbortHelper:
         assert meta_got == meta
 
     @responses.activate
-    def test_rma_errors_are_caught(self, capsys):
+    def test_rma_errors_are_caught(self):
         # this should lead to an RMAError in atldld.requests.rma_all
         response_json = {"success": False, "msg": "Some error"}
         responses.add(responses.GET, re.compile(""), json=response_json)
-        with pytest.raises(click.Abort):
+        with pytest.raises(click.ClickException, match=r"An error occurred"):
             get_dataset_meta_or_abort(0)
-        out, err = capsys.readouterr()
-        assert re.search(r"an error occurred", out, re.I)
 
-    def test_invalid_dataset_id_aborts(self, mocker, capsys):
+    def test_invalid_dataset_id_aborts(self, mocker):
         # An empty msg=[] means the dataset ID was not found
         mocker.patch("atldld.requests.rma_all", return_value=[])
-        with pytest.raises(click.Abort):
+        with pytest.raises(click.ClickException, match=r"does not exist"):
             get_dataset_meta_or_abort(0)
-        out, err = capsys.readouterr()
-        assert re.search(r"does not exist", out, re.I)
 
-    def test_multiple_datasets_returned_aborts(self, mocker, capsys):
+    def test_multiple_datasets_returned_aborts(self, mocker):
         # Return two datasets for one query - something is wrong.
         msg = ["dataset1", "dataset2"]
         mocker.patch("atldld.requests.rma_all", return_value=msg)
-        with pytest.raises(click.Abort):
+        with pytest.raises(click.ClickException, match=r"more than one dataset"):
             get_dataset_meta_or_abort(0)
-        out, err = capsys.readouterr()
-        assert re.search(r"more than one dataset", out, re.I)
 
-    def test_metadata_not_a_dict_aborts(self, mocker, capsys):
+    def test_metadata_not_a_dict_aborts(self, mocker):
         msg = ["This should be a dict"]
         mocker.patch("atldld.requests.rma_all", return_value=msg)
-        with pytest.raises(click.Abort):
+        with pytest.raises(
+            click.ClickException, match=r"unexpected dataset information format"
+        ):
             get_dataset_meta_or_abort(0)
-        out, err = capsys.readouterr()
-        assert re.search(r"unexpected dataset information format", out, re.I)
 
-    def test_metadata_keys_not_strings_aborts(self, mocker, capsys):
+    def test_metadata_keys_not_strings_aborts(self, mocker):
         msg = [{1: "The keys should all be strings!"}]
         mocker.patch("atldld.requests.rma_all", return_value=msg)
-        with pytest.raises(click.Abort):
+        with pytest.raises(
+            click.ClickException, match=r"unexpected dataset information format"
+        ):
             get_dataset_meta_or_abort(0)
-        out, err = capsys.readouterr()
-        assert re.search(r"unexpected dataset information format", out, re.I)
 
 
 class TestDatasetInfo:
