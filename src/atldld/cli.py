@@ -237,6 +237,22 @@ def dataset_preview(dataset_id, output_dir):
     """)
 @click.argument("dataset_id", type=int)
 @click.option(
+    "--input-downsample",
+    "downsample_img",
+    type=int,
+    default=0,
+    help="""
+    The downsampling factor for input section images.
+    
+    This equals the number of times the size of all section images is halved.
+    In other words, for the downsampling factor N the width and height of the
+    input images will be reduced by the factor 2^N.
+    
+    Setting this to a higher value will make the construction of the volume
+    faster at the cost of decreasing the image quality.
+    """,
+)
+@click.option(
     "-o",
     "--output-dir",
     type=click.Path(file_okay=False, writable=True, resolve_path=True),
@@ -245,7 +261,7 @@ def dataset_preview(dataset_id, output_dir):
     working directory will be used.
     """,
 )
-def download_faithful_dataset(dataset_id, output_dir):
+def download_faithful_dataset(dataset_id, output_dir, downsample_img):
     import pathlib
 
     from atldld.constants import REF_DIM_25UM
@@ -258,7 +274,7 @@ def download_faithful_dataset(dataset_id, output_dir):
     click.secho("Downloading the section images...", fg="green")
     with click.progressbar(meta["section_images"]) as image_metas:
         section_images = {
-            image_meta["id"]: get_image(image_meta["id"])
+            image_meta["id"]: get_image(image_meta["id"], downsample=downsample_img)
             for image_meta in image_metas
         }
     click.secho(f"Successfully loaded {len(section_images)} section images", fg="green")
@@ -274,12 +290,16 @@ def download_faithful_dataset(dataset_id, output_dir):
                 image_meta["image_height"],
             )
             image = section_images[image_meta["id"]]
-            out, out_bbox = get_true_ref_image(image, corners)
+            out, out_bbox = get_true_ref_image(image, corners, downsample_img=downsample_img)
             insert_subvolume(volume, out, out_bbox)
 
     # Save the volume to disk
     click.secho("Saving...", fg="green")
-    volume_file_name = f"dataset-id-{dataset_id}-faithful.npy"
+    if downsample_img > 0:
+        suffix = f"-downsample-{downsample_img}"
+    else:
+        suffix = ""
+    volume_file_name = f"dataset-id-{dataset_id}-faithful{suffix}.npy"
     if output_dir is None:
         volume_path = pathlib.Path.cwd() / volume_file_name
     else:
@@ -321,7 +341,7 @@ def bbox_meshgrid(bbox):
     return np.mgrid[slices]
 
 
-def get_true_ref_image(image, corners, slice_width_um=25):
+def get_true_ref_image(image, corners, slice_width_um=25, downsample_img=0):
     from atldld.maths import find_shearless_3d_affine
 
     # skip image download and corner queries because it would take too long.
@@ -365,7 +385,7 @@ def get_true_ref_image(image, corners, slice_width_um=25):
 
     # Rescale the z-coordinate to alleviate the ladder effect in the mapping
     # TODO: remove hard-coded value, make this more clever
-    coords[2] /= slice_width_um
+    coords[2] = coords[2] * 2**downsample_img / slice_width_um
 
     # Add padding to the z-coordinate to allow for interpolation
     pad = 3
