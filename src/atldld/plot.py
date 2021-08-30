@@ -21,7 +21,7 @@ import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 
-from atldld.constants import REF_DIM_25UM
+from atldld.constants import REF_DIM_1UM
 from atldld.dataset import PlaneOfSection
 
 
@@ -59,7 +59,11 @@ def dataset_preview(
     fig
         The figure with the plot.
     """
-    ref_space_size = np.array(REF_DIM_25UM)
+    # A semi-arbitrary choice of the reference space scale. This choice only
+    # changes the ticks on the axes, but not the overall plot. The 25µm scale
+    # is one of the common scales used for volumes.
+    ref_space_scale = 25
+    ref_space_size = np.array(REF_DIM_1UM) / ref_space_scale
     p, i, r = 0, 1, 2
     labels = {
         p: "p (coronal)",
@@ -133,7 +137,7 @@ def dataset_preview(
         # Plot the section image edges
         for corners in all_corners:
             points = corners[np.ix_(edge, [x_axis, y_axis])]
-            coords = points.T / 25
+            coords = points.T / ref_space_scale
             ax.plot(*coords, color="green")
             ax.scatter(*coords, color="red")
         if invert:
