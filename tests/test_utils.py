@@ -102,7 +102,7 @@ def test_get_corners_in_ref_space(mocker):
     def xy_to_pir(x, y, _image_id):
         return x * 10, y * 10, 53
 
-    mocker.patch("atldld.sync.xy_to_pir_API_single", xy_to_pir)
+    mocker.patch("atldld.utils.xy_to_pir_API_single", xy_to_pir)
 
     corners = get_corners_in_ref_space(image_id, width, height)
     assert isinstance(corners, np.ndarray)
