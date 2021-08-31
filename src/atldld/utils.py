@@ -22,9 +22,10 @@ See the module `atldld.sync` for more elaborate functions that use these utils.
 Each function here is independent and performs a very specific lower level
 operation.
 """
+import json
 import pathlib
 import warnings
-from typing import Optional, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 import requests
@@ -492,7 +493,11 @@ def pir_to_xy_API_single(p, i, r, dataset_id, reference_space=9):
     return x, y, section_number, closest_section_image_id
 
 
-def xy_to_pir_API_single(x, y, image_id):
+def xy_to_pir_API_single(
+    x: float,
+    y: float,
+    image_id: int,
+) -> Tuple[float, float, float]:
     """Convert an x and y in a section image into a p, i, r in the reference space.
 
     Notes
@@ -502,12 +507,12 @@ def xy_to_pir_API_single(x, y, image_id):
 
     Parameters
     ----------
-    x : float
-        The x coordinate (column) in the section image with id `image_id`.
-    y : float
-        The y coordinate (row) in the section image with id `image_id`.
-    image_id : int
-        Integer representing an id of the section image with id `image_id`.
+    x
+        The x coordinate (column) in the section image with id ``image_id``.
+    y
+        The y coordinate (row) in the section image with id ``image_id``.
+    image_id
+        Integer representing an id of the section image with id ``image_id``.
 
     Returns
     -------
@@ -520,18 +525,35 @@ def xy_to_pir_API_single(x, y, image_id):
         Sagittal dimension (left -> right).
         The x (column) coordinate in coronal sections.
     """
-    url = (
-        "http://api.brain-map.org/api/v2/image_to_reference/"
-        f"{image_id}.json?x={x}&y={y}"
-    )
+    xy_param = f"x={x}&y={y}"
 
-    response = abi_get_request(url)
+    # Load the cache file or create it if it doesn't exist
+    cache_file = GLOBAL_CACHE_FOLDER / "image-to-reference" / f"{image_id}.json"
+    cached_points: Dict[str, Tuple[float, float, float]]
+    if cache_file.exists():
+        with cache_file.open() as fp:
+            cached_points = json.load(fp)
+    else:
+        cache_file.parent.mkdir(exist_ok=True, parents=True)
+        cached_points = {}
 
-    temp = response["image_to_reference"]
+    # If the point is not in the cache then query it.
+    if xy_param not in cached_points:
+        base_url = "https://api.brain-map.org/api/v2/image_to_reference"
+        url = f"{base_url}/{image_id}.json?{xy_param}"
 
-    p, i, r = temp["x"], temp["y"], temp["z"]
+        response = abi_get_request(url)
+        cached_points[xy_param] = (
+            response["image_to_reference"]["x"],
+            response["image_to_reference"]["y"],
+            response["image_to_reference"]["z"],
+        )
 
-    return p, i, r
+        # Update the cache
+        with cache_file.open("w") as fp:
+            json.dump(cached_points, fp)
+
+    return cached_points[xy_param]
 
 
 class CommonQueries:
