@@ -237,7 +237,8 @@ def dataset_preview(dataset_id, output_dir):
     present a varying amount of tilt against the slicing axis the mapping into
     the reference space will distribute the image data of one image across
     different parallel slices of the reference space.
-    """)
+    """,
+)
 @click.argument("dataset_id", type=int)
 @click.option(
     "--input-downsample",
@@ -277,7 +278,7 @@ def download_faithful_dataset(dataset_id, output_dir, downsample_img, downsample
     import pathlib
 
     from atldld.constants import REF_DIM_1UM
-    from atldld.utils import get_image, get_corners_in_ref_space
+    from atldld.utils import get_corners_in_ref_space, get_image
 
     # Download the dataset metadata
     meta = get_dataset_meta_or_abort(dataset_id, include=["section_images"])
@@ -357,24 +358,27 @@ def bbox_meshgrid(bbox):
     return np.mgrid[slices]
 
 
-def get_true_ref_image(image, corners, section_thickness_um=25, downsample_img=0, downsample_ref=25):
+def get_true_ref_image(
+    image, corners, section_thickness_um=25, downsample_img=0, downsample_ref=25
+):
     from atldld.maths import find_shearless_3d_affine
 
     # skip image download and corner queries because it would take too long.
     # instead pre-compute them and take them as parameters for now
     # image = aibs.get_image(image_id)
     # corners = get_ref_corners(image_id, image)
-
     # map corners from the 1µm reference space scale to the given one
     corners = corners / downsample_ref
 
     # compute the affine transformation from the first three corner coordinates
     ny, nx = image.shape[:2]
-    p_to = np.array([
-        (0, 0, 0),
-        (nx, 0, 0),
-        (nx, ny, 0),
-    ])
+    p_to = np.array(
+        [
+            (0, 0, 0),
+            (nx, 0, 0),
+            (nx, ny, 0),
+        ]
+    )
     p_from = corners[:3]
     affine = find_shearless_3d_affine(p_from, p_to)
 
@@ -385,8 +389,9 @@ def get_true_ref_image(image, corners, section_thickness_um=25, downsample_img=0
     # Convert the affine transformation to displacements
     linear = affine[:3, :3]
     translation = affine[:3, 3]
-    coords = np.tensordot(linear, meshgrid, axes=(1, 0)) + \
-        np.expand_dims(translation, axis=(1, 2, 3))
+    coords = np.tensordot(linear, meshgrid, axes=(1, 0)) + np.expand_dims(
+        translation, axis=(1, 2, 3)
+    )
 
     # Use the grayscale version for mapping. Originals have white background,
     # invert to have black one
@@ -438,10 +443,12 @@ def insert_subvolume(volume, subvolume, subvolume_bbox):
 
     # The data bounding box is the intersection of the volume and sub-volume
     # bounding boxes
-    data_bbox = np.stack([
-        np.max([subvolume_bbox[0], volume_bbox[0]], axis=0),
-        np.min([subvolume_bbox[1], volume_bbox[1]], axis=0)
-    ])
+    data_bbox = np.stack(
+        [
+            np.max([subvolume_bbox[0], volume_bbox[0]], axis=0),
+            np.min([subvolume_bbox[1], volume_bbox[1]], axis=0),
+        ]
+    )
     if not np.all(data_bbox[1] - data_bbox[0] > 0):
         logger.warning(
             "The volume and sub-volume don't intersect!\n"
@@ -454,7 +461,9 @@ def insert_subvolume(volume, subvolume, subvolume_bbox):
     subvolume_slices = bbox_to_slices(subvolume_bbox, data_bbox)
     volume_slices = bbox_to_slices(volume_bbox, data_bbox)
 
-    volume[volume_slices] = np.max([volume[volume_slices], subvolume[subvolume_slices]], axis=0)
+    volume[volume_slices] = np.max(
+        [volume[volume_slices], subvolume[subvolume_slices]], axis=0
+    )
 
 
 root.add_command(dataset)

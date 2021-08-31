@@ -5,8 +5,7 @@ import numpy as np
 
 
 def find_shearless_3d_affine(
-        p_from: Sequence[np.ndarray],
-        p_to: Sequence[np.ndarray]
+    p_from: Sequence[np.ndarray], p_to: Sequence[np.ndarray]
 ) -> np.ndarray:
     """Find a 3D shearless affine transformation given the mapping of 3 points.
 
