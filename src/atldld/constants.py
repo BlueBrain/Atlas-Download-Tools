@@ -15,3 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Various constants."""
+
+# Volume dimensions
+REF_DIM_1UM = (13200, 8000, 11400)
+REF_DIM_25UM = (528, 320, 456)
