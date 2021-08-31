@@ -14,9 +14,15 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from atldld.constants import GLOBAL_CACHE_FOLDER
+from atldld.constants import GLOBAL_CACHE_FOLDER, REF_DIM_1UM, REF_DIM_25UM
 
 
 def test_global_cache_folder():
     assert GLOBAL_CACHE_FOLDER.exists()
     assert GLOBAL_CACHE_FOLDER.is_dir()
+
+
+def test_ref_space_dimensions_consistent():
+    assert len(REF_DIM_1UM) == len(REF_DIM_25UM) == 3
+    for dim_1um, dim_25um in zip(REF_DIM_1UM, REF_DIM_25UM):
+        assert dim_25um == dim_1um / 25

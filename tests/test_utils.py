@@ -29,6 +29,7 @@ from atldld.utils import (
     get_2d,
     get_2d_bulk,
     get_3d,
+    get_corners_in_ref_space,
     get_experiment_list_from_gene,
     get_image,
     pir_to_xy_API_single,
@@ -91,6 +92,29 @@ class TestGetImage:
 
         with pytest.raises(Image.DecompressionBombError):
             get_image(image_id, folder=str(tmpdir))
+
+
+def test_get_corners_in_ref_space(mocker):
+    image_id = 123
+    width = 200
+    height = 100
+
+    def xy_to_pir(x, y, _image_id):
+        return x * 10, y * 10, 53
+
+    mocker.patch("atldld.utils.xy_to_pir_API_single", xy_to_pir)
+
+    corners = get_corners_in_ref_space(image_id, width, height)
+    assert isinstance(corners, np.ndarray)
+    assert np.all(
+        corners
+        == [
+            (0, 0, 53),
+            (width * 10, 0, 53),
+            (width * 10, height * 10, 53),
+            (0, height * 10, 53),
+        ]
+    )
 
 
 class TestUtils:

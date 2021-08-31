@@ -142,6 +142,67 @@ def get_image(
     return img
 
 
+def get_corners_in_ref_space(
+    image_id: int,
+    image_width: int,
+    image_height: int,
+) -> np.ndarray:
+    """Get the corner coordinates of a section image in the reference space.
+
+    Parameters
+    ----------
+    image_id
+        The section image ID.
+    image_width
+        The width of the section image.
+    image_height
+        The height of the section image.
+
+    Returns
+    -------
+    ref_corners : np.ndarray
+
+    Notes
+    -----
+    The x and y coordinates in the API requests refer to the mathematical
+    axes with the origin in the lower left corner of the plotted image. This
+    is not the same as the array indices of ``image`` since the element
+    ``image[0, 0]`` is mapped to the upper left corner, ``image[i_max, 0]`` to
+    the lower left corner, etc.
+
+    Mathematical coordinates:
+
+    .. code-block:: text
+
+        ^ (0, 1)            (1, 1)
+        |
+        |
+        +------------------------->
+          (0, 0)            (1, 0)
+
+        Corresponding elements of the image array:
+        ^ image[0, 0]       image[0, j_max]
+        |
+        |
+        +------------------------->
+          image[i_max, 0]   image[i_max, j_max]
+
+    """
+    # Can we do this with affine transforms without sending a separate query
+    # for each corner???
+    ref_corners = []
+    for x, y in (
+        (0, 0),
+        (image_width, 0),
+        (image_width, image_height),
+        (0, image_height),
+    ):
+        pir = xy_to_pir_API_single(x, y, image_id)
+        ref_corners.append(pir)
+
+    return np.array(ref_corners)
+
+
 def get_experiment_list_from_gene(gene_name, axis="sagittal"):
     """Get Allen's experiments IDs for a given gene expression name.
 
