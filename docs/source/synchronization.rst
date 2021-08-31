@@ -3,7 +3,8 @@ Synchronization
 One of the main goals of ``atldld`` is to replicate some of the behavior of
 `Allen Brain Synchronization <https://help.brain-map.org/display/api/Image-to-Image+Synchronization>`_
 locally. This in turn allows for synchronization of a large number of coordinates in a
-reasonable amount of time..
+reasonable amount of time. The synchronization logic is implemented in the
+``atldl.sync`` module.
 
 Reference-To-Image
 ------------------
@@ -64,6 +65,52 @@ Specifically, the exact mapping looks like this
 
 Note that :math:`s` represents the theoretical section number multiplied
 by the dataset thickness.
+
+The above described logic is implemented inside of ``atldl.sync.pir_to_xy``.
+See below a small example.
+
+
+.. testcode::
+
+   from atldld.sync import pir_to_xy
+   import numpy as np
+
+   affine_2d = np.array(
+       [
+           [1, 0, 0],
+           [0, 1, 0],
+       ]
+   )  # should be downloaded from the Allen Brain API
+   affine_3d = np.array(
+        [
+           [1, 0, 0, 0],
+           [0, 2, 0, 0],
+           [0, 0, 1, 0],
+        ]
+   )  # should be downloaded from the Allen Brain API
+
+   coords_ref = np.array(
+        [
+              [2, 1],
+              [5, 2],
+              [7, 5],
+        ]
+   )  # (3, n_coords)
+
+   coords_img = pir_to_xy(coords_ref, affine_2d, affine_3d)
+
+   print(coords_img)
+
+.. testoutput::
+
+    [[ 2.  1.]
+     [10.  4.]
+     [ 7.  5.]]
+
+Note that the shape of ``coords_ref`` is ``(3, n_coords=2)``. However, ``n_coords``
+can be much larger and in fact the user is encouraged to make it as large
+as possible to get a speedup.
+
 
 
 
