@@ -1,6 +1,6 @@
-<h1 align="center">
+<p align="center">
     <img src="docs/_images/banner.jpg" alt="Atlas Download Tools Logo" />
-</h1>
+</p>
 
 <h4 align="center">Search, download, and prepare atlas data.</h4>
 
@@ -9,14 +9,12 @@
     <a href="https://doi.org/10.5281/zenodo.5195345"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.5195345.svg" alt="DOI"></a>
     <a href="https://github.com/BlueBrain/Atlas-Download-Tools/blob/main/LICENSE.txt"><img src="https://img.shields.io/github/license/BlueBrain/Atlas-Download-Tools" alt="License" /></a>
     <br />
-    
     <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Black"></a>
     <a href="https://pycqa.github.io/isort/"><img src="https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336" alt="Isort"></a>
     <a href="http://www.pydocstyle.org/"><img src="https://img.shields.io/badge/docstrings-pydocstyle-informational" alt="Pydocstyle"></a>
     <a href="https://flake8.pycqa.org/"><img src="https://img.shields.io/badge/PEP8-flake8-informational" alt="Pydocstyle"></a>
     <a href="http://mypy-lang.org"><img src="http://www.mypy-lang.org/static/mypy_badge.svg" alt="Checked with mypy"></a>
     <br />
-    
     <a href="https://github.com/BlueBrain/Atlas-Download-Tools/actions/workflows/run-tests.yml"><img src="https://github.com/BlueBrain/Atlas-Download-Tools/actions/workflows/run-tests.yml/badge.svg?branch=main" alt="Build status" /></a>
     <a href='https://atlas-download-tools.readthedocs.io/en/latest/?badge=latest'><img src='https://readthedocs.org/projects/atlas-download-tools/badge/?version=latest' alt='Documentation Status' /></a>
 </p>
