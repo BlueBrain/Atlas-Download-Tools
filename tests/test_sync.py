@@ -204,7 +204,7 @@ def test_pir_to_xy(pir_to_xy_response):
         :, None
     ]  # (3, 1)
 
-    coords_img_API = np.array([pir_to_xy_response["x"], pir_to_xy_response["y"],])[
+    coords_img_API = np.array([pir_to_xy_response["x"], pir_to_xy_response["y"]])[
         :, None
     ]  # We do not care about the section coordinate
 
