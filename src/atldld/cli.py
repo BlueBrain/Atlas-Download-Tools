@@ -48,10 +48,10 @@ def version():
 @click.command(help="Location of the global cache folder.")
 def cache_folder():
     """Print the location of the global cache folder."""
-    from atldld.constants import GLOBAL_CACHE_FOLDER
+    from atldld.constants import user_cache_dir
 
     click.echo("Location of the global cache folder:")
-    click.echo(str(GLOBAL_CACHE_FOLDER.resolve()))
+    click.echo(str(user_cache_dir().resolve()))
 
 
 root.add_command(info)

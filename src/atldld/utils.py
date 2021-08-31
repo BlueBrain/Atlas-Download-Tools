@@ -30,7 +30,7 @@ import numpy as np
 import requests
 from PIL import Image
 
-from atldld.constants import GLOBAL_CACHE_FOLDER
+from atldld.constants import user_cache_dir
 
 
 def abi_get_request(url):
@@ -78,7 +78,7 @@ def get_image(
         Integer representing an id of the section image.
     folder
         Local folder where image saved. If None then automatically defaults
-        to `GLOBAL_CACHE_FOLDER`.
+        to the configured cache directory.
     expression
         If True, retrieve the specified expression mask image. Otherwise,
         retrieve the specified image. See references for details.
@@ -102,7 +102,7 @@ def get_image(
     en/latest/allensdk.api.queries.image_download_api.html#allensdk.api.
     queries.image_download_api.ImageDownloadApi>`_
     """
-    folder = folder or GLOBAL_CACHE_FOLDER
+    folder = folder or user_cache_dir()
     folder = pathlib.Path(folder)
     folder.mkdir(exist_ok=True, parents=True)
 

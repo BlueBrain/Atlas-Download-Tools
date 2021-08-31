@@ -19,11 +19,16 @@ import appdirs
 import os
 import pathlib
 
+
 # Set the cache folder
-if "XDG_CACHE_HOME" in os.environ:
-    # appdirs reads XDG_CACHE_HOME only on Linux. Make it work for macOS
-    GLOBAL_CACHE_FOLDER = pathlib.Path(os.getenv("XDG_CACHE_HOME")) / "atldld"
-else:
-    GLOBAL_CACHE_FOLDER = pathlib.Path(appdirs.user_cache_dir("atldld"))
-GLOBAL_CACHE_FOLDER = GLOBAL_CACHE_FOLDER.resolve()
-GLOBAL_CACHE_FOLDER.mkdir(exist_ok=True, parents=True)
+def user_cache_dir(create: bool = True) -> pathlib.Path:
+    if "XDG_CACHE_HOME" in os.environ:
+        # appdirs reads XDG_CACHE_HOME only on Linux. Make it work for macOS too
+        cache_dir = pathlib.Path(os.getenv("XDG_CACHE_HOME")) / "atldld"
+    else:
+        cache_dir = pathlib.Path(appdirs.user_cache_dir("atldld"))
+    cache_dir = cache_dir.resolve()
+    if create:
+        cache_dir.mkdir(exist_ok=True, parents=True)
+
+    return cache_dir
