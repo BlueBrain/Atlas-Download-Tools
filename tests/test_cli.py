@@ -42,9 +42,9 @@ class TestInfoSubgroup:
         assert result.exit_code == 0
         assert atldld.__version__ in result.output
 
-    def test_cache_dir_command_works(self):
+    def test_cache_command_works(self):
         runner = CliRunner()
-        result = runner.invoke(info, ["cache-dir"])
+        result = runner.invoke(info, ["cache"])
         assert result.exit_code == 0
         assert "atldld cache directory" in result.output.lower()
 

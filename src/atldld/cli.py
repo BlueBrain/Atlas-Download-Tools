@@ -46,6 +46,7 @@ def version():
 
 
 @click.command(
+    name="cache",
     help="""
     Location of the atldld cache directory.
 
@@ -58,7 +59,7 @@ def cache_dir():
     """Print the location of the global cache directory."""
     from atldld.constants import user_cache_dir
 
-    click.echo("The atldld cache directory is:")
+    click.secho("The atldld cache directory is:", fg="green")
     click.echo(str(user_cache_dir(create=False).resolve().as_uri()))
 
 
