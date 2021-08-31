@@ -35,22 +35,37 @@ from atldld.utils import (
     xy_to_pir_API_single,
 )
 
-def xy_to_pir(coords_img, affine_2d, affine_3d):
+def xy_to_pir(
+        coords_img: np.ndarray,
+        affine_2d: np.ndarray,
+        affine_3d: np.ndarray,
+) -> np.ndarray:
     """Transform coordinates from the image space to the reference space.
 
     Parameters
     ----------
-    coords_img : np.ndarray
+    coords_img
         Array of shape `(3, N)` where the first axis contains the
         `x`, `y` and `section_number * section_thickness`. Note that
-        both that the `section_number` can be retrieved from the
+        both that the `section_number` (image specific) and
+        `section_thickncess` (dataset specific) can be retrieved from the
+        Allen Brain API.
+    affine_2d
+        Matrix of shape `(2, 3)` representing a 2D affine transformation. It
+        can be retrieved from the section image metadata via the
+        Allen Brain API. More specifically, it is stored under the
+        `tvr_**` entries.
 
+    affine_3d
+        Matrix of shape `(3, 4)` representing a 3D affine transformation. It
+        can be retrieved from the dataset metadata via the Allen Brain API.
+        More specifically, it is stored under the `tsv_**` entries.
 
     Returns
     -------
     coords_ref : np.ndarray
-        Array of shape `(3, N)`.
-
+        Array of shape `(3, N)` where the first axis contains the `p`, `i`,
+        `r` coordinates.
     """
     dtype = np.float32
     n_coords = coords_img.shape[1]
