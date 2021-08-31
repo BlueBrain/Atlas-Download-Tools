@@ -45,18 +45,26 @@ def version():
     click.echo(f"Atlas-Download-Tools version {atldld.__version__}")
 
 
-@click.command(help="Location of the global cache folder.")
-def cache_folder():
-    """Print the location of the global cache folder."""
+@click.command(
+    help="""
+    Location of the atldld cache directory.
+
+    By default it is configured as a subdirectory of the OS-specific cache
+    directory. If the XDG_CACHE_HOME environment variable is set its value will
+    override the OS-specific cache directory.
+    """,
+)
+def cache_dir():
+    """Print the location of the global cache directory."""
     from atldld.constants import user_cache_dir
 
-    click.echo("Location of the global cache folder:")
-    click.echo(str(user_cache_dir().resolve()))
+    click.echo("The atldld cache directory is:")
+    click.echo(str(user_cache_dir(create=False).resolve().as_uri()))
 
 
 root.add_command(info)
 info.add_command(version)
-info.add_command(cache_folder)
+info.add_command(cache_dir)
 
 
 # ============================= Dataset subcommand =============================

@@ -28,7 +28,7 @@ PIR_TO_XY_RESPONSES = sorted(PIR_TO_XY_FOLDER.iterdir())
 
 
 @pytest.fixture(autouse=True)
-def custom_cache_folder(monkeypatch, tmpdir):
+def custom_cache_dir(monkeypatch, tmpdir):
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmpdir))
 
 

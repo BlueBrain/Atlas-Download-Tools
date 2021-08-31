@@ -21,7 +21,6 @@ import pathlib
 import appdirs
 
 
-# Set the cache folder
 def user_cache_dir(create: bool = True) -> pathlib.Path:
     """Determine currently configured cache directory for atldld.
 
