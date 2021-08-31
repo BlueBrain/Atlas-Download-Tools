@@ -172,4 +172,51 @@ Specifically, the exact mapping looks like this
 
 
 Note that :math:`s` is a product of the section thickness (dataset specific)
-and the section number (image specific).
+and the section number (image specific). Both of these values can
+be retrieved from the Allen Brain API.
+
+The above described logic is implemented inside of ``atldl.sync.xy_to_pir``.
+See below a small example.
+
+
+.. testcode::
+
+   from atldld.sync import xy_to_pir
+   import numpy as np
+
+   affine_2d = np.array(
+       [
+           [1, 0, 0],
+           [0, 3, 0],
+       ]
+   )  # should be downloaded from the Allen Brain API
+   affine_3d = np.array(
+        [
+           [1, 0, 0, 0],
+           [0, 1, 0, 0],
+           [0, 0, 1, 0],
+        ]
+   )  # should be downloaded from the Allen Brain API
+
+   coords_img = np.array(
+        [
+              [2, 1, 5, 11, 0, 15],
+              [5, 2, 10, 12, 0, 2],
+              [7, 5, 2, 21, 0, 0],
+        ]
+   )  # (3, n_coords)
+
+   coords_ref = xy_to_pir(coords_img, affine_2d, affine_3d)
+
+   print(coords_ref)
+
+.. testoutput::
+
+    [[ 2.  1.  5. 11.  0. 15.]
+     [15.  6. 30. 36.  0.  6.]
+     [ 7.  5.  2. 21.  0.  0.]]
+
+Note that the shape of ``coords_img`` is ``(3, n_coords=6)``. However, ``n_coords``
+can be much larger and in fact the user is encouraged to make it as large
+as possible to get a speedup.
+
