@@ -55,7 +55,6 @@ def xy_to_pir(
         can be retrieved from the section image metadata via the
         Allen Brain API. More specifically, it is stored under the
         `tvr_**` entries.
-
     affine_3d
         Matrix of shape `(3, 4)` representing a 3D affine transformation. It
         can be retrieved from the dataset metadata via the Allen Brain API.
@@ -85,6 +84,62 @@ def xy_to_pir(
     coords_ref = (affine_3d_ @ affine_2d_) @ coords_img_
 
     return coords_ref
+
+
+def pir_to_xy(
+        coords_ref: np.ndarray,
+        affine_2d: np.ndarray,
+        affine_3d: np.ndarray,
+) -> np.ndarray:
+    """Transform coordinates from the image space to the reference space.
+
+    Parameters
+    ----------
+    coords_ref
+        Array of shape `(3, N)` where the first axis contains the
+        `p`, `i` and `r`.
+    affine_2d
+        Matrix of shape `(2, 3)` representing a 2D affine transformation. It
+        can be retrieved from the section image metadata via the
+        Allen Brain API. More specifically, it is stored under the
+        `trv_**` entries.
+    affine_3d
+        Matrix of shape `(3, 4)` representing a 3D affine transformation. It
+        can be retrieved from the dataset metadata via the Allen Brain API.
+        More specifically, it is stored under the `tvs_**` entries.
+
+    Returns
+    -------
+    coords_img : np.ndarray
+        Array of shape `(3, N)` where the first axis contains the `x`, `y`,
+        `section_number * section_thickness`. Note that the `section_number`
+        can be an arbitrary float that is most likely not equal to a
+        `section_number` of any section image.
+    """
+    dtype = np.float32
+
+    n_coords = coords_ref.shape[1]
+    coords_ref_ = np.concatenate([coords_ref, np.ones((1, n_coords), dtype=dtype)])
+
+    affine_2d_ = np.array(
+        [
+            [affine_2d[0, 0], affine_2d[0, 1], 0, affine_2d[0, 2]],
+            [affine_2d[1, 0], affine_2d[1, 1], 0, affine_2d[1, 2]],
+            [0, 0, 1, 0],
+        ],
+        dtype=dtype,
+    )
+    affine_3d_ = np.concatenate(
+        [
+            affine_3d,
+            np.array([[0, 0, 0, 1]]),
+        ],
+        axis=0,
+    ).astype(dtype)
+
+    coords_img  = (affine_2d_ @ affine_3d_) @ coords_ref_
+
+    return coords_img
 
 
 def get_parallel_transform(
@@ -130,21 +185,6 @@ def get_parallel_transform(
         ("sagittal", 11400),
     )
 
-    affine_2d_ = np.array(
-        [
-            [affine_2d[0, 0], affine_2d[0, 1], 0, affine_2d[0, 2]],
-            [affine_2d[1, 0], affine_2d[1, 1], 0, affine_2d[1, 2]],
-        ],
-        dtype=dtype,
-    )
-    affine_3d_ = np.concatenate(
-        [
-            affine_3d,
-            np.array([[0, 0, 0, 1]]),
-        ],
-        axis=0,
-    ).astype(dtype)
-
     axis_fixed = [i for i, a in enumerate(refspace) if a[0] == axis][0]
     axes_variable = [i for i, a in enumerate(refspace) if a[0] != axis]
 
@@ -152,11 +192,11 @@ def get_parallel_transform(
     n_pixels = np.prod(grid_shape)
     grid = np.indices(grid_shape, dtype=dtype)
 
-    coords_ref = np.ones((4, n_pixels), dtype=dtype)
+    coords_ref = np.ones((3, n_pixels), dtype=dtype)
     coords_ref[axis_fixed] *= slice_coordinate
     coords_ref[axes_variable] = grid.reshape(2, n_pixels) * downsample_ref
 
-    coords_img = (affine_2d_ @ affine_3d_) @ coords_ref
+    coords_img = pir_to_xy(coords_ref, affine_2d, affine_3d)[:2]
 
     tx = coords_img[0].reshape(grid_shape) / (2 ** downsample_img)
     ty = coords_img[1].reshape(grid_shape) / (2 ** downsample_img)

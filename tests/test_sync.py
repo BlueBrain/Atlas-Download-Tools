@@ -23,6 +23,7 @@ import pytest
 from atldld.sync import (
     download_parallel_dataset,
     get_parallel_transform,
+    pir_to_xy,
     xy_to_pir,
 )
 
@@ -191,6 +192,31 @@ class TestDownloadParallelDataset:
         assert common_queries_fake.get_axis.call_count == 1
         assert xy_to_pir_fake.call_count == 2
 
+
+def test_pir_to_xy(pir_to_xy_response):
+    coords_ref = np.array(
+        [
+            pir_to_xy_response["p"],
+            pir_to_xy_response["i"],
+            pir_to_xy_response["r"],
+        ]
+    )[:, None]  # (3, 1)
+
+
+    coords_img_API = np.array(
+        [
+            pir_to_xy_response["x"],
+            pir_to_xy_response["y"],
+        ]
+    )[:, None]  # We do not care about the section coordinate
+
+    coords_img_local = pir_to_xy(
+        coords_ref,
+        np.array(pir_to_xy_response["affine_2d"]),
+        np.array(pir_to_xy_response["affine_3d"]),
+    )[:2]
+
+    assert np.allclose(coords_img_API, coords_img_local)
 
 def test_xy_to_pir(xy_to_pir_response):
     coords_img = np.array(
