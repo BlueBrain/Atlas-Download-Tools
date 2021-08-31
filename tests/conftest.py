@@ -29,6 +29,8 @@ PIR_TO_XY_RESPONSES = sorted(PIR_TO_XY_FOLDER.iterdir())
 
 @pytest.fixture(autouse=True)
 def custom_cache_dir(monkeypatch, tmpdir):
+    # Automatically use a custom cache directory for all tests to avoid writing
+    # cache data to the user's real cache.
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmpdir))
 
 
