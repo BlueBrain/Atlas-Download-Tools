@@ -117,6 +117,44 @@ def test_get_corners_in_ref_space(mocker):
     )
 
 
+class TestXyToPirApiSingle:
+    @pytest.mark.parametrize("image_id", EXISTING_IMAGE_IDS[:1])
+    @pytest.mark.parametrize("x", [10])
+    @pytest.mark.parametrize("y", [40])
+    def test_xy_to_pir_API_single(self, image_id, x, y, mocker):
+        """Test that xy to pir API works."""
+
+        # patching
+        fake_response = Mock(spec=requests.Request)
+        fake_response.ok = True
+
+        rv = {
+            "success": True,
+            "id": 0,
+            "start_row": 0,
+            "num_rows": 0,
+            "total_rows": 0,
+            "msg": {
+                "image_to_reference": {
+                    "x": -983.5501122512056,
+                    "y": 335.1538167934086,
+                    "z": 4117.19706627407,
+                }
+            },
+        }
+
+        fake_response.json = Mock(return_value=rv)
+        mocker.patch("requests.get", return_value=fake_response)
+
+        p, i, r = xy_to_pir_API_single(x, y, image_id=image_id)
+
+        # Mock calls
+        fake_response.assert_called_once()
+        assert np.isfinite(p)
+        assert np.isfinite(i)
+        assert np.isfinite(r)
+
+
 class TestUtils:
     @pytest.mark.internet
     def test_get_experiment_list(self):
@@ -490,44 +528,6 @@ class TestUtils:
         assert np.isfinite(closest_section_image_id)
         assert isinstance(closest_section_image_id, int)
 
-    @pytest.mark.parametrize("image_id", EXISTING_IMAGE_IDS[:1])
-    @pytest.mark.parametrize("x", [10])
-    @pytest.mark.parametrize("y", [40])
-    def test_xy_to_pir_API_single(self, image_id, x, y, mocker):
-        """Test that xy to pir API works."""
-
-        # patching
-        fake_response = Mock(spec=requests.Request)
-        fake_response.ok = True
-
-        rv = {
-            "success": True,
-            "id": 0,
-            "start_row": 0,
-            "num_rows": 0,
-            "total_rows": 0,
-            "msg": {
-                "image_to_reference": {
-                    "x": -983.5501122512056,
-                    "y": 335.1538167934086,
-                    "z": 4117.19706627407,
-                }
-            },
-        }
-
-        fake_response.json = Mock(return_value=rv)
-        mocker.patch("requests.get", return_value=fake_response)
-
-        p, i, r = xy_to_pir_API_single(x, y, image_id=image_id)
-
-        # Mock calls
-        assert (
-            fake_response.json.call_count == 1
-        )  # assert_called not available in python 3.5 :(
-
-        assert np.isfinite(p)
-        assert np.isfinite(i)
-        assert np.isfinite(r)
 
     @pytest.mark.internet
     @pytest.mark.parametrize("dataset_id", EXISTING_DATASET_IDS)
