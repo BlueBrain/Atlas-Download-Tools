@@ -62,7 +62,6 @@ class TestInfoSubgroup:
         assert "XDG_CACHE_HOME" in result.output
 
 
-
 class TestDatasetSubgroup:
     def test_running_without_arguments_prints_help(self):
         runner = CliRunner()

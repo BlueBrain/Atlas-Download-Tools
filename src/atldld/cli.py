@@ -58,6 +58,7 @@ def version():
 def cache_dir():
     """Print the location of the global cache directory."""
     import os
+
     from atldld.constants import user_cache_dir
 
     if "XDG_CACHE_HOME" in os.environ:
