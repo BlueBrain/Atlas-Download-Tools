@@ -49,7 +49,7 @@ def xy_to_pir(
         Array of shape `(3, N)` where the first axis contains the
         `x`, `y` and `section_number * section_thickness`. Note that
         both that the `section_number` (image specific) and
-        `section_thickncess` (dataset specific) can be retrieved from the
+        `section_thickness` (dataset specific) can be retrieved from the
         Allen Brain API.
     affine_2d
         Matrix of shape `(2, 3)` representing a 2D affine transformation. It
