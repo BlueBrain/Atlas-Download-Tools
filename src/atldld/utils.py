@@ -102,9 +102,7 @@ def get_image(
     en/latest/allensdk.api.queries.image_download_api.html#allensdk.api.
     queries.image_download_api.ImageDownloadApi>`_
     """
-    folder = folder or user_cache_dir()
-    folder = pathlib.Path(folder)
-    folder.mkdir(exist_ok=True, parents=True)
+    folder = pathlib.Path(folder or user_cache_dir())
 
     # Construct the image file name and the full path
     file_name = f"{image_id}-{downsample}"
