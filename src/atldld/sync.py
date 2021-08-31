@@ -35,10 +35,11 @@ from atldld.utils import (
     xy_to_pir_API_single,
 )
 
+
 def xy_to_pir(
-        coords_img: np.ndarray,
-        affine_2d: np.ndarray,
-        affine_3d: np.ndarray,
+    coords_img: np.ndarray,
+    affine_2d: np.ndarray,
+    affine_3d: np.ndarray,
 ) -> np.ndarray:
     """Transform coordinates from the image space to the reference space.
 
@@ -87,9 +88,9 @@ def xy_to_pir(
 
 
 def pir_to_xy(
-        coords_ref: np.ndarray,
-        affine_2d: np.ndarray,
-        affine_3d: np.ndarray,
+    coords_ref: np.ndarray,
+    affine_2d: np.ndarray,
+    affine_3d: np.ndarray,
 ) -> np.ndarray:
     """Transform coordinates from the image space to the reference space.
 
@@ -137,7 +138,7 @@ def pir_to_xy(
         axis=0,
     ).astype(dtype)
 
-    coords_img  = (affine_2d_ @ affine_3d_) @ coords_ref_
+    coords_img = (affine_2d_ @ affine_3d_) @ coords_ref_
 
     return coords_img
 

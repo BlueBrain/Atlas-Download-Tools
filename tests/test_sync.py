@@ -200,15 +200,13 @@ def test_pir_to_xy(pir_to_xy_response):
             pir_to_xy_response["i"],
             pir_to_xy_response["r"],
         ]
-    )[:, None]  # (3, 1)
+    )[
+        :, None
+    ]  # (3, 1)
 
-
-    coords_img_API = np.array(
-        [
-            pir_to_xy_response["x"],
-            pir_to_xy_response["y"],
-        ]
-    )[:, None]  # We do not care about the section coordinate
+    coords_img_API = np.array([pir_to_xy_response["x"], pir_to_xy_response["y"],])[
+        :, None
+    ]  # We do not care about the section coordinate
 
     coords_img_local = pir_to_xy(
         coords_ref,
@@ -218,15 +216,18 @@ def test_pir_to_xy(pir_to_xy_response):
 
     assert np.allclose(coords_img_API, coords_img_local)
 
+
 def test_xy_to_pir(xy_to_pir_response):
     coords_img = np.array(
         [
             xy_to_pir_response["x"],
             xy_to_pir_response["y"],
-            xy_to_pir_response["section_number"] * xy_to_pir_response["section_thickness"],
+            xy_to_pir_response["section_number"]
+            * xy_to_pir_response["section_thickness"],
         ]
-    )[:, None]  # (3, 1)
-
+    )[
+        :, None
+    ]  # (3, 1)
 
     coords_ref_API = np.array(
         [
