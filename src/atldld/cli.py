@@ -57,9 +57,14 @@ def version():
 )
 def cache_dir():
     """Print the location of the global cache directory."""
+    import os
     from atldld.constants import user_cache_dir
 
-    click.secho("The atldld cache directory is:", fg="green")
+    if "XDG_CACHE_HOME" in os.environ:
+        suffix = " (configured via XDG_CACHE_HOME)"
+    else:
+        suffix = ""
+    click.secho(f"Location of the atldld cache{suffix}:", fg="green")
     click.echo(str(user_cache_dir(create=False).resolve().as_uri()))
 
 
