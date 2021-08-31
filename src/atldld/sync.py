@@ -92,7 +92,7 @@ def pir_to_xy(
     affine_2d: np.ndarray,
     affine_3d: np.ndarray,
 ) -> np.ndarray:
-    """Transform coordinates from the image space to the reference space.
+    """Transform coordinates from the reference space to the image space.
 
     Parameters
     ----------
