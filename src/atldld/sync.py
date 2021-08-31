@@ -35,6 +35,42 @@ from atldld.utils import (
     xy_to_pir_API_single,
 )
 
+def xy_to_pir(coords_img, affine_2d, affine_3d):
+    """Transform coordinates from the image space to the reference space.
+
+    Parameters
+    ----------
+    coords_img : np.ndarray
+        Array of shape `(3, N)` where the first axis contains the
+        `x`, `y` and `section_number * section_thickness`. Note that
+        both that the `section_number` can be retrieved from the
+
+
+    Returns
+    -------
+    coords_ref : np.ndarray
+        Array of shape `(3, N)`.
+
+    """
+    dtype = np.float32
+    n_coords = coords_img.shape[1]
+
+    coords_img_ = np.concatenate([coords_img, np.ones((1, n_coords), dtype=dtype)])
+
+    affine_2d_ = np.array(
+        [
+            [affine_2d[0, 0], affine_2d[0, 1], 0, affine_2d[0, 2]],
+            [affine_2d[1, 0], affine_2d[1, 1], 0, affine_2d[1, 2]],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ],
+        dtype=dtype,
+    )
+    affine_3d_ = affine_3d.astype(dtype)
+    coords_ref = (affine_3d_ @ affine_2d_) @ coords_img_
+
+    return coords_ref
+
 
 def get_parallel_transform(
     slice_coordinate: float,

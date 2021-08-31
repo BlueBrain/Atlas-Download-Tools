@@ -20,7 +20,11 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from atldld.sync import download_parallel_dataset, get_parallel_transform
+from atldld.sync import (
+    download_parallel_dataset,
+    get_parallel_transform,
+    xy_to_pir,
+)
 
 
 class TestGetParallelTransform:
@@ -186,3 +190,30 @@ class TestDownloadParallelDataset:
         assert get_3d_fake.call_count == 1
         assert common_queries_fake.get_axis.call_count == 1
         assert xy_to_pir_fake.call_count == 2
+
+
+def test_xy_to_pir(xy_to_pir_response):
+    coords_img = np.array(
+        [
+            xy_to_pir_response["x"],
+            xy_to_pir_response["y"],
+            xy_to_pir_response["section_number"] * xy_to_pir_response["section_thickness"],
+        ]
+    )[:, None]  # (3, 1)
+
+
+    coords_ref_API = np.array(
+        [
+            xy_to_pir_response["p"],
+            xy_to_pir_response["i"],
+            xy_to_pir_response["r"],
+        ]
+    )[:, None]
+
+    coords_ref_local = xy_to_pir(
+        coords_img,
+        np.array(xy_to_pir_response["affine_2d"]),
+        np.array(xy_to_pir_response["affine_3d"]),
+    )
+
+    assert np.allclose(coords_ref_API, coords_ref_local)

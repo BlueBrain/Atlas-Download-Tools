@@ -25,6 +25,8 @@ import pytest
 DATA_FOLDER = pathlib.Path(__file__).parent / "data"
 PIR_TO_XY_FOLDER = DATA_FOLDER / "sync" / "pir_to_xy"
 PIR_TO_XY_RESPONSES = sorted(PIR_TO_XY_FOLDER.iterdir())
+XY_TO_PIR_FOLDER = DATA_FOLDER / "sync" / "xy_to_pir"
+XY_TO_PIR_RESPONSES = sorted(XY_TO_PIR_FOLDER.iterdir())
 
 
 @pytest.fixture(scope="function")
@@ -46,6 +48,20 @@ def img():
     ids=[p.stem for p in PIR_TO_XY_RESPONSES],
 )
 def pir_to_xy_response(request):
+    path = request.param
+
+    with path.open() as f:
+        data = json.load(f)
+
+    return data
+
+
+@pytest.fixture(
+    scope="session",
+    params=XY_TO_PIR_RESPONSES,
+    ids=[p.stem for p in XY_TO_PIR_RESPONSES],
+)
+def xy_to_pir_response(request):
     path = request.param
 
     with path.open() as f:
