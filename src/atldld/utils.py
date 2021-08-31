@@ -30,7 +30,7 @@ import numpy as np
 import requests
 from PIL import Image
 
-from atldld.constants import user_cache_dir
+from atldld.config import user_cache_dir
 
 
 def abi_get_request(url):

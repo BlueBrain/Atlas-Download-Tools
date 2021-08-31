@@ -15,33 +15,3 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Various constants."""
-import os
-import pathlib
-
-import appdirs
-
-
-def user_cache_dir(create: bool = True) -> pathlib.Path:
-    """Determine currently configured cache directory for atldld.
-
-    Parameters
-    ----------
-    create
-        If true the returned directory will be guaranteed to exist.
-
-    Returns
-    -------
-    pathlib.Path
-        The currently configured cache directory for atldld.
-    """
-    app_name = "atldld"
-    if "XDG_CACHE_HOME" in os.environ:
-        # appdirs reads XDG_CACHE_HOME only on Linux. Make it work for macOS too
-        cache_dir = pathlib.Path(os.environ["XDG_CACHE_HOME"]) / app_name
-    else:
-        cache_dir = pathlib.Path(appdirs.user_cache_dir(app_name))
-    cache_dir = cache_dir.resolve()
-    if create:
-        cache_dir.mkdir(exist_ok=True, parents=True)
-
-    return cache_dir
