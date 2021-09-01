@@ -47,6 +47,13 @@ extras_require = {
     "docs": ["sphinx>=1.3", "sphinx-bluebrain-theme"],
 }
 
+description = "Search, download, and prepare atlas data."
+long_description = """ Among different sources of data, Allen Brain Institute
+hosts a rich database of gene expression images, Nissl volumes, and annotation atlases.
+The Atlas-Download-Tools library can help you to download single section images
+and entire datasets, as well as the corresponding metadata. It can further
+pre-process the image data to place it in the standard reference space."""
+
 setup(
     name="atldld",
     author="Blue Brain Project, EPFL",
@@ -62,4 +69,18 @@ setup(
     install_requires=install_requires,
     extras_require=extras_require,
     entry_points={"console_scripts": ["atldld = atldld.cli:root"]},
+    description=description,
+    long_description=long_description,
+    license="LGPLv3",
+    classifiers=[
+        "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+        "Operating System :: Unix",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3 :: Only",
+    ],
 )
