@@ -48,7 +48,7 @@ def xy_to_pir(
     coords_img
         Array of shape `(3, N)` where the first axis contains the
         `x`, `y` and `section_number * section_thickness`. Note that
-        both that the `section_number` (image specific) and
+        both the `section_number` (image specific) and
         `section_thickness` (dataset specific) can be retrieved from the
         Allen Brain API.
     affine_2d
@@ -103,11 +103,11 @@ def pir_to_xy(
         Matrix of shape `(2, 3)` representing a 2D affine transformation. It
         can be retrieved from the section image metadata via the
         Allen Brain API. More specifically, it is stored under the
-        `trv_**` entries.
+        `tvs_**` entries.
     affine_3d
         Matrix of shape `(3, 4)` representing a 3D affine transformation. It
         can be retrieved from the dataset metadata via the Allen Brain API.
-        More specifically, it is stored under the `tvs_**` entries.
+        More specifically, it is stored under the `trv_**` entries.
 
     Returns
     -------
