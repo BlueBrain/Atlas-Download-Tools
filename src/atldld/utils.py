@@ -528,7 +528,7 @@ def xy_to_pir_API_single(
     xy_param = f"x={x}&y={y}"
 
     # Load the cache file or create it if it doesn't exist
-    cache_file = GLOBAL_CACHE_FOLDER / "image-to-reference" / f"{image_id}.json"
+    cache_file = user_cache_dir() / "image-to-reference" / f"{image_id}.json"
     cached_points: Dict[str, Tuple[float, float, float]]
     if cache_file.exists():
         with cache_file.open() as fp:
