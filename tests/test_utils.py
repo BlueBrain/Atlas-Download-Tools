@@ -15,15 +15,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Test for utils.py module."""
-
+import json
 import pathlib
+import re
 from unittest.mock import Mock
 
 import numpy as np
 import pytest
 import requests
+import responses
 from PIL import Image
 
+from atldld.config import user_cache_dir
 from atldld.utils import (
     CommonQueries,
     get_2d,
@@ -118,41 +121,61 @@ def test_get_corners_in_ref_space(mocker):
 
 
 class TestXyToPirApiSingle:
-    @pytest.mark.parametrize("image_id", EXISTING_IMAGE_IDS[:1])
-    @pytest.mark.parametrize("x", [10])
-    @pytest.mark.parametrize("y", [40])
-    def test_xy_to_pir_API_single(self, image_id, x, y, mocker):
-        """Test that xy to pir API works."""
+    @pytest.mark.internet
+    @pytest.mark.parametrize("image_id", EXISTING_IMAGE_IDS)
+    def test_fetching_online_no_mocking(self, image_id):
+        x, y = np.random.randint(0, 10000, 2)
+        p, i, r = xy_to_pir_API_single(x, y, image_id=image_id)
+        assert np.isfinite(p)
+        assert np.isfinite(i)
+        assert np.isfinite(r)
 
-        # patching
-        fake_response = Mock(spec=requests.Request)
-        fake_response.ok = True
-
+    @responses.activate
+    def test_fetching_online_and_storing_in_cache(self):
+        # Mock the online response
+        image_id = 123
+        x, y = 10, 40
+        pir = (-983.5501122512056, 335.1538167934086, 4117.19706627407)
         rv = {
             "success": True,
             "id": 0,
             "start_row": 0,
-            "num_rows": 0,
-            "total_rows": 0,
-            "msg": {
-                "image_to_reference": {
-                    "x": -983.5501122512056,
-                    "y": 335.1538167934086,
-                    "z": 4117.19706627407,
-                }
-            },
+            "num_rows": 1,
+            "total_rows": 1,
+            "msg": {"image_to_reference": {"x": pir[0], "y": pir[1], "z": pir[2]}},
         }
+        responses.add(responses.GET, re.compile(r".*/image_to_reference/.*"), json=rv)
 
-        fake_response.json = Mock(return_value=rv)
-        mocker.patch("requests.get", return_value=fake_response)
+        # Check the returned value
+        pir_got = xy_to_pir_API_single(x, y, image_id=image_id)
+        assert pir_got == pir
 
-        p, i, r = xy_to_pir_API_single(x, y, image_id=image_id)
+        # Check that the cache is updated
+        cache_file = user_cache_dir() / "image-to-reference" / f"{image_id}.json"
+        assert cache_file.exists()
+        with cache_file.open() as fp:
+            cache_json = json.load(fp)
+        assert cache_json.get(f"x={x}&y={y}") == list(pir)
 
-        # Mock calls
-        fake_response.assert_called_once()
-        assert np.isfinite(p)
-        assert np.isfinite(i)
-        assert np.isfinite(r)
+    @responses.activate
+    def test_reading_from_cache(self):
+        # Because we activated responses but didn't add any response values any
+        # request will raise an error. This way we automatically test that no
+        # requests are sent and the values are obtained offline from the cache
+        image_id = 123
+        x, y = 5, 10
+        pir = 20.5, 13.7, 8.8
+
+        # Prepare the cache file
+        cache_file = user_cache_dir() / "image-to-reference" / f"{image_id}.json"
+        cache_file.parent.mkdir()
+        cache_json = {f"x={x}&y={y}": pir}
+        with cache_file.open("w") as fp:
+            json.dump(cache_json, fp)
+
+        # Run the test
+        pir_got = xy_to_pir_API_single(x, y, image_id=image_id)
+        assert pir_got == pir
 
 
 class TestUtils:
@@ -527,7 +550,6 @@ class TestUtils:
         assert np.isfinite(section_number)
         assert np.isfinite(closest_section_image_id)
         assert isinstance(closest_section_image_id, int)
-
 
     @pytest.mark.internet
     @pytest.mark.parametrize("dataset_id", EXISTING_DATASET_IDS)
