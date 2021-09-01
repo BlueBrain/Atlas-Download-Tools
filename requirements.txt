@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+appdirs==1.4.4
 certifi==2021.5.30
 charset-normalizer==2.0.4
 click==8.0.1

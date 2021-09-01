@@ -14,12 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from atldld.constants import GLOBAL_CACHE_FOLDER, REF_DIM_1UM, REF_DIM_25UM
-
-
-def test_global_cache_folder():
-    assert GLOBAL_CACHE_FOLDER.exists()
-    assert GLOBAL_CACHE_FOLDER.is_dir()
+from atldld.constants import REF_DIM_1UM, REF_DIM_25UM
 
 
 def test_ref_space_dimensions_consistent():

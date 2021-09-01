@@ -51,11 +51,24 @@ class TestInfoSubgroup:
         assert result.exit_code == 0
         assert atldld.__version__ in result.output
 
-    def test_cache_folder_command_works(self):
+    def test_cache_command_works(self):
         runner = CliRunner()
-        result = runner.invoke(info, ["cache-folder"])
+        result = runner.invoke(info, ["cache"])
         assert result.exit_code == 0
-        assert "global cache folder" in result.output.lower()
+        assert "atldld cache" in result.output.lower()
+
+    def test_cache_command_shows_xdg(self, monkeypatch, tmpdir):
+        runner = CliRunner()
+
+        monkeypatch.delenv("XDG_CACHE_HOME")
+        result = runner.invoke(info, ["cache"])
+        assert result.exit_code == 0
+        assert "XDG_CACHE_HOME" not in result.output
+
+        monkeypatch.setenv("XDG_CACHE_HOME", str(tmpdir))
+        result = runner.invoke(info, ["cache"])
+        assert result.exit_code == 0
+        assert "XDG_CACHE_HOME" in result.output
 
 
 class TestDatasetSubgroup:
