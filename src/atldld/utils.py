@@ -25,7 +25,7 @@ operation.
 import json
 import pathlib
 import warnings
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import requests
@@ -527,9 +527,9 @@ def xy_to_pir_API_single(
     """
     xy_param = f"x={x}&y={y}"
 
-    # Load the cache file or create it if it doesn't exist
+    # Load the cache file or create it if it doesn't exist.
+    # The format of the cache is {"x=x_val&y=y_val": [p, i, r]}.
     cache_file = user_cache_dir() / "image-to-reference" / f"{image_id}.json"
-    cached_points: Dict[str, Tuple[float, float, float]]
     if cache_file.exists():
         with cache_file.open() as fp:
             cached_points = json.load(fp)
@@ -553,7 +553,14 @@ def xy_to_pir_API_single(
         with cache_file.open("w") as fp:
             json.dump(cached_points, fp)
 
-    return cached_points[xy_param]
+    # Constructing a tuple explicitly because json.load produces lists of
+    # arbitrary lengths, not tuples of length 3
+    pir = (
+        cached_points[xy_param][0],
+        cached_points[xy_param][1],
+        cached_points[xy_param][2],
+    )
+    return pir
 
 
 class CommonQueries:
