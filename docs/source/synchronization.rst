@@ -27,7 +27,7 @@ transformation.
 
 .. math::
 
-	B_{tvr} = \begin{pmatrix}
+	B_{tvs} = \begin{pmatrix}
 	 b_{1,1} & b_{1,2} & b_{1,3}\\ 
 	 b_{2,1} & b_{2,2} & b_{2,3}\\
 	\end{pmatrix}
