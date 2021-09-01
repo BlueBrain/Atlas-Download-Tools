@@ -214,7 +214,7 @@ def test_pir_to_xy(pir_to_xy_response):
         np.array(pir_to_xy_response["affine_3d"]),
     )[:2]
 
-    assert np.allclose(coords_img_API, coords_img_local)
+    assert np.allclose(coords_img_API, coords_img_local, rtol=0, atol=1e-3)
 
 
 def test_xy_to_pir(xy_to_pir_response):
@@ -243,4 +243,4 @@ def test_xy_to_pir(xy_to_pir_response):
         np.array(xy_to_pir_response["affine_3d"]),
     )
 
-    assert np.allclose(coords_ref_API, coords_ref_local)
+    assert np.allclose(coords_ref_API, coords_ref_local, rtol=0, atol=1e-3)
