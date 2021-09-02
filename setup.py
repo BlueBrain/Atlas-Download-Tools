@@ -48,11 +48,13 @@ extras_require = {
 }
 
 description = "Search, download, and prepare atlas data."
-long_description = """ Among different sources of data, Allen Brain Institute
+long_description = """
+Among different sources of data, Allen Brain Institute
 hosts a rich database of gene expression images, Nissl volumes, and annotation atlases.
 The Atlas-Download-Tools library can help you to download single section images
 and entire datasets, as well as the corresponding metadata. It can further
-pre-process the image data to place it in the standard reference space."""
+pre-process the image data to place it in the standard reference space.
+"""
 
 setup(
     name="atldld",
@@ -71,6 +73,7 @@ setup(
     entry_points={"console_scripts": ["atldld = atldld.cli:root"]},
     description=description,
     long_description=long_description,
+    long_description_content_type="text/x-rst",
     license="LGPLv3",
     classifiers=[
         "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
