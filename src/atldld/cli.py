@@ -15,11 +15,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """The command line interface (CLI) for Atlas-Download-Tools."""
+import logging
 from typing import Any, Dict, Optional, Sequence
 
 import click
 
 import atldld
+
+logger = logging.getLogger(__name__)
 
 
 @click.group(
@@ -218,6 +221,252 @@ def dataset_preview(dataset_id, output_dir):
     click.secho(f"{img_path.resolve().as_uri()}", fg="yellow", bold=True)
 
 
+@click.command(
+    "download-faithful",
+    help="""
+    Download all section images of a given dataset and map them into the
+    reference space.
+    
+    More precisely, the section images are mapped into the 25µm version of the
+    reference space while exactly following the correct image-to-reference
+    synchronization. Hence the name "faithful", as opposed to a "parallel"
+    mapping where the section images end up parallel to one of the reference
+    space axes.
+    
+    Because of the faithful mapping and the fact that section images might
+    present a varying amount of tilt against the slicing axis the mapping into
+    the reference space will distribute the image data of one image across
+    different parallel slices of the reference space.
+    """,
+)
+@click.argument("dataset_id", type=int)
+@click.option(
+    "--input-downsample",
+    "downsample_img",
+    type=int,
+    default=0,
+    help="""
+    The downsampling factor for input section images.
+    
+    This equals the number of times the size of all section images is halved.
+    In other words, for the downsampling factor N the width and height of the
+    input images will be reduced by the factor 2^N.
+    
+    Setting this to a higher value will make the construction of the volume
+    faster at the cost of decreasing the image quality.
+    """,
+)
+@click.option(
+    "--output-scale",
+    "downsample_ref",
+    type=int,
+    default=25,
+    help="""
+    The size of the voxels of the output reference volume in micrometres.
+    """,
+)
+@click.option(
+    "-o",
+    "--output-dir",
+    type=click.Path(file_okay=False, writable=True, resolve_path=True),
+    help="""
+    The output directory for the volume. If not provided the current
+    working directory will be used.
+    """,
+)
+def download_faithful_dataset(dataset_id, output_dir, downsample_img, downsample_ref):
+    import pathlib
+
+    from atldld.constants import REF_DIM_1UM
+    from atldld.utils import get_corners_in_ref_space, get_image
+
+    # Download the dataset metadata
+    meta = get_dataset_meta_or_abort(dataset_id, include=["section_images"])
+    section_thickness = meta["section_thickness"]
+    section_image_meta = meta.pop("section_images")
+
+    # Download the section images
+    click.secho("Downloading the section images...", fg="green")
+    with click.progressbar(section_image_meta) as image_metas:
+        section_images = {
+            image_meta["id"]: get_image(image_meta["id"], downsample=downsample_img)
+            for image_meta in image_metas
+        }
+    click.secho(f"Successfully loaded {len(section_images)} section images", fg="green")
+
+    # Map the section images into the reference volume
+    click.secho("Mapping section images into the reference space volume")
+    volume = np.zeros(tuple(dim // downsample_ref for dim in REF_DIM_1UM))
+    with click.progressbar(section_image_meta) as image_metas:
+        for image_meta in image_metas:
+            corners = get_corners_in_ref_space(
+                image_meta["id"],
+                image_meta["image_width"],
+                image_meta["image_height"],
+            )
+            image = section_images[image_meta["id"]]
+            out, out_bbox = get_true_ref_image(
+                image,
+                corners,
+                section_thickness_um=section_thickness,
+                downsample_img=downsample_img,
+                downsample_ref=downsample_ref,
+            )
+            insert_subvolume(volume, out, out_bbox)
+
+    # Save the volume to disk
+    click.secho("Saving...", fg="green")
+    volume_file_name = f"dataset-id-{dataset_id}-faithful-downsample-{downsample_img}-scale-{downsample_ref}.npy"
+    if output_dir is None:
+        volume_path = pathlib.Path.cwd() / volume_file_name
+    else:
+        volume_path = pathlib.Path(output_dir) / volume_file_name
+        volume_path.parent.mkdir(exist_ok=True, parents=True)
+    np.save(str(volume_path), volume)
+    click.secho("Volume was saved in ", fg="green", nl=False)
+    click.secho(f"{volume_path.resolve().as_uri()}", fg="yellow", bold=True)
+
+
+import numpy as np
+from scipy import ndimage
+from skimage.color import rgb2gray
+
+
+def get_bbox(points):
+    """Get the bounding box for a sequence of points.
+
+    Parameters
+    ----------
+    points : np.ndarray or sequence
+        The points in an d-dimensional space. Shape should be (n_points, d)
+
+    Returns
+    -------
+    np.ndarray
+        Array with semi-open intervals `[min, max)` for each axis representing
+        the bounding box for all points. The shape of the array is (2, d).
+    """
+    mins = np.floor(np.min(points, axis=0))
+    maxs = np.ceil(np.max(points, axis=0)) + 1
+
+    return np.stack([mins, maxs]).astype(int)
+
+
+def bbox_meshgrid(bbox):
+    slices = tuple(slice(start, stop) for start, stop in bbox.T)
+
+    return np.mgrid[slices]
+
+
+def get_true_ref_image(
+    image, corners, section_thickness_um=25, downsample_img=0, downsample_ref=25
+):
+    from atldld.maths import find_shearless_3d_affine
+
+    # skip image download and corner queries because it would take too long.
+    # instead pre-compute them and take them as parameters for now
+    # image = aibs.get_image(image_id)
+    # corners = get_ref_corners(image_id, image)
+    # map corners from the 1µm reference space scale to the given one
+    corners = corners / downsample_ref
+
+    # compute the affine transformation from the first three corner coordinates
+    ny, nx = image.shape[:2]
+    p_to = np.array(
+        [
+            (0, 0, 0),
+            (nx, 0, 0),
+            (nx, ny, 0),
+        ]
+    )
+    p_from = corners[:3]
+    affine = find_shearless_3d_affine(p_from, p_to)
+
+    # Create the meshgrid
+    out_bbox = get_bbox(corners)
+    meshgrid = bbox_meshgrid(out_bbox)
+
+    # Convert the affine transformation to displacements
+    linear = affine[:3, :3]
+    translation = affine[:3, 3]
+    coords = np.tensordot(linear, meshgrid, axes=(1, 0)) + np.expand_dims(
+        translation, axis=(1, 2, 3)
+    )
+
+    # Use the grayscale version for mapping. Originals have white background,
+    # invert to have black one
+    # TODO: support RGB
+    input_img = 1 - rgb2gray(image)
+
+    # Rotate to convert from "ij" coordinates to "xy"
+    input_img = np.rot90(input_img, 3)
+
+    # Add the z-axis
+    input_img = np.expand_dims(input_img, axis=2)
+
+    # Correctly take into account the scaling along the slicing axis. The affine
+    # transformation is computed from the dimensions of the full-resolution
+    # section images, so the scale along the section axis is the same as along
+    # the other axes, namely 1µm. We rescale the values for the section axis
+    # to take into account the true section thickness as well as the
+    # downsampling of the input images.
+    coords[2] = coords[2] * 2 ** downsample_img / section_thickness_um
+
+    # Add padding to the z-coordinate to allow for interpolation
+    pad = 3
+    input_img = np.pad(input_img, ((0, 0), (0, 0), (pad, pad)))
+    coords[2] += pad
+
+    # Apply the transformation
+    out = ndimage.map_coordinates(input_img, coords, prefilter=False)
+
+    # Rotate to convert from "xy" coordinates to "ij"
+    out = np.rot90(out)
+
+    # Transpose to get from ipr to pir
+    out = out.transpose((1, 0, 2))
+
+    return out, out_bbox
+
+
+def bbox_to_slices(bbox, subset_bbox):
+    starts = subset_bbox[0] - bbox[0]
+    ends = subset_bbox[1] - bbox[0]
+    slices = tuple(slice(start, end) for start, end in zip(starts, ends))
+
+    return slices
+
+
+def insert_subvolume(volume, subvolume, subvolume_bbox):
+    # Bounding box of the volume, lower bounds are zeros by definition
+    volume_bbox = np.stack([(0, 0, 0), volume.shape])
+
+    # The data bounding box is the intersection of the volume and sub-volume
+    # bounding boxes
+    data_bbox = np.stack(
+        [
+            np.max([subvolume_bbox[0], volume_bbox[0]], axis=0),
+            np.min([subvolume_bbox[1], volume_bbox[1]], axis=0),
+        ]
+    )
+    if not np.all(data_bbox[1] - data_bbox[0] > 0):
+        logger.warning(
+            "The volume and sub-volume don't intersect!\n"
+            f"Volume bounding box:\n{volume_bbox}\n"
+            f"Sub-volume bounding box:\n{subvolume_bbox}"
+        )
+        return
+
+    # Convert bounding boxes to array slices
+    subvolume_slices = bbox_to_slices(subvolume_bbox, data_bbox)
+    volume_slices = bbox_to_slices(volume_bbox, data_bbox)
+
+    volume[volume_slices] = np.max(
+        [volume[volume_slices], subvolume[subvolume_slices]], axis=0
+    )
+
+
 root.add_command(dataset)
 dataset.add_command(dataset_info)
 dataset.add_command(dataset_preview)
+dataset.add_command(download_faithful_dataset)
