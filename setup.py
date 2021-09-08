@@ -29,7 +29,6 @@ install_requires = [
     "pandas",
     "requests",
     "scikit-image",
-    "tqdm",
 ]
 extras_require = {
     "dev": [

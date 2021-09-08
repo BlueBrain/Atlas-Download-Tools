@@ -71,82 +71,8 @@ def cache_dir():
     click.secho(f"Location of the atldld cache{suffix}:", fg="green")
     click.echo(str(user_cache_dir(create=False).resolve().as_uri()))
 
-@click.command()
-@click.argument("dataset_id", type=str)
-@click.argument("output_folder",
-    type=click.Path(
-        exists=False,
-        dir_okay=True,
-        path_type=pathlib.Path
-        )
-    )
-@click.option(
-    "--downsample-ref",
-    type=int,
-    default=25,
-    show_default=True,
-    help="Downsampling coefficient for the reference space. Determines the size "
-    "of the synchronized image."
-)
-@click.option(
-    "--downsample-img",
-    type=int,
-    default=0,
-    show_default=True,
-    help="Downsampling coefficient for the image download."
-)
-def download(
-    dataset_id,
-    output_folder,
-    downsample_ref,
-    downsample_img
-):
-    """Download and synchronize an entire section dataset."""
-
-    import json
-
-    import matplotlib.pyplot as plt
-    import tqdm
-
-    from atldld.sync import download_parallel_dataset
-
-    # Prepare paths
-    if not output_folder.exists():
-        output_folder.mkdir(parents=True)
-    metadata_path = output_folder / "metadata.json"
-
-    gen = download_parallel_dataset(
-        dataset_id,
-        downsample_ref=downsample_ref,
-        downsample_img=downsample_img,
-    )
-
-    metadata = {
-        "dataset_id": dataset_id,
-        "downsample_ref": downsample_ref,
-        "downsample_img": downsample_img,
-        "per_image": {},
-    }
-
-    for image_id, section_coordinate, img, df in tqdm.tqdm(gen):
-        img_synced = df.warp(img)
-        img_path = output_folder / f"{image_id}.png"
-        plt.imsave(str(img_path), img_synced)  # stores alpha channel
-
-        metadata["per_image"][image_id] = {
-            "section_coordinate": section_coordinate,
-        }
-
-
-    with metadata_path.open("w") as f:
-        json.dump(metadata, f, indent=4)
-
-
-
-
 
 root.add_command(info)
-root.add_command(download)
 info.add_command(version)
 info.add_command(cache_dir)
 
@@ -242,6 +168,68 @@ def dataset_info(dataset_id):
     click.secho(textwrap.dedent(output).strip(), fg="green")
 
 
+@click.command("download", help="Download and synchronize an entire section dataset")
+@click.argument("dataset_id", type=str)
+@click.argument(
+    "output_folder",
+    type=click.Path(exists=False, dir_okay=True, path_type=pathlib.Path),
+)
+@click.option(
+    "--downsample-ref",
+    type=int,
+    default=25,
+    show_default=True,
+    help="Downsampling coefficient for the reference space. Determines the size "
+    "of the synchronized image.",
+)
+@click.option(
+    "--downsample-img",
+    type=int,
+    default=0,
+    show_default=True,
+    help="Downsampling coefficient for the image download.",
+)
+def dataset_download(dataset_id, output_folder, downsample_ref, downsample_img):
+    """Download and synchronize an entire section dataset."""
+
+    import json
+
+    import matplotlib.pyplot as plt
+
+    from atldld.sync import download_parallel_dataset
+
+    # Prepare paths
+    if not output_folder.exists():
+        output_folder.mkdir(parents=True)
+    metadata_path = output_folder / "metadata.json"
+
+    gen = download_parallel_dataset(
+        dataset_id,
+        downsample_ref=downsample_ref,
+        downsample_img=downsample_img,
+    )
+
+    metadata = {
+        "dataset_id": dataset_id,
+        "downsample_ref": downsample_ref,
+        "downsample_img": downsample_img,
+        "per_image": {},
+    }
+
+    with click.progressbar(gen) as progress:
+        for image_id, section_coordinate, img, df in progress:
+            img_synced = df.warp(img, c=img[0, 0].tolist())
+            img_path = output_folder / f"{image_id}.png"
+            plt.imsave(str(img_path), img_synced)  # stores alpha channel
+
+            metadata["per_image"][image_id] = {
+                "section_coordinate": section_coordinate,
+            }
+
+    with metadata_path.open("w") as f:
+        json.dump(metadata, f, indent=4)
+
+
 @click.command("preview", help="Plot a preview of dataset slices")
 @click.argument("dataset_id", type=int)
 @click.option(
@@ -295,4 +283,5 @@ def dataset_preview(dataset_id, output_dir):
 
 root.add_command(dataset)
 dataset.add_command(dataset_info)
+dataset.add_command(dataset_download)
 dataset.add_command(dataset_preview)
