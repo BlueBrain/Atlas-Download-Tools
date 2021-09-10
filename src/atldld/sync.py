@@ -55,11 +55,11 @@ def xy_to_pir(
         Matrix of shape `(2, 3)` representing a 2D affine transformation. It
         can be retrieved from the section image metadata via the
         Allen Brain API. More specifically, it is stored under the
-        `tvr_**` entries.
+        `tsv_**` entries.
     affine_3d
         Matrix of shape `(3, 4)` representing a 3D affine transformation. It
         can be retrieved from the dataset metadata via the Allen Brain API.
-        More specifically, it is stored under the `tsv_**` entries.
+        More specifically, it is stored under the `tvr_**` entries.
 
     Returns
     -------
