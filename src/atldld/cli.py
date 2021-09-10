@@ -189,10 +189,23 @@ def dataset_info(dataset_id):
     show_default=True,
     help="Downsampling coefficient for the image download.",
 )
-def dataset_download(dataset_id, output_folder, downsample_ref, downsample_img):
+@click.option(
+    "-e",
+    "--include-expression",
+    is_flag=True,
+    help="Include expression image.",
+)
+def dataset_download(
+    dataset_id,
+    output_folder,
+    downsample_ref,
+    downsample_img,
+    include_expression,
+):
     """Download and synchronize an entire section dataset."""
 
     import json
+    import textwrap
 
     import matplotlib.pyplot as plt
 
@@ -207,8 +220,26 @@ def dataset_download(dataset_id, output_folder, downsample_ref, downsample_img):
         dataset_id,
         downsample_ref=downsample_ref,
         downsample_img=downsample_img,
+        include_expression=include_expression,
     )
+    cli_input = f"""
+    Dataset ID               : {dataset_id}
+    Dowsample reference      : {downsample_ref}
+    Dowsample image          : {downsample_img}
+    Include expression       : {include_expression}
+    Output folder            : {output_folder}
+    """
+    click.secho(textwrap.dedent(cli_input).strip(), fg="blue")
+
     downloader.fetch_metadata()
+    n_images = len(downloader)
+
+    additional_info = f"""
+    Number of section images : {n_images}
+    Section thickness        : {downloader.metadata["dataset"]["section_thickness"]}µm
+    Plane of section         : {downloader.metadata["dataset"]["plane_of_section_id"]}
+    """
+    click.secho(textwrap.dedent(additional_info).strip(), fg="green")
 
     metadata = {
         "dataset_id": dataset_id,
@@ -217,11 +248,17 @@ def dataset_download(dataset_id, output_folder, downsample_ref, downsample_img):
         "per_image": {},
     }
 
-    with click.progressbar(downloader.run(), length=len(downloader)) as progress:
+    with click.progressbar(downloader.run(), length=n_images) as progress:
         for image_id, section_coordinate, img, img_expr, df in progress:
             img_synced = df.warp(img, c=img[0, 0].tolist())
+
             img_path = output_folder / f"{image_id}.png"
-            plt.imsave(str(img_path), img_synced)  # stores alpha channel
+            plt.imsave(str(img_path), img_synced)
+
+            if img_expr is not None:
+                img_expr_synced = df.warp(img_expr)
+                img_expr_path = output_folder / f"{image_id}_expr.png"
+                plt.imsave(str(img_expr_path), img_expr_synced)
 
             metadata["per_image"][image_id] = {
                 "section_coordinate": section_coordinate,
