@@ -27,13 +27,11 @@ from typing import Generator, Tuple, Union
 import numpy as np
 
 from atldld.base import DisplacementField
+from atldld.constants import AFFINE_TEMPLATES
 from atldld.utils import (
-    CommonQueries,
-    get_2d_bulk,
-    get_3d,
     get_image,
-    xy_to_pir_API_single,
 )
+from atldld.requests import RMAParameters, rma_all
 
 
 def xy_to_pir(
@@ -277,6 +275,10 @@ def download_parallel_dataset(
         dataset_id,
         ref2inp=True,
     )
+    metadata_2d_dict = get_2d_bulk(
+        dataset_id,
+        ref2inp=False,
+    )
     metadata_2d = sorted(
         [
             (image_id, affine_2d, section_number)
@@ -293,7 +295,7 @@ def download_parallel_dataset(
     axis = CommonQueries.get_axis(dataset_id)
 
     for image_id, affine_2d, _ in metadata_2d:
-        p, i, r = xy_to_pir_API_single(*detection_xy, image_id=image_id)
+        p, i, r = xy_to_pir(*detection_xy, image_id=image_id)
         slice_ref_coordinate = p if axis == "coronal" else r
 
         df = get_parallel_transform(
@@ -316,3 +318,145 @@ def download_parallel_dataset(
                 downsample=downsample_img,
             )
             yield image_id, slice_ref_coordinate, img, df, img_expression
+
+
+class DatasetDownloader:
+    def __init__(
+        self,
+        dataset_id: int,
+        downsample_ref: int = 25,
+        detection_xy: Tuple[float, float] = (0, 0),
+        include_expression: bool = False,
+        downsample_img: int = 0,
+    ):
+        self.dataset_id = dataset_id
+        self.downsample_ref = downsample_ref
+        self.detection_xy = detection_xy
+        self.include_expression = include_expression
+        self.downsample_img = downsample_img
+
+        self.metadata = None  # populated by calling `fetch_metadata`
+
+    def __len__(self):
+        return len(self.metadata["images"])
+
+
+    def fetch_metadata(
+        self,
+        force_redownload: bool = False,
+    ):
+        if self.metadata is not None and not force_redownload:
+            return
+
+        # Initialize metadata
+        metadata = {}
+
+        # Prepare query parameters
+        parameters_dataset = RMAParameters(
+            model="SectionDataSet",
+            criteria={
+                "id": self.dataset_id,
+            },
+            include=["alignment3d"],
+        )
+        parameters_images = RMAParameters(
+            model="SectionImage",
+            criteria={
+                "data_set_id": self.dataset_id,
+            },
+            include=["alignment2d"],
+        )
+
+        # Query the API
+        r_dataset = rma_all(parameters_dataset)[0]
+        r_images = rma_all(parameters_images)
+
+        # Extract relevant information
+        def extract_template(data, name):
+            template = np.array(AFFINE_TEMPLATES[name])
+            key = "alignment2d" if name in {"tsv", "tvs"} else "alignment3d"
+            return np.vectorize(lambda x: data[key][x])(template)
+
+        metadata["dataset"] = {
+            "id": r_dataset["id"],
+            "affine_tvr": extract_template(r_dataset, "tvr"),
+            "affine_trv": extract_template(r_dataset, "trv"),
+            "plane_of_section_id": r_dataset["plane_of_section_id"],
+            "section_thickness": r_dataset["section_thickness"],
+        }
+
+        metadata["images"] = []
+        for r_image in r_images:
+            metadata["images"].append(
+                {
+                    "id": r_image["id"],
+                    "affine_tsv": extract_template(r_image, "tsv"),
+                    "affine_tvs": extract_template(r_image, "tvs"),
+                    "section_number": r_image["section_number"],
+                }
+            )
+
+        metadata["images"].sort(key=lambda x: -x["section_number"])
+
+        self.metadata = metadata
+
+    def run(self):
+        if self.metadata is None:
+            raise ValueError("The metadata is empty. Please run `fetch_metadata`")
+
+        metadata_images = self.metadata["images"]
+        metadata_dataset = self.metadata["dataset"]
+
+        detection_xy = np.array(self.detection_xy)[:, None]
+
+        if metadata_dataset["plane_of_section_id"] == 1:
+            slice_coordinate_ix = 0
+            axis = "coronal"
+        elif metadata_dataset["plane_of_section_id"] == 2:
+            slice_coordinate_ix = 2
+            axis = "sagittal"
+        else:
+            raise ValueError
+
+        for metadata_image in metadata_images:
+            z = metadata_dataset["section_thickness"] * metadata_image["section_number"]
+            detection_xy = np.array(
+                [
+                    [detection_xy[0]],
+                    [detection_xy[1]],
+                    [z],
+                ],
+                dtype=np.float32,
+            )
+            detection_pir = xy_to_pir(
+                detection_xy,
+                affine_2d=metadata_image["affine_tsv"],
+                affine_3d=metadata_dataset["affine_tvr"],
+            )
+            slice_coordinate = detection_pir[slice_coordinate_ix, 0].item()
+
+            df = get_parallel_transform(
+                slice_coordinate,
+                affine_2d=metadata_image["affine_tvs"],
+                affine_3d=metadata_dataset["affine_trv"],
+                downsample_ref=self.downsample_ref,
+                axis=axis,
+                downsample_img=self.downsample_img,
+            )
+
+            image_id = metadata_image["id"]
+            img = get_image(
+                image_id,
+                downsample=self.downsample_img,
+            )
+
+            if self.include_expression:
+                img_expression = get_image(
+                    image_id,
+                    expression=True,
+                    downsample=self.downsample_img,
+                )
+            else:
+                img_expression = None
+
+            yield image_id, slice_coordinate, img, img_expression, df

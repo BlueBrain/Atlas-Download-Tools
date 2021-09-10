@@ -196,18 +196,19 @@ def dataset_download(dataset_id, output_folder, downsample_ref, downsample_img):
 
     import matplotlib.pyplot as plt
 
-    from atldld.sync import download_parallel_dataset
+    from atldld.sync import DatasetDownloader
 
     # Prepare paths
     if not output_folder.exists():
         output_folder.mkdir(parents=True)
     metadata_path = output_folder / "metadata.json"
 
-    gen = download_parallel_dataset(
+    downloader = DatasetDownloader(
         dataset_id,
         downsample_ref=downsample_ref,
         downsample_img=downsample_img,
     )
+    downloader.fetch_metadata()
 
     metadata = {
         "dataset_id": dataset_id,
@@ -216,8 +217,8 @@ def dataset_download(dataset_id, output_folder, downsample_ref, downsample_img):
         "per_image": {},
     }
 
-    with click.progressbar(gen) as progress:
-        for image_id, section_coordinate, img, df in progress:
+    with click.progressbar(downloader.run(), length=len(downloader)) as progress:
+        for image_id, section_coordinate, img, img_expr, df in progress:
             img_synced = df.warp(img, c=img[0, 0].tolist())
             img_path = output_folder / f"{image_id}.png"
             plt.imsave(str(img_path), img_synced)  # stores alpha channel
