@@ -28,10 +28,8 @@ import numpy as np
 
 from atldld.base import DisplacementField
 from atldld.constants import AFFINE_TEMPLATES
-from atldld.utils import (
-    get_image,
-)
 from atldld.requests import RMAParameters, rma_all
+from atldld.utils import get_image
 
 
 def xy_to_pir(
@@ -208,37 +206,8 @@ def get_parallel_transform(
     return df
 
 
-def download_parallel_dataset(
-    dataset_id: int,
-    downsample_ref: int = 25,
-    detection_xy: Tuple[float, float] = (0, 0),
-    include_expression: bool = False,
-    downsample_img: int = 0,
-) -> Generator[
-    Union[
-        Tuple[int, float, np.ndarray, DisplacementField],
-        Tuple[int, float, np.ndarray, DisplacementField, np.ndarray],
-    ],
-    None,
-    None,
-]:
-    """Download entire dataset.
-
-    This function performs the following steps:
-
-    1. Get metadata for the entire dataset (e.g. `affine_3d`)
-    2. Get metadata for all images inside of the dataset (e.g. `affine_2d`)
-    3. For each image in the dataset do the following
-
-        a. Query the API to get the `p, i, r` coordinates of the `detection_xy`.
-        b. One of the `p, i, r` will become the `slice_coordinate`. For
-           coronal datasets it is the `p` and for sagittal ones it is the `r`.
-           In other words we assume that the slice is parallel to
-           one of the axes.
-        c. Use `get_parallel_transform` to get a full mapping between the
-           reference space and the image.
-        d. Download the image (+ potentially the expression image)
-        e. Yield result (order derived from section numbers - highest first)
+class DatasetDownloader:
+    """Class to download an entire dataset.
 
     Parameters
     ----------
@@ -258,69 +227,8 @@ def download_parallel_dataset(
     downsample_img
         The downloaded image will have both the height and the width
         downsampled by `2 ** downsample_img`.
-
-    Returns
-    -------
-    res_dict : generator
-        Generator yielding consecutive four tuples of
-        (image_id, constant_ref_coordinate, img, df).
-        The `constant_ref_coordinate` is the dimension in the given axis in microns.
-        The `img` is the raw gene expression image with dtype `uint8`.
-        The `df` is the displacement field.
-        Note that the sorting. If `include_expression=True` then last returned image
-        is the processed expression image.
-        That is the generator yield (image_id, p, img, df, img_expr).
     """
-    metadata_2d_dict = get_2d_bulk(
-        dataset_id,
-        ref2inp=True,
-    )
-    metadata_2d_dict = get_2d_bulk(
-        dataset_id,
-        ref2inp=False,
-    )
-    metadata_2d = sorted(
-        [
-            (image_id, affine_2d, section_number)
-            for image_id, (affine_2d, section_number) in metadata_2d_dict.items()
-        ],
-        key=lambda x: -int(x[2]),  # we use section_number for sorting
-    )
 
-    affine_3d = get_3d(
-        dataset_id,
-        ref2inp=True,
-        return_meta=False,
-    )
-    axis = CommonQueries.get_axis(dataset_id)
-
-    for image_id, affine_2d, _ in metadata_2d:
-        p, i, r = xy_to_pir(*detection_xy, image_id=image_id)
-        slice_ref_coordinate = p if axis == "coronal" else r
-
-        df = get_parallel_transform(
-            slice_ref_coordinate,
-            affine_2d,
-            affine_3d,
-            downsample_ref=downsample_ref,
-            axis=axis,
-            downsample_img=downsample_img,
-        )
-
-        img = get_image(image_id, downsample=downsample_img)
-
-        if not include_expression:
-            yield image_id, slice_ref_coordinate, img, df
-        else:
-            img_expression = get_image(
-                image_id,
-                expression=True,
-                downsample=downsample_img,
-            )
-            yield image_id, slice_ref_coordinate, img, df, img_expression
-
-
-class DatasetDownloader:
     def __init__(
         self,
         dataset_id: int,
@@ -338,13 +246,25 @@ class DatasetDownloader:
         self.metadata = None  # populated by calling `fetch_metadata`
 
     def __len__(self):
+        """Return the number of images in the dataset."""
         return len(self.metadata["images"])
-
 
     def fetch_metadata(
         self,
         force_redownload: bool = False,
     ):
+        """Fetch metadata of the dataset.
+
+        This function performs the following steps:
+        1. Get metadata for the entire dataset (e.g. `affine_3d`)
+        2. Get metadata for all images inside of the dataset (e.g. `affine_2d`)
+
+        Parameters
+        ----------
+        force_redownload
+            If yes, force to redownload the metadata. Otherwise, if
+            the metadata have been computed once, they are not computed again.
+        """
         if self.metadata is not None and not force_redownload:
             return
 
@@ -400,7 +320,42 @@ class DatasetDownloader:
 
         self.metadata = metadata
 
-    def run(self):
+    def run(
+        self,
+    ) -> Generator[
+        Union[
+            Tuple[int, float, np.ndarray, DisplacementField],
+            Tuple[int, float, np.ndarray, DisplacementField, np.ndarray],
+        ],
+        None,
+        None,
+    ]:
+        """Download entire dataset.
+
+        For each image in the dataset, this function performs the following steps:
+
+            1. Query the API to get the `p, i, r` coordinates of the `detection_xy`.
+            2. One of the `p, i, r` will become the `slice_coordinate`. For
+               coronal datasets it is the `p` and for sagittal ones it is the `r`.
+               In other words we assume that the slice is parallel to
+               one of the axes.
+            3. Use `get_parallel_transform` to get a full mapping between the
+               reference space and the image.
+            4. Download the image (+ potentially the expression image)
+            5. Yield result (order derived from section numbers - highest first)
+
+        Returns
+        -------
+        res_dict : generator
+            Generator yielding consecutive four tuples of
+            (image_id, constant_ref_coordinate, img, df).
+            The `constant_ref_coordinate` is the dimension in the given axis in microns.
+            The `img` is the raw gene expression image with dtype `uint8`.
+            The `df` is the displacement field.
+            Note that the sorting. If `include_expression=True` then last returned image
+            is the processed expression image.
+            That is the generator yield (image_id, p, img, df, img_expr).
+        """
         if self.metadata is None:
             raise ValueError("The metadata is empty. Please run `fetch_metadata`")
 

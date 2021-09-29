@@ -203,7 +203,6 @@ def dataset_download(
     include_expression,
 ):
     """Download and synchronize an entire section dataset."""
-
     import json
     import textwrap
 
