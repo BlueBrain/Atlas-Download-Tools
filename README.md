@@ -78,19 +78,6 @@ from atldld.utils import get_experiment_list_from_gene
 dataset_ids = get_experiment_list_from_gene("Pvalb", axis='sagittal')
 ```
 
-- One can obtain metadata of a dataset:
-```python
-from atldld.sync import DatasetDownloader
-downloader = DatasetDownloader(dataset_id=DATASET_ID, **kwargs)
-downloader.fetch_metadata()
-# One can then obtain the axis of the dataset (1) for coronal and (2) sagittal
-plane_of_section = downloader.metadata["plane_of_section_id"]
-# One can know the number of images of the dataset
-n_images = len(downloader.metadata["images"])
-# One can extract 3D matrix of the dataset
-matrix_3d = downloader.metadata["affine_trv"]
-```
-
 - One can download any dataset from a dataset ID:
 ```python
 from atldld.sync import DatasetDownloader
@@ -103,7 +90,16 @@ image_id, section_number, img, img_exp, df = next(dataset)
 Note that this functionality makes a simplifying assumption that
 the slices are perfectly parallel to one of the 3 axes.
 
-
+- One can obtain metadata of a dataset:
+```python
+from atldld.utils import CommonQueries, get_3d
+# The axis {'sagittal', 'coronal'}
+axis = CommonQueries.get_axis(dataset_id=DATASET_ID)
+# The reference space
+ref_space = CommonQueries.get_reference_space(dataset_id=DATASET_ID)
+# The 3d transformation of the dataset
+matrix_3d = get_3d(dataset_id=DATASET_ID)
+```
 
 ## Funding & Acknowledgment
 
