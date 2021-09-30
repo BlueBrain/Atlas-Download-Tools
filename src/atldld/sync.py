@@ -319,7 +319,7 @@ class DatasetDownloader:
             )
 
         images.sort(key=lambda x: -x["section_number"])  # type: ignore
-        metadata["images"] = images
+        metadata["images"] = images  # type: ignore[assignment]
         self.metadata = metadata
 
     def run(
