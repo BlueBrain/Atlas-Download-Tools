@@ -63,8 +63,19 @@ All functionality can be accessed through the `atldld` command and its
 sub-commands. For example:
 ```bash
 $ atldld
+
+# Information about the version of atldld
 $ atldld info version
 $ atldld info version --help
+# Information about the cache folder 
+$ atldld info cache
+```
+
+One can also obtain dataset and dataset information through the CLI.
+```bash
+$ atldld dataset info $DATASET_ID
+$ atldld dataset preview $DATASET_ID
+$ atldld dataset download $DATASET_ID
 ```
 For further information please refer to the help part of the corresponding
 command.
