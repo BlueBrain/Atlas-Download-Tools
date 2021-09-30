@@ -79,12 +79,14 @@ generator. Each iteration then yields
 
 .. testcode::
 
-    from atldld.sync import download_parallel_dataset
+    from atldld.sync import DatasetDownloader
 
     dataset_id = 909
-    data_gen = download_parallel_dataset(dataset_id, downsample_ref=25)
+    downloader = DatasetDownloader(dataset_id, downsample_ref=25)
+    downloader.fetch_metadata()
+    data_gen = downloader.run()
 
-    image_id, p, img, df = next(iter(data_gen))
+    image_id, p, img, img_expression, df = next(iter(data_gen))
     img_reg = df.warp(img)
 
 To register the image one simply warps the original image with the displacement field. Let us list a few important
