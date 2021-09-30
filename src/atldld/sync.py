@@ -318,7 +318,7 @@ class DatasetDownloader:
                 }
             )
 
-        images.sort(key=lambda x: -x["section_number"])
+        images.sort(key=lambda x: -x["section_number"])  # type: ignore
         metadata["images"] = images
         self.metadata = metadata
 
