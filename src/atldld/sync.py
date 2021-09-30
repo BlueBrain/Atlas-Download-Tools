@@ -22,7 +22,7 @@ See the module `atldld.utils.py` for lower level
 functions that are called within this module.
 """
 
-from typing import Generator, Tuple, Union
+from typing import Any, Dict, Generator, Optional, Tuple
 
 import numpy as np
 
@@ -243,16 +243,19 @@ class DatasetDownloader:
         self.include_expression = include_expression
         self.downsample_img = downsample_img
 
-        self.metadata = None  # populated by calling `fetch_metadata`
+        self.metadata: Dict[str, Any] = {}
+        # populated by calling `fetch_metadata`
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of images in the dataset."""
+        if "images" not in self.metadata:
+            self.fetch_metadata()
         return len(self.metadata["images"])
 
     def fetch_metadata(
         self,
         force_redownload: bool = False,
-    ):
+    ) -> None:
         """Fetch metadata of the dataset.
 
         This function performs the following steps:
@@ -265,7 +268,7 @@ class DatasetDownloader:
             If yes, force to redownload the metadata. Otherwise, if
             the metadata have been computed once, they are not computed again.
         """
-        if self.metadata is not None and not force_redownload:
+        if self.metadata != {} and not force_redownload:
             return
 
         # Initialize metadata
@@ -286,7 +289,6 @@ class DatasetDownloader:
             },
             include=["alignment2d"],
         )
-
         # Query the API
         r_dataset = rma_all(parameters_dataset)[0]
         r_images = rma_all(parameters_images)
@@ -305,9 +307,9 @@ class DatasetDownloader:
             "section_thickness": r_dataset["section_thickness"],
         }
 
-        metadata["images"] = []
+        images = []
         for r_image in r_images:
-            metadata["images"].append(
+            images.append(
                 {
                     "id": r_image["id"],
                     "affine_tsv": extract_template(r_image, "tsv"),
@@ -316,17 +318,14 @@ class DatasetDownloader:
                 }
             )
 
-        metadata["images"].sort(key=lambda x: -x["section_number"])
-
+        images.sort(key=lambda x: -x["section_number"])
+        metadata["images"] = images
         self.metadata = metadata
 
     def run(
         self,
     ) -> Generator[
-        Union[
-            Tuple[int, float, np.ndarray, DisplacementField],
-            Tuple[int, float, np.ndarray, DisplacementField, np.ndarray],
-        ],
+        Tuple[int, float, np.ndarray, Optional[np.ndarray], DisplacementField],
         None,
         None,
     ]:

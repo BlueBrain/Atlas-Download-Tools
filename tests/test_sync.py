@@ -15,17 +15,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Test for sync.py module."""
-from unittest.mock import Mock
-
 import numpy as np
 import pytest
+import responses
+from PIL import Image
 
-from atldld.sync import (
-    download_parallel_dataset,
-    get_parallel_transform,
-    pir_to_xy,
-    xy_to_pir,
-)
+from atldld.sync import DatasetDownloader, get_parallel_transform, pir_to_xy, xy_to_pir
 
 
 class TestGetParallelTransform:
@@ -92,56 +87,54 @@ class TestGetParallelTransform:
         assert y_pred == pytest.approx(y, abs=1e-2)
 
 
-class TestDownloadParallelDataset:
-    @pytest.mark.parametrize("include_expression", [True, False])
-    @pytest.mark.parametrize("downsample_ref", [25, 50])
-    @pytest.mark.parametrize("axis", ["coronal", "sagittal"])
-    def test_patched(self, include_expression, downsample_ref, axis, monkeypatch):
-        """Does not requires internet, everything is patched.
-
-        The only thing that is unpatched is the `get_transform_simple`.
-        """
+class TestDatasetDownloader:
+    @responses.activate
+    def test_patched(self, data_folder, custom_cache_dir):
+        """Does not requires internet, everything is patched."""
 
         # Parameters
-        dataset_id = 12345
+        dataset_id = 123
+        include_expression = False
+        downsample_ref = 25
+        axis = "sagittal"
 
-        # Mocking
-        get_2d_bulk_fake = Mock(
-            return_value={
-                11111: (np.ones((2, 3)), 20),
-                22222: (np.ones((2, 3)), 50),
-            }
+        # Mocking the responses to request
+        with open(data_folder / "sync" / "SectionDataSet.txt") as f:
+            body_dataset = f.read()
+
+        responses.add(
+            responses.GET,
+            "https://api.brain-map.org/api/v2/data/query.json?"
+            "criteria=model::SectionDataSet,rma::criteria,[id$eq123],"
+            "rma::include,alignment3d,rma::options[start_row$eq0][num_rows$eq25000]",
+            body=body_dataset,
         )
 
-        get_3d_fake = Mock(
-            return_value=np.ones((3, 4)),
+        with open(data_folder / "sync" / "SectionImage.txt") as f:
+            body_image = f.read()
+
+        responses.add(
+            responses.GET,
+            "https://api.brain-map.org/api/v2/data/query.json?"
+            "criteria=model::SectionImage,rma::criteria,"
+            "%5Bdata_set_id$eq123%5D,rma::include,alignment2d,"
+            "rma::options%5Bstart_row$eq0%5D%5Bnum_rows$eq25000%5D",
+            body=body_image,
         )
 
-        common_queries_fake = Mock()
-        common_queries_fake.get_axis.return_value = axis
-
-        get_image_fake = Mock(
-            return_value=np.zeros((10, 10)),
-        )
-
-        xy_to_pir_fake = Mock(return_value=(1200, 235, 242))
-
-        # Patching
-        monkeypatch.setattr("atldld.sync.get_2d_bulk", get_2d_bulk_fake)
-        monkeypatch.setattr("atldld.sync.get_3d", get_3d_fake)
-        monkeypatch.setattr("atldld.sync.get_image", get_image_fake)
-        monkeypatch.setattr("atldld.sync.CommonQueries", common_queries_fake)
-        monkeypatch.setattr("atldld.sync.xy_to_pir_API_single", xy_to_pir_fake)
+        # Save fake image in cache folder
+        custom_cache_dir.mkdir(exist_ok=True)
+        fake_img = Image.fromarray(np.zeros((100, 200), dtype=np.uint8))
+        fake_img.save(custom_cache_dir / "101945191-0.jpg")
 
         # Call the function
-        gen = download_parallel_dataset(
+        downloader = DatasetDownloader(
             dataset_id=dataset_id,
             include_expression=include_expression,
             downsample_ref=downsample_ref,
         )
-
-        # Asserts - preparation
-        slice_coordinate_true = 1200 if axis == "coronal" else 242
+        downloader.fetch_metadata()
+        gen = downloader.run()
 
         if axis == "coronal":
             grid_shape = (8000 / downsample_ref, 11400 / downsample_ref)
@@ -150,47 +143,18 @@ class TestDownloadParallelDataset:
 
         # Asserts - first iteration
         x = next(gen)
+        assert len(x) == 5
 
-        if include_expression:
-            assert len(x) == 5
+        img_id, slice_coordinate, img, img_expression, df = x
 
-        else:
-            assert len(x) == 4
-
-        img_id, slice_coordinate, img, df, *_ = x
-
-        assert img_id == 22222
-        assert slice_coordinate == slice_coordinate_true
-        assert np.allclose(img, np.zeros((10, 10)))
-        assert df.delta_x.shape == grid_shape
-        assert df.delta_y.shape == grid_shape
-
-        # Asserts - second iteration
-        x = next(gen)
-
-        if include_expression:
-            assert len(x) == 5
-
-        else:
-            assert len(x) == 4
-
-        img_id, slice_coordinate, img, df, *_ = x
-
-        assert img_id == 11111
-        assert slice_coordinate == slice_coordinate_true
-        assert np.allclose(img, np.zeros((10, 10)))
+        assert img_id == 101945191
+        assert img_expression is None
         assert df.delta_x.shape == grid_shape
         assert df.delta_y.shape == grid_shape
 
         # Asserts remaining
         with pytest.raises(StopIteration):
             next(gen)
-
-        assert get_image_fake.call_count == (4 if include_expression else 2)
-        assert get_2d_bulk_fake.call_count == 1
-        assert get_3d_fake.call_count == 1
-        assert common_queries_fake.get_axis.call_count == 1
-        assert xy_to_pir_fake.call_count == 2
 
 
 def test_pir_to_xy(pir_to_xy_response):

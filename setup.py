@@ -28,6 +28,7 @@ install_requires = [
     "opencv-python",
     "pandas",
     "requests",
+    "responses",
     "scikit-image",
 ]
 extras_require = {
