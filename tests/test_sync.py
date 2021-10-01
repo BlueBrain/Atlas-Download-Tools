@@ -95,15 +95,16 @@ class TestGetParallelTransform:
 
 
 class TestDatasetDownloader:
-    def test_patched(self, data_folder, monkeypatch):
+    @pytest.mark.parametrize("include_expression", [True, False])
+    def test_patched(self, include_expression, data_folder, monkeypatch):
         """Does not requires internet, everything is patched."""
 
         # Parameters
-        dataset_id = 123
-        include_expression = False
+        dataset_id = 123  # Sagittal dataset
         downsample_ref = 25
-        axis = "sagittal"
+        grid_shape = (13200 // downsample_ref, 8000 // downsample_ref)
 
+        # Mocking
         def mock_rma_all(value):
             parameters_dataset = RMAParameters(
                 model="SectionDataSet",
@@ -137,12 +138,6 @@ class TestDatasetDownloader:
 
         mock = MagicMock(side_effect=mock_rma_all)
         monkeypatch.setattr("atldld.sync.rma_all", mock)
-
-        if axis == "coronal":
-            grid_shape = (8000 // downsample_ref, 11400 // downsample_ref)
-        else:
-            grid_shape = (13200 // downsample_ref, 8000 // downsample_ref)
-
         monkeypatch.setattr("atldld.utils.get_image", np.zeros(grid_shape))
 
         # Call the function
@@ -161,13 +156,47 @@ class TestDatasetDownloader:
         img_id, slice_coordinate, img, img_expression, df = x
 
         assert img_id == 101945191
-        assert img_expression is None
+        if include_expression:
+            assert isinstance(img_expression, np.ndarray)
+        else:
+            assert img_expression is None
         assert df.delta_x.shape == grid_shape
         assert df.delta_y.shape == grid_shape
 
         # Asserts remaining
         with pytest.raises(StopIteration):
             next(gen)
+
+    def test_metadata(self):
+        """Test metadata"""
+        # Parameters
+        dataset_id = 123
+        include_expression = True
+        downsample_ref = 25
+
+        # Call the function
+        downloader = DatasetDownloader(
+            dataset_id=dataset_id,
+            include_expression=include_expression,
+            downsample_ref=downsample_ref,
+        )
+
+        with pytest.raises(ValueError):
+            len(downloader)
+
+        with pytest.raises(ValueError):
+            gen = downloader.run()
+            _ = next(gen)
+
+        downloader.metadata["images"] = list(np.arange(10))
+        assert len(downloader) == 10
+
+        downloader.metadata["dataset"] = {}
+        downloader.metadata["dataset"]["plane_of_section_id"] = 3
+
+        with pytest.raises(ValueError):
+            gen = downloader.run()
+            _ = next(gen)
 
 
 def test_pir_to_xy(pir_to_xy_response):

@@ -249,7 +249,7 @@ class DatasetDownloader:
     def __len__(self) -> int:
         """Return the number of images in the dataset."""
         if "images" not in self.metadata:
-            raise ValueError("You need to fetch metadata first!")
+            raise ValueError("The metadata is empty. Please run `fetch_metadata`")
         return len(self.metadata["images"])
 
     def fetch_metadata(
