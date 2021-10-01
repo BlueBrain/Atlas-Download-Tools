@@ -15,12 +15,19 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Test for sync.py module."""
+import json
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
-import responses
-from PIL import Image
 
-from atldld.sync import DatasetDownloader, get_parallel_transform, pir_to_xy, xy_to_pir
+from atldld.sync import (
+    DatasetDownloader,
+    RMAParameters,
+    get_parallel_transform,
+    pir_to_xy,
+    xy_to_pir,
+)
 
 
 class TestGetParallelTransform:
@@ -88,8 +95,7 @@ class TestGetParallelTransform:
 
 
 class TestDatasetDownloader:
-    @responses.activate
-    def test_patched(self, data_folder, custom_cache_dir):
+    def test_patched(self, data_folder, monkeypatch):
         """Does not requires internet, everything is patched."""
 
         # Parameters
@@ -98,34 +104,46 @@ class TestDatasetDownloader:
         downsample_ref = 25
         axis = "sagittal"
 
-        # Mocking the responses to request
-        with open(data_folder / "sync" / "SectionDataSet.txt") as f:
-            body_dataset = f.read()
+        def mock_rma_all(value):
+            parameters_dataset = RMAParameters(
+                model="SectionDataSet",
+                criteria={
+                    "id": dataset_id,
+                },
+                include=["alignment3d"],
+            )
+            parameters_images = RMAParameters(
+                model="SectionImage",
+                criteria={
+                    "data_set_id": dataset_id,
+                },
+                include=["alignment2d"],
+            )
+            if value == parameters_dataset:
+                with open(data_folder / "rma_all" / "SectionDataSet.json") as f:
+                    data = json.load(f)
+                return [
+                    data,
+                    None,
+                ]  # We extract only the first element of the list here.
+            elif value == parameters_images:
+                with open(data_folder / "rma_all" / "SectionImage.json") as f:
+                    data = json.load(f)
+                return [
+                    data,
+                ]  # In a list because can have several images
+            else:
+                raise ValueError("Not expected")
 
-        responses.add(
-            responses.GET,
-            "https://api.brain-map.org/api/v2/data/query.json?"
-            "criteria=model::SectionDataSet,rma::criteria,[id$eq123],"
-            "rma::include,alignment3d,rma::options[start_row$eq0][num_rows$eq25000]",
-            body=body_dataset,
-        )
+        mock = MagicMock(side_effect=mock_rma_all)
+        monkeypatch.setattr("atldld.sync.rma_all", mock)
 
-        with open(data_folder / "sync" / "SectionImage.txt") as f:
-            body_image = f.read()
+        if axis == "coronal":
+            grid_shape = (8000 // downsample_ref, 11400 // downsample_ref)
+        else:
+            grid_shape = (13200 // downsample_ref, 8000 // downsample_ref)
 
-        responses.add(
-            responses.GET,
-            "https://api.brain-map.org/api/v2/data/query.json?"
-            "criteria=model::SectionImage,rma::criteria,"
-            "%5Bdata_set_id$eq123%5D,rma::include,alignment2d,"
-            "rma::options%5Bstart_row$eq0%5D%5Bnum_rows$eq25000%5D",
-            body=body_image,
-        )
-
-        # Save fake image in cache folder
-        custom_cache_dir.mkdir(exist_ok=True)
-        fake_img = Image.fromarray(np.zeros((100, 200), dtype=np.uint8))
-        fake_img.save(custom_cache_dir / "101945191-0.jpg")
+        monkeypatch.setattr("atldld.utils.get_image", np.zeros(grid_shape))
 
         # Call the function
         downloader = DatasetDownloader(
@@ -135,11 +153,6 @@ class TestDatasetDownloader:
         )
         downloader.fetch_metadata()
         gen = downloader.run()
-
-        if axis == "coronal":
-            grid_shape = (8000 / downsample_ref, 11400 / downsample_ref)
-        else:
-            grid_shape = (13200 / downsample_ref, 8000 / downsample_ref)
 
         # Asserts - first iteration
         x = next(gen)

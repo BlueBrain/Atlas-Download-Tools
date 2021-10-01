@@ -1,0 +1,9 @@
+{"blue_channel": null, "delegate": false, "expression": false, "failed": false, "failed_facet": 734881840, "green_channel": null,
+  "id": 123, "name": null, "plane_of_section_id": 2, "qc_date": null, "red_channel": null, "reference_space_id": 10,
+  "rnaseq_design_id": null, "section_thickness": 25.0, "specimen_id": 702643, "sphinx_id": 136385, "storage_directory":
+"/external/mouse/prod1/image_series_123/", "weight": 5270, "alignment3d":
+{"aligned_id": 123, "aligned_type": "DataSet", "id": 348398583, "trv_00": 0.948631, "trv_01": -0.0252548, "trv_02": 0.0332274,
+  "trv_03": 0.0261118, "trv_04": 0.999551, "trv_05": 0.014234, "trv_06": -0.0336111, "trv_07": -0.01411, "trv_08": 0.94886,
+  "trv_09": 953.568, "trv_10": 2078.55, "trv_11": -1672.98, "tvr_00": 1.05211, "tvr_01": 0.0260573, "tvr_02": -0.0372341,
+  "tvr_03": -0.0280098, "tvr_04": 0.999544, "tvr_05": -0.0140134, "tvr_06": 0.0368521, "tvr_07": 0.0157867, "tvr_08": 1.05237,
+  "tvr_09": -1119.72, "tvr_10": -2074.34, "tvr_11": 1692.64}}

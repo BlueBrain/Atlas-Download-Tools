@@ -40,7 +40,6 @@ def custom_cache_dir(monkeypatch, tmpdir):
     # Automatically use a custom cache directory for all tests to avoid writing
     # cache data to the user's real cache.
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmpdir))
-    return pathlib.Path(tmpdir) / "atldld"
 
 
 @pytest.fixture(scope="function")
