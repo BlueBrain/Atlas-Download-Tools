@@ -249,7 +249,7 @@ class DatasetDownloader:
     def __len__(self) -> int:
         """Return the number of images in the dataset."""
         if "images" not in self.metadata:
-            self.fetch_metadata()
+            raise ValueError("You need to fetch metadata first!")
         return len(self.metadata["images"])
 
     def fetch_metadata(
@@ -268,7 +268,7 @@ class DatasetDownloader:
             If yes, force to redownload the metadata. Otherwise, if
             the metadata have been computed once, they are not computed again.
         """
-        if self.metadata != {} and not force_redownload:
+        if self.metadata and not force_redownload:
             return
 
         # Initialize metadata
@@ -355,7 +355,7 @@ class DatasetDownloader:
             is the processed expression image.
             That is the generator yield (image_id, p, img, df, img_expr).
         """
-        if self.metadata is None:
+        if not self.metadata:
             raise ValueError("The metadata is empty. Please run `fetch_metadata`")
 
         metadata_images = self.metadata["images"]
