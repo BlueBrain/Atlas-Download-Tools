@@ -16,7 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Test for sync.py module."""
 import json
-from unittest.mock import MagicMock
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -136,9 +136,10 @@ class TestDatasetDownloader:
             else:
                 raise ValueError("Not expected")
 
-        mock = MagicMock(side_effect=mock_rma_all)
-        monkeypatch.setattr("atldld.sync.rma_all", mock)
-        monkeypatch.setattr("atldld.utils.get_image", np.zeros(grid_shape))
+        fake_rma_all = Mock(side_effect=mock_rma_all)
+        fake_get_image = Mock(return_value=np.zeros(grid_shape))
+        monkeypatch.setattr("atldld.sync.rma_all", fake_rma_all)
+        monkeypatch.setattr("atldld.sync.get_image", fake_get_image)
 
         # Call the function
         downloader = DatasetDownloader(
