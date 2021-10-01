@@ -188,15 +188,28 @@ class TestDatasetDownloader:
             gen = downloader.run()
             _ = next(gen)
 
-        downloader.metadata["images"] = list(np.arange(10))
-        assert len(downloader) == 10
+        metadata = {"test": True}
+        downloader.metadata = metadata
+        downloader.fetch_metadata()
+        # As metadata exists, check that did not fetch metadata
+        assert downloader.metadata == metadata
 
+        # Create very small metadata
+        downloader.metadata = {}
+        downloader.metadata["images"] = list(np.arange(10))
         downloader.metadata["dataset"] = {}
         downloader.metadata["dataset"]["plane_of_section_id"] = 3
 
+        # Check that len is working correctly
+        assert len(downloader) == 10
+
+        # Raise ValueError because plane_of_section_id in {1, 2}
         with pytest.raises(ValueError):
             gen = downloader.run()
             _ = next(gen)
+
+        # Check that everything working fine if plane_of_section_id = 1
+        downloader.metadata["dataset"]["plane_of_section_id"] = 1
 
 
 def test_pir_to_xy(pir_to_xy_response):
