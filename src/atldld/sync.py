@@ -299,7 +299,7 @@ class DatasetDownloader:
             key = "alignment2d" if name in {"tsv", "tvs"} else "alignment3d"
             return np.vectorize(lambda x: data[key][x])(template)
 
-        metadata["dataset"] = {
+        dataset_dict = {
             "id": r_dataset["id"],
             "affine_tvr": extract_template(r_dataset, "tvr"),
             "affine_trv": extract_template(r_dataset, "trv"),
@@ -318,8 +318,11 @@ class DatasetDownloader:
                 }
             )
 
-        images.sort(key=lambda x: -x["section_number"])  # type: ignore
-        metadata["images"] = images  # type: ignore[assignment]
+        images.sort(key=lambda x: -int(x["section_number"]))
+        metadata = {
+            "dataset": dataset_dict,
+            "images": images,
+        }
         self.metadata = metadata
 
     def run(
