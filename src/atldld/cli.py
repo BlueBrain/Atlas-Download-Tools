@@ -206,7 +206,7 @@ def dataset_download(
     import json
     import textwrap
 
-    import matplotlib.pyplot as plt
+    from PIL import Image
 
     from atldld.sync import DatasetDownloader
 
@@ -252,12 +252,12 @@ def dataset_download(
             img_synced = df.warp(img, c=img[0, 0].tolist())
 
             img_path = output_folder / f"{image_id}.png"
-            plt.imsave(str(img_path), img_synced)
+            Image.fromarray(img_synced, mode="RGB").save(img_path)
 
             if img_expr is not None:
                 img_expr_synced = df.warp(img_expr)
                 img_expr_path = output_folder / f"{image_id}_expr.png"
-                plt.imsave(str(img_expr_path), img_expr_synced)
+                Image.fromarray(img_expr_synced, mode="RGB").save(img_expr_path)
 
             metadata["per_image"][image_id] = {
                 "section_coordinate": section_coordinate,
