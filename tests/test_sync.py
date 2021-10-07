@@ -182,10 +182,10 @@ class TestDatasetDownloader:
             downsample_ref=downsample_ref,
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError):
             len(downloader)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError):
             gen = downloader.run()
             _ = next(gen)
 

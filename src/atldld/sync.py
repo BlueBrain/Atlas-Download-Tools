@@ -249,7 +249,7 @@ class DatasetDownloader:
     def __len__(self) -> int:
         """Return the number of images in the dataset."""
         if "images" not in self.metadata:
-            raise ValueError("The metadata is empty. Please run `fetch_metadata`")
+            raise RuntimeError("The metadata is empty. Please run `fetch_metadata`")
         return len(self.metadata["images"])
 
     def fetch_metadata(
@@ -359,7 +359,7 @@ class DatasetDownloader:
             That is the generator yield (image_id, p, img, df, img_expr).
         """
         if not self.metadata:
-            raise ValueError("The metadata is empty. Please run `fetch_metadata`")
+            raise RuntimeError("The metadata is empty. Please run `fetch_metadata`")
 
         metadata_images = self.metadata["images"]
         metadata_dataset = self.metadata["dataset"]
