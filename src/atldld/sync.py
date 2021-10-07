@@ -363,14 +363,15 @@ class DatasetDownloader:
 
         detection_xy = np.array(self.detection_xy)[:, None]
 
-        if metadata_dataset["plane_of_section_id"] == 1:
+        plane_of_section = metadata_dataset["plane_of_section_id"]
+        if plane_of_section == 1:
             slice_coordinate_ix = 0
             axis = "coronal"
-        elif metadata_dataset["plane_of_section_id"] == 2:
+        elif plane_of_section == 2:
             slice_coordinate_ix = 2
             axis = "sagittal"
         else:
-            raise ValueError
+            raise ValueError(f"Unrecognized plane of section {plane_of_section}")
 
         for metadata_image in metadata_images:
             z = metadata_dataset["section_thickness"] * metadata_image["section_number"]
