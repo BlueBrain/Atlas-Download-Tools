@@ -207,7 +207,7 @@ class TestDatasetDownloader:
         # Raise ValueError because plane_of_section_id in {1, 2}
         with pytest.raises(ValueError, match="Unrecognized plane"):
             gen = downloader.run()
-            _ = next(gen)
+            next(gen)
 
         # Check that everything working fine if plane_of_section_id = 1
         downloader.metadata["dataset"]["plane_of_section_id"] = 1
