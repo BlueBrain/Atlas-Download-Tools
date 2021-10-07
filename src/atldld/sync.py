@@ -271,9 +271,6 @@ class DatasetDownloader:
         if self.metadata and not force_redownload:
             return
 
-        # Initialize metadata
-        metadata = {}
-
         # Prepare query parameters
         parameters_dataset = RMAParameters(
             model="SectionDataSet",
