@@ -335,5 +335,5 @@ class TestDatasetDownload:
         } == set(metadata.keys())
 
         assert len(metadata["per_image"]) == n_images
-        for img_id, image_metadata in metadata["per_image"].items():
+        for image_metadata in metadata["per_image"].values():
             assert {"section_coordinate"} == set(image_metadata.keys())
