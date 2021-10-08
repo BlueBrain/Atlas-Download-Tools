@@ -1,0 +1,8 @@
+{"annotated": false, "axes": null, "bits_per_component": 8, "data_set_id": 123, "expression": null, "expression_path":
+"/external/aibssan/production32/prod46/b.123.6/b.123.6_expression.aff", "failed": false, "height": 4936, "id": 101945191,
+  "image_height": 4936, "image_type": "Primary", "image_width": 8992, "isi_experiment_id": null, "lims1_id": 3773, "number_of_components": 3,
+  "ophys_experiment_id": null, "path": "/external/aibssan/production15/Asb4_2137_33814/zoomify/primary/null/Asb4_171_null_B.aff", "projection_function": null,
+  "resolution": 1.63, "section_number": 171, "specimen_id": null, "structure_id": null, "tier_count": 7, "width": 8992,
+  "x": 0, "y": 0, "alignment2d": {"id": 348398605, "section_image_id": 101945191, "tsv_00": 1.62929, "tsv_01": 0.0480343, "tsv_02": -0.0480343,
+  "tsv_03": 1.62929, "tsv_04": 406.469, "tsv_05": 2243.71, "tvs_00": 0.61323, "tvs_01": -0.0180791, "tvs_02": 0.0180791,"tvs_03": 0.61323,
+  "tvs_04": -208.695, "tvs_05": -1383.26}}

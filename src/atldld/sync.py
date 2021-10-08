@@ -22,18 +22,18 @@ See the module `atldld.utils.py` for lower level
 functions that are called within this module.
 """
 
-from typing import Generator, Tuple, Union
+from typing import Any, Dict, Generator, Optional, Tuple
 
 import numpy as np
 
 from atldld.base import DisplacementField
-from atldld.utils import (
-    CommonQueries,
-    get_2d_bulk,
-    get_3d,
-    get_image,
-    xy_to_pir_API_single,
-)
+from atldld.constants import AFFINE_TEMPLATES
+from atldld.requests import RMAParameters, rma_all
+from atldld.utils import get_image
+
+
+class DatasetNotFoundError(Exception):
+    """Raised when there is no dataset for the given dataset ID."""
 
 
 def xy_to_pir(
@@ -55,11 +55,11 @@ def xy_to_pir(
         Matrix of shape `(2, 3)` representing a 2D affine transformation. It
         can be retrieved from the section image metadata via the
         Allen Brain API. More specifically, it is stored under the
-        `tvr_**` entries.
+        `tsv_**` entries.
     affine_3d
         Matrix of shape `(3, 4)` representing a 3D affine transformation. It
         can be retrieved from the dataset metadata via the Allen Brain API.
-        More specifically, it is stored under the `tsv_**` entries.
+        More specifically, it is stored under the `tvr_**` entries.
 
     Returns
     -------
@@ -210,37 +210,8 @@ def get_parallel_transform(
     return df
 
 
-def download_parallel_dataset(
-    dataset_id: int,
-    downsample_ref: int = 25,
-    detection_xy: Tuple[float, float] = (0, 0),
-    include_expression: bool = False,
-    downsample_img: int = 0,
-) -> Generator[
-    Union[
-        Tuple[int, float, np.ndarray, DisplacementField],
-        Tuple[int, float, np.ndarray, DisplacementField, np.ndarray],
-    ],
-    None,
-    None,
-]:
-    """Download entire dataset.
-
-    This function performs the following steps:
-
-    1. Get metadata for the entire dataset (e.g. `affine_3d`)
-    2. Get metadata for all images inside of the dataset (e.g. `affine_2d`)
-    3. For each image in the dataset do the following
-
-        a. Query the API to get the `p, i, r` coordinates of the `detection_xy`.
-        b. One of the `p, i, r` will become the `slice_coordinate`. For
-           coronal datasets it is the `p` and for sagittal ones it is the `r`.
-           In other words we assume that the slice is parallel to
-           one of the axes.
-        c. Use `get_parallel_transform` to get a full mapping between the
-           reference space and the image.
-        d. Download the image (+ potentially the expression image)
-        e. Yield result (order derived from section numbers - highest first)
+class DatasetDownloader:
+    """Class to download an entire dataset.
 
     Parameters
     ----------
@@ -261,58 +232,203 @@ def download_parallel_dataset(
         The downloaded image will have both the height and the width
         downsampled by `2 ** downsample_img`.
 
-    Returns
-    -------
-    res_dict : generator
-        Generator yielding consecutive four tuples of
-        (image_id, constant_ref_coordinate, img, df).
-        The `constant_ref_coordinate` is the dimension in the given axis in microns.
-        The `img` is the raw gene expression image with dtype `uint8`.
-        The `df` is the displacement field.
-        Note that the sorting. If `include_expression=True` then last returned image
-        is the processed expression image.
-        That is the generator yield (image_id, p, img, df, img_expr).
+    Attributes
+    ----------
+    metadata
+        Needs to be fetched with the `fetch_metadata` method. It contains
+        two keys: "dataset" and "images". The values are
+        dictionaries storing metadata downloaded from the API.
     """
-    metadata_2d_dict = get_2d_bulk(
-        dataset_id,
-        ref2inp=True,
-    )
-    metadata_2d = sorted(
-        [
-            (image_id, affine_2d, section_number)
-            for image_id, (affine_2d, section_number) in metadata_2d_dict.items()
-        ],
-        key=lambda x: -int(x[2]),  # we use section_number for sorting
-    )
 
-    affine_3d = get_3d(
-        dataset_id,
-        ref2inp=True,
-        return_meta=False,
-    )
-    axis = CommonQueries.get_axis(dataset_id)
+    def __init__(
+        self,
+        dataset_id: int,
+        downsample_ref: int = 25,
+        detection_xy: Tuple[float, float] = (0, 0),
+        include_expression: bool = False,
+        downsample_img: int = 0,
+    ):
+        self.dataset_id = dataset_id
+        self.downsample_ref = downsample_ref
+        self.detection_xy = detection_xy
+        self.include_expression = include_expression
+        self.downsample_img = downsample_img
 
-    for image_id, affine_2d, _ in metadata_2d:
-        p, i, r = xy_to_pir_API_single(*detection_xy, image_id=image_id)
-        slice_ref_coordinate = p if axis == "coronal" else r
+        self.metadata: Dict[str, Any] = {}
+        # populated by calling `fetch_metadata`
 
-        df = get_parallel_transform(
-            slice_ref_coordinate,
-            affine_2d,
-            affine_3d,
-            downsample_ref=downsample_ref,
-            axis=axis,
-            downsample_img=downsample_img,
+    def __len__(self) -> int:
+        """Return the number of images in the dataset."""
+        if "images" not in self.metadata:
+            raise RuntimeError("The metadata is empty. Please run `fetch_metadata`")
+        return len(self.metadata["images"])
+
+    def fetch_metadata(
+        self,
+        force_redownload: bool = False,
+    ) -> None:
+        """Fetch metadata of the dataset.
+
+        This function performs the following steps:
+        1. Get metadata for the entire dataset (e.g. `affine_3d`)
+        2. Get metadata for all images inside of the dataset (e.g. `affine_2d`)
+
+        Parameters
+        ----------
+        force_redownload
+            If yes, force to redownload the metadata. Otherwise, if
+            the metadata have been computed once, they are not computed again.
+        """
+        if self.metadata and not force_redownload:
+            return
+
+        # Prepare query parameters
+        parameters_dataset = RMAParameters(
+            model="SectionDataSet",
+            criteria={
+                "id": self.dataset_id,
+            },
+            include=["alignment3d"],
         )
-
-        img = get_image(image_id, downsample=downsample_img)
-
-        if not include_expression:
-            yield image_id, slice_ref_coordinate, img, df
-        else:
-            img_expression = get_image(
-                image_id,
-                expression=True,
-                downsample=downsample_img,
+        parameters_images = RMAParameters(
+            model="SectionImage",
+            criteria={
+                "data_set_id": self.dataset_id,
+            },
+            include=["alignment2d"],
+        )
+        # Query the API
+        r_datasets = rma_all(parameters_dataset)
+        if not r_datasets:
+            raise DatasetNotFoundError(
+                f"Dataset {self.dataset_id} does not seem to exist"
             )
-            yield image_id, slice_ref_coordinate, img, df, img_expression
+
+        r_dataset = r_datasets[0]  # dataset_id is unique
+        r_images = rma_all(parameters_images)
+
+        # Extract relevant information
+        def extract_template(data, name):
+            template = np.array(AFFINE_TEMPLATES[name])
+            key = "alignment2d" if name in {"tsv", "tvs"} else "alignment3d"
+            return np.vectorize(lambda x: data[key][x])(template)
+
+        dataset_dict = {
+            "id": r_dataset["id"],
+            "affine_tvr": extract_template(r_dataset, "tvr"),
+            "affine_trv": extract_template(r_dataset, "trv"),
+            "plane_of_section_id": r_dataset["plane_of_section_id"],
+            "section_thickness": r_dataset["section_thickness"],
+        }
+
+        images = []
+        for r_image in r_images:
+            images.append(
+                {
+                    "id": r_image["id"],
+                    "affine_tsv": extract_template(r_image, "tsv"),
+                    "affine_tvs": extract_template(r_image, "tvs"),
+                    "section_number": r_image["section_number"],
+                }
+            )
+
+        images.sort(key=lambda x: -int(x["section_number"]))
+        metadata = {
+            "dataset": dataset_dict,
+            "images": images,
+        }
+        self.metadata = metadata
+
+    def run(
+        self,
+    ) -> Generator[
+        Tuple[int, float, np.ndarray, Optional[np.ndarray], DisplacementField],
+        None,
+        None,
+    ]:
+        """Download entire dataset.
+
+        For each image in the dataset, this function performs the following steps:
+
+            1. Query the API to get the `p, i, r` coordinates of the `detection_xy`.
+            2. One of the `p, i, r` will become the `slice_coordinate`. For
+               coronal datasets it is the `p` and for sagittal ones it is the `r`.
+               In other words we assume that the slice is parallel to
+               one of the axes.
+            3. Use `get_parallel_transform` to get a full mapping between the
+               reference space and the image.
+            4. Download the image (+ potentially the expression image)
+            5. Yield result (order derived from section numbers - highest first)
+
+        Returns
+        -------
+        res_dict : generator
+            Generator yielding consecutive four tuples of
+            (image_id, constant_ref_coordinate, img, df).
+            The `constant_ref_coordinate` is the dimension in the given axis in microns.
+            The `img` is the raw gene expression image with dtype `uint8`.
+            The `df` is the displacement field.
+            Note that the sorting. If `include_expression=True` then last returned image
+            is the processed expression image.
+            That is the generator yield (image_id, p, img, df, img_expr).
+        """
+        if not self.metadata:
+            raise RuntimeError("The metadata is empty. Please run `fetch_metadata`")
+
+        metadata_images = self.metadata["images"]
+        metadata_dataset = self.metadata["dataset"]
+
+        detection_xy = np.array(self.detection_xy)[:, None]
+
+        plane_of_section = metadata_dataset["plane_of_section_id"]
+        if plane_of_section == 1:
+            slice_coordinate_ix = 0
+            axis = "coronal"
+        elif plane_of_section == 2:
+            slice_coordinate_ix = 2
+            axis = "sagittal"
+        else:
+            raise ValueError(f"Unrecognized plane of section {plane_of_section}")
+
+        for metadata_image in metadata_images:
+            z = metadata_dataset["section_thickness"] * metadata_image["section_number"]
+            detection_xy = np.array(
+                [
+                    [detection_xy[0]],
+                    [detection_xy[1]],
+                    [z],
+                ],
+                dtype=np.float32,
+            )
+            detection_pir = xy_to_pir(
+                detection_xy,
+                affine_2d=metadata_image["affine_tsv"],
+                affine_3d=metadata_dataset["affine_tvr"],
+            )
+            slice_coordinate = detection_pir[slice_coordinate_ix, 0].item()
+
+            df = get_parallel_transform(
+                slice_coordinate,
+                affine_2d=metadata_image["affine_tvs"],
+                affine_3d=metadata_dataset["affine_trv"],
+                downsample_ref=self.downsample_ref,
+                axis=axis,
+                downsample_img=self.downsample_img,
+            )
+
+            image_id = metadata_image["id"]
+            img = get_image(
+                image_id,
+                downsample=self.downsample_img,
+            )
+
+            if self.include_expression:
+                img_expression = get_image(
+                    image_id,
+                    expression=True,
+                    downsample=self.downsample_img,
+                )
+            else:
+                img_expression = None
+
+            yield image_id, slice_coordinate, img, img_expression, df

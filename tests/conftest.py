@@ -29,6 +29,12 @@ XY_TO_PIR_FOLDER = DATA_FOLDER / "sync" / "xy_to_pir"
 XY_TO_PIR_RESPONSES = sorted(XY_TO_PIR_FOLDER.iterdir())
 
 
+@pytest.fixture()
+def data_folder():
+    """Return data folder."""
+    return DATA_FOLDER
+
+
 @pytest.fixture(autouse=True)
 def custom_cache_dir(monkeypatch, tmpdir):
     # Automatically use a custom cache directory for all tests to avoid writing

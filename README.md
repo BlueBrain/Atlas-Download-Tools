@@ -80,9 +80,12 @@ dataset_ids = get_experiment_list_from_gene("Pvalb", axis='sagittal')
 
 - One can download any dataset from a dataset ID:
 ```python
-from atldld.sync import download_parallel_dataset
-dataset = download_parallel_dataset(dataset_id=DATASET_ID, **kwargs)
-image_id, section_number, img, df = next(dataset)
+from atldld.sync import DatasetDownloader
+downloader = DatasetDownloader(dataset_id=DATASET_ID, **kwargs)
+# One needs to fetch metadata before downloading a dataset.
+downloader.fetch_metadata()
+dataset = downloader.run()
+image_id, section_number, img, img_exp, df = next(dataset)
 ```
 Note that this functionality makes a simplifying assumption that
 the slices are perfectly parallel to one of the 3 axes.

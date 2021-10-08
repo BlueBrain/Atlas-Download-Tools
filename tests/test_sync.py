@@ -15,13 +15,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Test for sync.py module."""
+import json
 from unittest.mock import Mock
 
 import numpy as np
 import pytest
 
 from atldld.sync import (
-    download_parallel_dataset,
+    DatasetDownloader,
+    DatasetNotFoundError,
+    RMAParameters,
     get_parallel_transform,
     pir_to_xy,
     xy_to_pir,
@@ -92,93 +95,86 @@ class TestGetParallelTransform:
         assert y_pred == pytest.approx(y, abs=1e-2)
 
 
-class TestDownloadParallelDataset:
-    @pytest.mark.parametrize("include_expression", [True, False])
-    @pytest.mark.parametrize("downsample_ref", [25, 50])
-    @pytest.mark.parametrize("axis", ["coronal", "sagittal"])
-    def test_patched(self, include_expression, downsample_ref, axis, monkeypatch):
-        """Does not requires internet, everything is patched.
+class TestDatasetDownloader:
+    def test_invalid_dataset(self, monkeypatch):
+        # If `rma_all` returns an empty list, the API does not have any entries
+        # satisfying the parameters
 
-        The only thing that is unpatched is the `get_transform_simple`.
-        """
+        mock_rma_all = Mock(return_value=[])
+        monkeypatch.setattr("atldld.sync.rma_all", mock_rma_all)
+
+        downloader = DatasetDownloader(
+            dataset_id=434324132413241,
+        )
+        with pytest.raises(DatasetNotFoundError, match="does not seem to exist"):
+            downloader.fetch_metadata()
+
+    @pytest.mark.parametrize("include_expression", [True, False])
+    def test_patched(self, include_expression, data_folder, monkeypatch):
+        """Does not require internet, everything is patched."""
 
         # Parameters
-        dataset_id = 12345
+        dataset_id = 123  # Sagittal dataset
+        downsample_ref = 25
+        grid_shape = (13200 // downsample_ref, 8000 // downsample_ref)
 
         # Mocking
-        get_2d_bulk_fake = Mock(
-            return_value={
-                11111: (np.ones((2, 3)), 20),
-                22222: (np.ones((2, 3)), 50),
-            }
-        )
+        def mock_rma_all(value):
+            parameters_dataset = RMAParameters(
+                model="SectionDataSet",
+                criteria={
+                    "id": dataset_id,
+                },
+                include=["alignment3d"],
+            )
+            parameters_images = RMAParameters(
+                model="SectionImage",
+                criteria={
+                    "data_set_id": dataset_id,
+                },
+                include=["alignment2d"],
+            )
+            if value == parameters_dataset:
+                with open(data_folder / "rma_all" / "SectionDataSet.json") as f:
+                    data = json.load(f)
+                return [
+                    data,
+                    None,
+                ]  # We extract only the first element of the list here.
+            elif value == parameters_images:
+                with open(data_folder / "rma_all" / "SectionImage.json") as f:
+                    data = json.load(f)
+                return [
+                    data,
+                ]  # In a list because can have several images
+            else:
+                raise ValueError("Not expected")
 
-        get_3d_fake = Mock(
-            return_value=np.ones((3, 4)),
-        )
-
-        common_queries_fake = Mock()
-        common_queries_fake.get_axis.return_value = axis
-
-        get_image_fake = Mock(
-            return_value=np.zeros((10, 10)),
-        )
-
-        xy_to_pir_fake = Mock(return_value=(1200, 235, 242))
-
-        # Patching
-        monkeypatch.setattr("atldld.sync.get_2d_bulk", get_2d_bulk_fake)
-        monkeypatch.setattr("atldld.sync.get_3d", get_3d_fake)
-        monkeypatch.setattr("atldld.sync.get_image", get_image_fake)
-        monkeypatch.setattr("atldld.sync.CommonQueries", common_queries_fake)
-        monkeypatch.setattr("atldld.sync.xy_to_pir_API_single", xy_to_pir_fake)
+        fake_rma_all = Mock(side_effect=mock_rma_all)
+        fake_get_image = Mock(return_value=np.zeros(grid_shape))
+        monkeypatch.setattr("atldld.sync.rma_all", fake_rma_all)
+        monkeypatch.setattr("atldld.sync.get_image", fake_get_image)
 
         # Call the function
-        gen = download_parallel_dataset(
+        downloader = DatasetDownloader(
             dataset_id=dataset_id,
             include_expression=include_expression,
             downsample_ref=downsample_ref,
         )
-
-        # Asserts - preparation
-        slice_coordinate_true = 1200 if axis == "coronal" else 242
-
-        if axis == "coronal":
-            grid_shape = (8000 / downsample_ref, 11400 / downsample_ref)
-        else:
-            grid_shape = (13200 / downsample_ref, 8000 / downsample_ref)
+        downloader.fetch_metadata()
+        gen = downloader.run()
 
         # Asserts - first iteration
         x = next(gen)
+        assert len(x) == 5
 
+        img_id, slice_coordinate, img, img_expression, df = x
+
+        assert img_id == 101945191
         if include_expression:
-            assert len(x) == 5
-
+            assert isinstance(img_expression, np.ndarray)
         else:
-            assert len(x) == 4
-
-        img_id, slice_coordinate, img, df, *_ = x
-
-        assert img_id == 22222
-        assert slice_coordinate == slice_coordinate_true
-        assert np.allclose(img, np.zeros((10, 10)))
-        assert df.delta_x.shape == grid_shape
-        assert df.delta_y.shape == grid_shape
-
-        # Asserts - second iteration
-        x = next(gen)
-
-        if include_expression:
-            assert len(x) == 5
-
-        else:
-            assert len(x) == 4
-
-        img_id, slice_coordinate, img, df, *_ = x
-
-        assert img_id == 11111
-        assert slice_coordinate == slice_coordinate_true
-        assert np.allclose(img, np.zeros((10, 10)))
+            assert img_expression is None
         assert df.delta_x.shape == grid_shape
         assert df.delta_y.shape == grid_shape
 
@@ -186,11 +182,49 @@ class TestDownloadParallelDataset:
         with pytest.raises(StopIteration):
             next(gen)
 
-        assert get_image_fake.call_count == (4 if include_expression else 2)
-        assert get_2d_bulk_fake.call_count == 1
-        assert get_3d_fake.call_count == 1
-        assert common_queries_fake.get_axis.call_count == 1
-        assert xy_to_pir_fake.call_count == 2
+    def test_metadata(self):
+        """Test metadata"""
+        # Parameters
+        dataset_id = 123
+        include_expression = True
+        downsample_ref = 25
+
+        # Call the function
+        downloader = DatasetDownloader(
+            dataset_id=dataset_id,
+            include_expression=include_expression,
+            downsample_ref=downsample_ref,
+        )
+
+        with pytest.raises(RuntimeError):
+            len(downloader)
+
+        with pytest.raises(RuntimeError):
+            gen = downloader.run()
+            _ = next(gen)
+
+        metadata = {"test": True}
+        downloader.metadata = metadata
+        downloader.fetch_metadata()
+        # As metadata exists, check that did not fetch metadata
+        assert downloader.metadata == metadata
+
+        # Create very small metadata
+        downloader.metadata = {}
+        downloader.metadata["images"] = list(np.arange(10))
+        downloader.metadata["dataset"] = {}
+        downloader.metadata["dataset"]["plane_of_section_id"] = 3
+
+        # Check that len is working correctly
+        assert len(downloader) == 10
+
+        # Raise ValueError because plane_of_section_id in {1, 2}
+        with pytest.raises(ValueError, match="Unrecognized plane"):
+            gen = downloader.run()
+            next(gen)
+
+        # Check that everything working fine if plane_of_section_id = 1
+        downloader.metadata["dataset"]["plane_of_section_id"] = 1
 
 
 def test_pir_to_xy(pir_to_xy_response):

@@ -584,7 +584,7 @@ class TestUtils:
         assert closest_section_image_id == closest_section_image_id_s
 
 
-# @pytest.mark.internet
+@pytest.mark.internet
 class TestCommonQueries:
     """A set of tests focused on some basic queries in the CommonQueries class."""
 
