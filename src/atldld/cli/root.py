@@ -14,16 +14,23 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""The main CLI entry point.
+"""Implementation of the "atldld" command line entrypoint."""
+import click
 
-This module enables running the CLI by running `atldld` as a module:
+from atldld.cli.dataset import dataset_group
+from atldld.cli.info import info_group
 
-    $ python -m atldld
 
-This way it is also possible to debug the CLI using the PDB debugger:
+@click.group(
+    help="""\
+    Atlas-Download-Tools command line interface.
 
-    $ python -m pdb -m atldld
-"""
-from atldld.cli.root import root_cmd
+    For detailed instructions see the documentation of the corresponding sub-commands.
+    """
+)
+def root_cmd():
+    """Run the command line interface for Atlas-Download-Tools."""
 
-root_cmd()
+
+root_cmd.add_command(info_group)
+root_cmd.add_command(dataset_group)

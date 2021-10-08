@@ -71,7 +71,7 @@ setup(
     python_requires=python_requires,
     install_requires=install_requires,
     extras_require=extras_require,
-    entry_points={"console_scripts": ["atldld = atldld.cli:root"]},
+    entry_points={"console_scripts": ["atldld = atldld.cli.root:root_cmd"]},
     description=description,
     long_description=long_description,
     long_description_content_type="text/x-rst",
