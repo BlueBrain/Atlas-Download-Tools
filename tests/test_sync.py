@@ -95,6 +95,19 @@ class TestGetParallelTransform:
 
 
 class TestDatasetDownloader:
+    def invalid_dataset(self, monkeypatch):
+        # If `rma_all` returns an empty list, the API does not have any entries
+        # satisfying the parameters
+
+        mock_rma_all = Mock(return_value=[])
+        monkeypatch.setattr("atldld.sync.rma_all", mock_rma_all)
+
+        downloader = DatasetDownloader(
+            dataset_id=434324132413241,
+        )
+        with pytest.raises(ValueError, match="does not seem to exist"):
+            downloader.fetch_metadata()
+
     @pytest.mark.parametrize("include_expression", [True, False])
     def test_patched(self, include_expression, data_folder, monkeypatch):
         """Does not require internet, everything is patched."""

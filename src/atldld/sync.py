@@ -294,7 +294,11 @@ class DatasetDownloader:
             include=["alignment2d"],
         )
         # Query the API
-        r_dataset = rma_all(parameters_dataset)[0]
+        r_datasets = rma_all(parameters_dataset)
+        if not r_datasets:
+            raise ValueError(f"Dataset {self.dataset_id} does not seem to exist")
+
+        r_dataset = r_datasets[0]  # dataset_id is unique
         r_images = rma_all(parameters_images)
 
         # Extract relevant information
