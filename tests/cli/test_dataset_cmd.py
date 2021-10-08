@@ -13,8 +13,8 @@ from click.testing import CliRunner
 
 from atldld.base import DisplacementField
 from atldld.cli.dataset import (
-    dataset_download,
     dataset_cmd,
+    dataset_download,
     dataset_info,
     dataset_preview,
     get_dataset_meta_or_abort,
