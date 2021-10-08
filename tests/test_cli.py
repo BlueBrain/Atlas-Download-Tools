@@ -261,6 +261,7 @@ class TestDatasetPreview:
         )
         assert output_dir.exists()
 
+
 class TestDatasetDownload:
     @pytest.mark.parametrize("dataset_id", [3532, 542133])
     @pytest.mark.parametrize("n_images", [2, 3])
@@ -316,13 +317,12 @@ class TestDatasetDownload:
         mocked_downloader_inst.fetch_metadata.assert_called()
         mocked_downloader_inst.run.assert_called()
 
-
         img_paths = [p for p in output_folder.iterdir() if p.suffix == ".png"]
         assert len(img_paths) == (int(include_expression) + 1) * n_images
 
         metadata_path = output_folder / "metadata.json"
         assert metadata_path.exists()
-    
+
         with metadata_path.open() as f:
             metadata = json.load(f)
 
@@ -331,7 +331,7 @@ class TestDatasetDownload:
             "downsample_ref",
             "downsample_img",
             "downsample_img",
-            "per_image"
+            "per_image",
         } == set(metadata.keys())
 
         assert len(metadata["per_image"]) == n_images
