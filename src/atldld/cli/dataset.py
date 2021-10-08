@@ -72,11 +72,11 @@ def get_dataset_meta_or_abort(
 
 
 @click.group("dataset", help="Commands related to atlas datasets")
-def dataset_group():
+def dataset_cmd():
     """Run dataset subcommands."""
 
 
-@dataset_group.command("info", help="Get information for a given dataset ID")
+@dataset_cmd.command("info", help="Get information for a given dataset ID")
 @click.argument("dataset_id", type=int)
 def dataset_info(dataset_id):
     """Get information for a given dataset ID."""
@@ -111,7 +111,7 @@ def dataset_info(dataset_id):
     click.secho(textwrap.dedent(output).strip(), fg="green")
 
 
-@dataset_group.command(
+@dataset_cmd.command(
     "download", help="Download and synchronize an entire section dataset"
 )
 @click.argument("dataset_id", type=str)
@@ -219,7 +219,7 @@ def dataset_download(
         json.dump(metadata, f, indent=4)
 
 
-@dataset_group.command("preview", help="Plot a preview of dataset slices")
+@dataset_cmd.command("preview", help="Plot a preview of dataset slices")
 @click.argument("dataset_id", type=int)
 @click.option(
     "-o",

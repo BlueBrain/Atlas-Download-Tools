@@ -1,7 +1,7 @@
 from click.testing import CliRunner
 
 import atldld
-from atldld.cli.info import info_group
+from atldld.cli.info import info_cmd
 from atldld.cli.root import root_cmd
 
 
@@ -14,13 +14,13 @@ class TestInfoSubgroup:
 
     def test_version_command_works(self):
         runner = CliRunner()
-        result = runner.invoke(info_group, ["version"])
+        result = runner.invoke(info_cmd, ["version"])
         assert result.exit_code == 0
         assert atldld.__version__ in result.output
 
     def test_cache_command_works(self):
         runner = CliRunner()
-        result = runner.invoke(info_group, ["cache"])
+        result = runner.invoke(info_cmd, ["cache"])
         assert result.exit_code == 0
         assert "atldld cache" in result.output.lower()
 
@@ -28,11 +28,11 @@ class TestInfoSubgroup:
         runner = CliRunner()
 
         monkeypatch.delenv("XDG_CACHE_HOME")
-        result = runner.invoke(info_group, ["cache"])
+        result = runner.invoke(info_cmd, ["cache"])
         assert result.exit_code == 0
         assert "XDG_CACHE_HOME" not in result.output
 
         monkeypatch.setenv("XDG_CACHE_HOME", str(tmpdir))
-        result = runner.invoke(info_group, ["cache"])
+        result = runner.invoke(info_cmd, ["cache"])
         assert result.exit_code == 0
         assert "XDG_CACHE_HOME" in result.output

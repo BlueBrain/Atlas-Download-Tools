@@ -17,8 +17,8 @@
 """Implementation of the "atldld" command line entrypoint."""
 import click
 
-from atldld.cli.dataset import dataset_group
-from atldld.cli.info import info_group
+from atldld.cli.dataset import dataset_cmd
+from atldld.cli.info import info_cmd
 
 
 @click.group(
@@ -32,5 +32,5 @@ def root_cmd():
     """Run the command line interface for Atlas-Download-Tools."""
 
 
-root_cmd.add_command(info_group)
-root_cmd.add_command(dataset_group)
+root_cmd.add_command(info_cmd)
+root_cmd.add_command(dataset_cmd)

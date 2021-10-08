@@ -14,7 +14,7 @@ from click.testing import CliRunner
 from atldld.base import DisplacementField
 from atldld.cli.dataset import (
     dataset_download,
-    dataset_group,
+    dataset_cmd,
     dataset_info,
     dataset_preview,
     get_dataset_meta_or_abort,
@@ -25,7 +25,7 @@ from atldld.sync import DatasetNotFoundError
 class TestDatasetSubgroup:
     def test_running_without_arguments_prints_help(self):
         runner = CliRunner()
-        result = runner.invoke(dataset_group)
+        result = runner.invoke(dataset_cmd)
         assert result.exit_code == 0
         assert result.output.startswith("Usage:")
 

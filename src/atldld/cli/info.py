@@ -21,17 +21,17 @@ import atldld
 
 
 @click.group("info", help="Informational subcommands.")
-def info_group():
+def info_cmd():
     """Run informational subcommands."""
 
 
-@info_group.command(help="Version of Atlas-Download-Tools.")
+@info_cmd.command(help="Version of Atlas-Download-Tools.")
 def version():
     """Print the version of Atlas-Download-Tools."""
     click.echo(f"Atlas-Download-Tools version {atldld.__version__}")
 
 
-@info_group.command(
+@info_cmd.command(
     name="cache",
     help="""
     Location of the atldld cache directory.
