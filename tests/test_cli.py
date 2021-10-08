@@ -15,8 +15,8 @@ import atldld
 from atldld.base import DisplacementField
 from atldld.cli import (
     dataset,
-    dataset_info,
     dataset_download,
+    dataset_info,
     dataset_preview,
     get_dataset_meta_or_abort,
     info,
