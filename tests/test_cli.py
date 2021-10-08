@@ -1,3 +1,4 @@
+import json
 import pathlib
 import re
 import subprocess
@@ -5,14 +6,17 @@ import textwrap
 from typing import Any, Dict
 
 import click
+import numpy as np
 import pytest
 import responses
 from click.testing import CliRunner
 
 import atldld
+from atldld.base import DisplacementField
 from atldld.cli import (
     dataset,
     dataset_info,
+    dataset_download,
     dataset_preview,
     get_dataset_meta_or_abort,
     info,
@@ -256,3 +260,80 @@ class TestDatasetPreview:
             pathlib.Path(output_dir) / "dataset-id-123-preview.png"
         )
         assert output_dir.exists()
+
+class TestDatasetDownload:
+    @pytest.mark.parametrize("dataset_id", [3532, 542133])
+    @pytest.mark.parametrize("n_images", [2, 3])
+    @pytest.mark.parametrize("include_expression", [True, False])
+    @pytest.mark.parametrize("folder_exists", [True, False])
+    def test_all(
+        self,
+        tmp_path,
+        mocker,
+        dataset_id,
+        n_images,
+        include_expression,
+        folder_exists,
+    ):
+        dataset_id = str(dataset_id)
+        runner = CliRunner()
+        output_folder = tmp_path / "output_folder"
+        if folder_exists:
+            output_folder.mkdir()
+
+        # Mocking and patching
+        mocked_downloader_class = mocker.patch("atldld.sync.DatasetDownloader")
+        mocked_downloader_inst = mocked_downloader_class.return_value
+        mocked_downloader_inst.__len__.return_value = n_images
+
+        def fake_run():
+            for i in range(n_images):
+                image_id = i
+                section_coordinate = i * 2.5
+                img = np.ones((100, 100, 3))
+                img_expr = np.ones((100, 100, 3)) if include_expression else None
+                df = DisplacementField(np.zeros((100, 100)), np.zeros((100, 100)))
+
+                yield image_id, section_coordinate, img, img_expr, df
+
+        mocked_downloader_inst.run.side_effect = fake_run
+
+        # Invoking the CLI
+        result = runner.invoke(
+            dataset_download,
+            [
+                dataset_id,
+                str(output_folder),
+            ],
+            catch_exceptions=False,
+        )
+
+        # Asserts
+        assert result.exit_code == 0
+        assert dataset_id in result.output
+
+        mocked_downloader_class.assert_called()
+        mocked_downloader_inst.fetch_metadata.assert_called()
+        mocked_downloader_inst.run.assert_called()
+
+
+        img_paths = [p for p in output_folder.iterdir() if p.suffix == ".png"]
+        assert len(img_paths) == (int(include_expression) + 1) * n_images
+
+        metadata_path = output_folder / "metadata.json"
+        assert metadata_path.exists()
+    
+        with metadata_path.open() as f:
+            metadata = json.load(f)
+
+        assert {
+            "dataset_id",
+            "downsample_ref",
+            "downsample_img",
+            "downsample_img",
+            "per_image"
+        } == set(metadata.keys())
+
+        assert len(metadata["per_image"]) == n_images
+        for img_id, image_metadata in metadata["per_image"].items():
+            assert {"section_coordinate"} == set(image_metadata.keys())
