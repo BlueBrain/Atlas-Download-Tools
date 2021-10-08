@@ -97,7 +97,7 @@ class TestGetParallelTransform:
 class TestDatasetDownloader:
     @pytest.mark.parametrize("include_expression", [True, False])
     def test_patched(self, include_expression, data_folder, monkeypatch):
-        """Does not requires internet, everything is patched."""
+        """Does not require internet, everything is patched."""
 
         # Parameters
         dataset_id = 123  # Sagittal dataset

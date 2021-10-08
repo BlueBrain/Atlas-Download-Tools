@@ -244,6 +244,8 @@ def dataset_download(
         "dataset_id": dataset_id,
         "downsample_ref": downsample_ref,
         "downsample_img": downsample_img,
+        "plane_of_section": downloader.metadata["dataset"]["plane_of_section_id"],
+        "section_thickness": downloader.metadata["dataset"]["section_thickness"],
         "per_image": {},
     }
 
@@ -261,6 +263,8 @@ def dataset_download(
 
             metadata["per_image"][image_id] = {
                 "section_coordinate": section_coordinate,
+                "section_coordinate_scaled": section_coordinate
+                / metadata["section_thickness"],
             }
 
     with metadata_path.open("w") as f:

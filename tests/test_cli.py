@@ -3,6 +3,7 @@ import pathlib
 import re
 import subprocess
 import textwrap
+from collections import defaultdict
 from typing import Any, Dict
 
 import click
@@ -286,6 +287,7 @@ class TestDatasetDownload:
         mocked_downloader_class = mocker.patch("atldld.sync.DatasetDownloader")
         mocked_downloader_inst = mocked_downloader_class.return_value
         mocked_downloader_inst.__len__.return_value = n_images
+        mocked_downloader_inst.metadata = defaultdict(lambda: defaultdict(lambda: 1))
 
         def fake_run():
             for i in range(n_images):
@@ -331,9 +333,14 @@ class TestDatasetDownload:
             "downsample_ref",
             "downsample_img",
             "downsample_img",
+            "plane_of_section",
+            "section_thickness",
             "per_image",
         } == set(metadata.keys())
 
         assert len(metadata["per_image"]) == n_images
         for image_metadata in metadata["per_image"].values():
-            assert {"section_coordinate"} == set(image_metadata.keys())
+            assert {
+                "section_coordinate",
+                "section_coordinate_scaled",
+            } == set(image_metadata.keys())
