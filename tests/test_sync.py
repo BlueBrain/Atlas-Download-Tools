@@ -95,7 +95,7 @@ class TestGetParallelTransform:
 
 
 class TestDatasetDownloader:
-    def invalid_dataset(self, monkeypatch):
+    def test_invalid_dataset(self, monkeypatch):
         # If `rma_all` returns an empty list, the API does not have any entries
         # satisfying the parameters
 
