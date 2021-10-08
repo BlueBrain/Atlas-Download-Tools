@@ -223,8 +223,8 @@ def dataset_download(
     )
     cli_input = f"""
     Dataset ID               : {dataset_id}
-    Dowsample reference      : {downsample_ref}
-    Dowsample image          : {downsample_img}
+    Downsample reference     : {downsample_ref}
+    Downsample image         : {downsample_img}
     Include expression       : {include_expression}
     Output folder            : {output_folder}
     """
