@@ -227,6 +227,13 @@ class DatasetDownloader:
     downsample_img
         The downloaded image will have both the height and the width
         downsampled by `2 ** downsample_img`.
+
+    Attributes
+    ----------
+    metadata
+        Needs to be fetched with the `fetch_metadata` method. It contains
+        two keys: "dataset" and "images". The values are
+        dictionaries storing metadata downloaded from the API.
     """
 
     def __init__(
