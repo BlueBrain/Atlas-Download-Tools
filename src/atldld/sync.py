@@ -32,6 +32,10 @@ from atldld.requests import RMAParameters, rma_all
 from atldld.utils import get_image
 
 
+class DatasetNotFoundError(Exception):
+    """Raised when there is no dataset for the given dataset ID."""
+
+
 def xy_to_pir(
     coords_img: np.ndarray,
     affine_2d: np.ndarray,
@@ -296,7 +300,9 @@ class DatasetDownloader:
         # Query the API
         r_datasets = rma_all(parameters_dataset)
         if not r_datasets:
-            raise ValueError(f"Dataset {self.dataset_id} does not seem to exist")
+            raise DatasetNotFoundError(
+                f"Dataset {self.dataset_id} does not seem to exist"
+            )
 
         r_dataset = r_datasets[0]  # dataset_id is unique
         r_images = rma_all(parameters_images)

@@ -208,7 +208,7 @@ def dataset_download(
 
     from PIL import Image
 
-    from atldld.sync import DatasetDownloader
+    from atldld.sync import DatasetDownloader, DatasetNotFoundError
 
     # Prepare paths
     if not output_folder.exists():
@@ -230,7 +230,10 @@ def dataset_download(
     """
     click.secho(textwrap.dedent(cli_input).strip(), fg="blue")
 
-    downloader.fetch_metadata()
+    try:
+        downloader.fetch_metadata()
+    except DatasetNotFoundError as exc:
+        raise click.ClickException(str(exc))
     n_images = len(downloader)
 
     additional_info = f"""

@@ -23,6 +23,7 @@ import pytest
 
 from atldld.sync import (
     DatasetDownloader,
+    DatasetNotFoundError,
     RMAParameters,
     get_parallel_transform,
     pir_to_xy,
@@ -105,7 +106,7 @@ class TestDatasetDownloader:
         downloader = DatasetDownloader(
             dataset_id=434324132413241,
         )
-        with pytest.raises(ValueError, match="does not seem to exist"):
+        with pytest.raises(DatasetNotFoundError, match="does not seem to exist"):
             downloader.fetch_metadata()
 
     @pytest.mark.parametrize("include_expression", [True, False])

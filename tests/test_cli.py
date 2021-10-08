@@ -23,6 +23,7 @@ from atldld.cli import (
     info,
     root,
 )
+from atldld.sync import DatasetNotFoundError
 
 
 def test_cli_entrypoint_is_installed():
@@ -264,6 +265,21 @@ class TestDatasetPreview:
 
 
 class TestDatasetDownload:
+    def test_invalid_dataset_id_errors_out(self, mocker):
+        # Mocking
+        def fetch_metadata():
+            raise DatasetNotFoundError("My Exception")
+
+        mocked_downloader_class = mocker.patch("atldld.sync.DatasetDownloader")
+        mocked_downloader_inst = mocked_downloader_class.return_value
+        mocked_downloader_inst.fetch_metadata.side_effect = fetch_metadata
+
+        # Testing
+        runner = CliRunner()
+        result = runner.invoke(dataset_download, ["0", "out"])
+        assert result.exit_code != 0  # should exit with an error code
+        assert "Error: My Exception" in result.output
+
     @pytest.mark.parametrize("dataset_id", [3532, 542133])
     @pytest.mark.parametrize("n_images", [2, 3])
     @pytest.mark.parametrize("include_expression", [True, False])
