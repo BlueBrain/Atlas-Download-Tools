@@ -31,6 +31,7 @@ import click
 
 from atldld.cli.dataset import dataset_cmd
 from atldld.cli.info import info_cmd
+from atldld.cli.search import search_cmd
 
 
 @click.group(
@@ -46,3 +47,4 @@ def root_cmd():
 
 root_cmd.add_command(info_cmd)
 root_cmd.add_command(dataset_cmd)
+root_cmd.add_command(search_cmd)

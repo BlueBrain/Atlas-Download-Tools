@@ -23,17 +23,39 @@ class PlaneOfSection(enum.Enum):
 
     The values correspond to the IDs used by the AIBS and can be found here:
     http://api.brain-map.org/api/v2/data/PlaneOfSection/query.json
-
-    Only a subset of values of interest are included. For the full list see the
-    URL above.
     """
 
     CORONAL = 1
     SAGITTAL = 2
+    VARIABLE = 4
+    NA = 5
+    TRANSVERSE = 6
+    LATERAL_TO_MEDIAL = 7
+    MEDIAL_TO_LATERAL = 8
+    VENTRAL_TO_DORSAL = 9
+    DORSAL_TO_VENTRAL = 10
+    CORONAL_CAUDAL_TO_ROSTRAL = 11
+    CORONAL_ROSTRAL_TO_CAUDAL = 531107579
+    TANGENTIAL = 1082279372
+
+    __names__ = {
+        CORONAL: "coronal",
+        SAGITTAL: "sagittal",
+        VARIABLE: "variable",
+        NA: "n/a",
+        TRANSVERSE: "transverse",
+        LATERAL_TO_MEDIAL: "Lateral to Medial",
+        MEDIAL_TO_LATERAL: "Medial to Lateral",
+        VENTRAL_TO_DORSAL: "Ventral to Dorsal",
+        DORSAL_TO_VENTRAL: "Dorsal to Ventral",
+        CORONAL_CAUDAL_TO_ROSTRAL: "Coronal (Caudal to Rostral)",
+        CORONAL_ROSTRAL_TO_CAUDAL: "Coronal (Rostral to Caudal)",
+        TANGENTIAL: "Tangential",
+    }
 
     def __str__(self):
         """Get the name of the plane of section."""
-        return self.name.lower()
+        return self.__names__[self.value]
 
 
 class ReferenceSpace(enum.Enum):
