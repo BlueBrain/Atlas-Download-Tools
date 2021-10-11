@@ -25,8 +25,8 @@ def info_cmd():
     """Run informational subcommands."""
 
 
-@info_cmd.command(help="Version of Atlas-Download-Tools.")
-def version():
+@info_cmd.command("version", help="Version of Atlas-Download-Tools.")
+def info_version():
     """Print the version of Atlas-Download-Tools."""
     click.echo(f"Atlas-Download-Tools version {atldld.__version__}")
 
@@ -41,7 +41,7 @@ def version():
     override the OS-specific cache directory.
     """,
 )
-def cache_dir():
+def info_cache():
     """Print the location of the global cache directory."""
     import os
 

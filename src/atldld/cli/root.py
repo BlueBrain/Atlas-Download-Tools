@@ -14,7 +14,19 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""Implementation of the "atldld" command line entrypoint."""
+"""Implementation of the "atldld" command line entrypoint.
+
+We follow a particular naming for the functions that implement the CLI commands.
+Given the command `atldld group command` the function representing the `group`
+subcommand shall be named `group_cmd` and the function that implements `command`
+shall be named `group_command`. Both `group_cmd` and `group_command` shall be
+placed in the submodule `atldld.cli.group`.
+
+For example, the `atldld dataset download` command leads to the following
+functions:
+* `atldld.cli.dataset::dataset_cmd` (subcommand group)
+* `atldld.cli.dataset::dataset_download` (`download` command implementation)
+"""
 import click
 
 from atldld.cli.dataset import dataset_cmd
