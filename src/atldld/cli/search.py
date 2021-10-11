@@ -91,5 +91,43 @@ def search_dataset(dataset_id, specimen_id, gene_acronym, plane_of_section):
 
 
 @search_cmd.command("img", help="Search section images")
-def search_img():
+@click.option("-i", "--id", "image_id", help="The image ID")
+@click.option("-d", "--dataset", "dataset_id", help="The dataset ID")
+def search_img(image_id, dataset_id):
     """Run search subcommand."""
+    from atldld import requests
+
+    criteria = {}
+    if image_id is not None:
+        criteria["id"] = image_id
+    if dataset_id is not None:
+        criteria["data_set_id"] = dataset_id
+
+    if len(criteria) == 0:
+        raise click.ClickException(
+            "At least one of the search criteria has to be specified. "
+            "Use the --help flag to see all available criteria."
+        )
+
+    # Send request
+    rma_parameters = requests.RMAParameters(
+        "SectionImage",
+        criteria=criteria,
+    )
+    click.secho("Searching...", fg="green")
+    try:
+        msg = requests.rma_all(rma_parameters)
+    except requests.RMAError as exc:
+        raise click.ClickException(
+            f"An error occurred while querying the AIBS servers: {str(exc)}"
+        )
+
+    if len(msg) == 0:
+        click.secho("No image found", fg="red")
+    else:
+        click.secho(f"{len(msg)} image(s) found:", fg="green")
+        for meta in msg:
+            print(
+                f"* id: {meta['id']:10d}, dataset: {meta['data_set_id']:>10d}, "
+                f"h: {meta['height']:>5d}, w: {meta['width']:>5d}"
+            )
