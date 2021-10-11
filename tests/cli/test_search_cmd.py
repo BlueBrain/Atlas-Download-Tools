@@ -19,7 +19,7 @@ import re
 import pytest
 from click.testing import CliRunner
 
-from atldld.cli.search import search_cmd, search_dataset
+from atldld.cli.search import search_cmd, search_dataset, search_img
 from atldld.requests import RMAError
 
 
@@ -31,11 +31,12 @@ class TestSearchSubgroup:
         assert result.output.startswith("Usage:")
 
 
-class TestSearchDataset:
-    @pytest.fixture
-    def rma_all(self, mocker):
-        return mocker.patch("atldld.requests.rma_all", return_value=[])
+@pytest.fixture
+def rma_all(mocker):
+    return mocker.patch("atldld.requests.rma_all", return_value=[])
 
+
+class TestSearchDataset:
     def test_calling_without_parameters_produces_an_error(self):
         runner = CliRunner()
         result = runner.invoke(search_dataset)
@@ -135,3 +136,67 @@ class TestSearchDataset:
         )
         assert result.exit_code == 0
         assert f'Unknown plane of section name: "{plane_of_section}"' in result.output
+
+
+class TestSearchImage:
+    def test_calling_without_parameters_produces_an_error(self):
+        runner = CliRunner()
+        result = runner.invoke(search_img)
+        assert result.exit_code != 0  # should exit with an error code
+        assert result.output.startswith(
+            "Error: At least one of the search criteria has to be specified."
+        )
+
+    def test_rma_errors_are_reported(self, rma_all):
+        error_msg = "Some error occurred"
+        rma_all.side_effect = RMAError(error_msg)
+        result = CliRunner().invoke(search_img, ["--id", "1"])
+        assert result.exit_code != 0
+        assert "error" in result.output
+        assert error_msg in result.output
+
+    def test_no_datasets_found(self, rma_all):
+        rma_all.return_value = []
+        result = CliRunner().invoke(search_img, ["--id", "1"])
+        assert result.exit_code == 0
+        assert "No image found" in result.output
+
+    @pytest.mark.parametrize("command", ["--id", "--dataset"])
+    def test_all_results_are_shown(self, rma_all, command):
+        msg = [
+            {
+                "id": 1,
+                "data_set_id": 1,
+                "height": 100,
+                "width": 100,
+            },
+            {
+                "id": 2,
+                "data_set_id": 1,
+                "height": 200,
+                "width": 200,
+            },
+            {
+                "id": 3,
+                "data_set_id": 1,
+                "height": 300,
+                "width": 300,
+            },
+        ]
+        rma_all.return_value = msg
+        runner = CliRunner()
+        result = runner.invoke(search_img, [command, "whatever"])
+        assert result.exit_code == 0
+
+        # Check the output contains the correct number of bullet points
+        assert len(re.findall(r"\*", result.output)) == len(msg)
+
+        # Check each bullet point has the correct content
+        for item in msg:
+            assert re.search(
+                (
+                    fr"id: +{item['id']}, dataset: +{item['data_set_id']}, "
+                    fr"h: +{item['height']}, w: +{item['width']}"
+                ),
+                result.output.strip(),
+            )
