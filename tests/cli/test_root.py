@@ -14,16 +14,27 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""The main CLI entry point.
+import subprocess
 
-This module enables running the CLI by running `atldld` as a module:
+import pytest
+from click.testing import CliRunner
 
-    $ python -m atldld
-
-This way it is also possible to debug the CLI using the PDB debugger:
-
-    $ python -m pdb -m atldld
-"""
 from atldld.cli.root import root_cmd
 
-root_cmd()
+
+def test_cli_entrypoint_is_installed():
+    subprocess.check_call("atldld")
+
+
+class TestCliRoot:
+    def test_running_without_arguments_prints_help(self):
+        runner = CliRunner()
+        result = runner.invoke(root_cmd)
+        assert result.exit_code == 0
+        assert result.output.startswith("Usage:")
+
+    @pytest.mark.parametrize("subgroup", ("info", "dataset"))
+    def test_subgroup_installed(self, subgroup):
+        runner = CliRunner()
+        result = runner.invoke(root_cmd, [subgroup])
+        assert result.exit_code == 0

@@ -14,70 +14,13 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""The command line interface (CLI) for Atlas-Download-Tools."""
+"""Implementation of the "atldld dataset" subcommand."""
 import pathlib
 from typing import Any, Dict, Optional, Sequence
 
 import click
 
-import atldld
 
-
-@click.group(
-    help="""\
-    Atlas-Download-Tools command line interface.
-
-    For detailed instructions see the documentation of the corresponding sub-commands.
-    """
-)
-def root():
-    """Run the command line interface for Atlas-Download-Tools."""
-
-
-# ============================= Info subcommand ================================
-
-
-@click.group(help="Informational subcommands.")
-def info():
-    """Run informational subcommands."""
-
-
-@click.command(help="Version of Atlas-Download-Tools.")
-def version():
-    """Print the version of Atlas-Download-Tools."""
-    click.echo(f"Atlas-Download-Tools version {atldld.__version__}")
-
-
-@click.command(
-    name="cache",
-    help="""
-    Location of the atldld cache directory.
-
-    By default it is configured as a subdirectory of the OS-specific cache
-    directory. If the XDG_CACHE_HOME environment variable is set its value will
-    override the OS-specific cache directory.
-    """,
-)
-def cache_dir():
-    """Print the location of the global cache directory."""
-    import os
-
-    from atldld.config import user_cache_dir
-
-    if "XDG_CACHE_HOME" in os.environ:
-        suffix = " (configured via XDG_CACHE_HOME)"
-    else:
-        suffix = ""
-    click.secho(f"Location of the atldld cache{suffix}:", fg="green")
-    click.echo(str(user_cache_dir(create=False).resolve().as_uri()))
-
-
-root.add_command(info)
-info.add_command(version)
-info.add_command(cache_dir)
-
-
-# ============================= Dataset subcommand =============================
 def get_dataset_meta_or_abort(
     dataset_id: int, include: Optional[Sequence[str]] = None
 ) -> Dict[str, Any]:
@@ -128,12 +71,12 @@ def get_dataset_meta_or_abort(
     return meta
 
 
-@click.group(help="Commands related to atlas datasets")
-def dataset():
+@click.group("dataset", help="Commands related to atlas datasets")
+def dataset_cmd():
     """Run dataset subcommands."""
 
 
-@click.command("info", help="Get information for a given dataset ID")
+@dataset_cmd.command("info", help="Get information for a given dataset ID")
 @click.argument("dataset_id", type=int)
 def dataset_info(dataset_id):
     """Get information for a given dataset ID."""
@@ -168,7 +111,9 @@ def dataset_info(dataset_id):
     click.secho(textwrap.dedent(output).strip(), fg="green")
 
 
-@click.command("download", help="Download and synchronize an entire section dataset")
+@dataset_cmd.command(
+    "download", help="Download and synchronize an entire section dataset"
+)
 @click.argument("dataset_id", type=str)
 @click.argument(
     "output_folder",
@@ -274,7 +219,7 @@ def dataset_download(
         json.dump(metadata, f, indent=4)
 
 
-@click.command("preview", help="Plot a preview of dataset slices")
+@dataset_cmd.command("preview", help="Plot a preview of dataset slices")
 @click.argument("dataset_id", type=int)
 @click.option(
     "-o",
@@ -323,9 +268,3 @@ def dataset_preview(dataset_id, output_dir):
     fig.savefig(img_path)
     click.secho("Figure was saved in ", fg="green", nl=False)
     click.secho(f"{img_path.resolve().as_uri()}", fg="yellow", bold=True)
-
-
-root.add_command(dataset)
-dataset.add_command(dataset_info)
-dataset.add_command(dataset_download)
-dataset.add_command(dataset_preview)

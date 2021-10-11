@@ -14,16 +14,4 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""The main CLI entry point.
-
-This module enables running the CLI by running `atldld` as a module:
-
-    $ python -m atldld
-
-This way it is also possible to debug the CLI using the PDB debugger:
-
-    $ python -m pdb -m atldld
-"""
-from atldld.cli.root import root_cmd
-
-root_cmd()
+"""The command line interface (CLI) for Atlas-Download-Tools."""
