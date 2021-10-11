@@ -34,7 +34,7 @@ class TestSearchSubgroup:
 class TestSearchDataset:
     @pytest.fixture
     def rma_all(self, mocker):
-        return mocker.patch("atldld.requests.rma_all")
+        return mocker.patch("atldld.requests.rma_all", return_value=[])
 
     def test_calling_without_parameters_produces_an_error(self):
         runner = CliRunner()
@@ -99,44 +99,39 @@ class TestSearchDataset:
                 result.output.strip(),
             )
 
-    def test_search_by_dataset_id(self, rma_all):
-        rma_all.return_value = [
-            {
-                "id": 1,
-                "plane_of_section_id": 1,
-                "genes": [{"acronym": "Gad1"}],
-                "section_images": [1, 2, 3],
-            },
-        ]
-        runner = CliRunner()
-        result = runner.invoke(search_dataset, ["--id", "1"])
+    @pytest.mark.parametrize(
+        ("cli_params", "expected_criteria"),
+        (
+            (["--id", "1"], {"id": "1"}),
+            (["--specimen", "789"], {"specimen_id": "789"}),
+            (["--gene-name", "my-gene"], {"genes": {"acronym": "my-gene"}}),
+            (
+                ["--plane-of-section", "coronal"],
+                {"plane_of_section": {"name": "coronal"}},
+            ),
+        ),
+        ids=(
+            "Filter by dataset ID",
+            "Filter by specimen ID",
+            "Filter by gene acronym",
+            "Filter by plane of section",
+        ),
+    )
+    def test_search_filters(self, rma_all, cli_params, expected_criteria):
+        """Test that CLI parameters are correctly translated to criteria."""
+        result = CliRunner().invoke(search_dataset, cli_params)
         assert result.exit_code == 0
-        assert re.search(
-            r"id: +1, genes: +Gad1, coronal, 3 section images",
-            result.output.strip(),
-        )
         assert rma_all.called_once
         # Get the args of the last call to rma_all
         (rma_parameters,), _kwargs = rma_all.call_args
-        assert rma_parameters.criteria == {"id": "1"}
+        assert rma_parameters.criteria == expected_criteria
 
-    def test_search_by_specimen_id(self, rma_all):
-        rma_all.return_value = [
-            {
-                "id": 1,
-                "plane_of_section_id": 1,
-                "genes": [{"acronym": "Gad1"}],
-                "section_images": [1, 2, 3],
-            },
-        ]
-        runner = CliRunner()
-        result = runner.invoke(search_dataset, ["--specimen", "789"])
-        assert result.exit_code == 0
-        assert re.search(
-            r"id: +1, genes: +Gad1, coronal, 3 section images",
-            result.output.strip(),
+    def test_unknown_plane_of_section(self, rma_all):
+        """Test that CLI parameters are correctly translated to criteria."""
+        plane_of_section = "unknown value"
+        result = CliRunner().invoke(
+            search_dataset,
+            ["--plane-of-section", plane_of_section],
         )
-        assert rma_all.called_once
-        # Get the args of the last call to rma_all
-        (rma_parameters,), _kwargs = rma_all.call_args
-        assert rma_parameters.criteria == {"specimen_id": "789"}
+        assert result.exit_code == 0
+        assert f'Unknown plane of section name: "{plane_of_section}"' in result.output

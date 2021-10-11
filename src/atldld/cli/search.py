@@ -48,7 +48,7 @@ def search_dataset(dataset_id, specimen_id, gene_acronym, plane_of_section):
     if plane_of_section is not None:
         criteria["plane_of_section"] = {"name": plane_of_section}
 
-        if plane_of_section not in PlaneOfSection.__names__:
+        if plane_of_section not in PlaneOfSection.__names__.values():
             click.secho(
                 f'Unknown plane of section name: "{plane_of_section}"', fg="yellow"
             )
