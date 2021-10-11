@@ -33,7 +33,7 @@ def search_cmd():
     "plane_of_section",
     help="The plane of section, e.g. coronal, sagittal, etc.",
 )
-def search_dataset_cmd(dataset_id, specimen_id, gene_acronym, plane_of_section):
+def search_dataset(dataset_id, specimen_id, gene_acronym, plane_of_section):
     """Run search subcommand."""
     from atldld import requests
     from atldld.dataset import PlaneOfSection
@@ -91,5 +91,5 @@ def search_dataset_cmd(dataset_id, specimen_id, gene_acronym, plane_of_section):
 
 
 @search_cmd.command("img", help="Search section images")
-def search_img_cmd():
+def search_img():
     """Run search subcommand."""
