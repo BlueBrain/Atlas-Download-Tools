@@ -116,8 +116,8 @@ class TestSearchDataset:
             result.output.strip(),
         )
         assert rma_all.called_once
-        # First call, first arg
-        rma_parameters = rma_all.call_args_list[0].args[0]
+        # Get the args of the last call to rma_all
+        (rma_parameters,), _kwargs = rma_all.call_args
         assert rma_parameters.criteria == {"id": "1"}
 
     def test_search_by_specimen_id(self, rma_all):
@@ -137,6 +137,6 @@ class TestSearchDataset:
             result.output.strip(),
         )
         assert rma_all.called_once
-        # First call, first arg
-        rma_parameters = rma_all.call_args_list[0].args[0]
+        # Get the args of the last call to rma_all
+        (rma_parameters,), _kwargs = rma_all.call_args
         assert rma_parameters.criteria == {"specimen_id": "789"}
