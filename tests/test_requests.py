@@ -27,11 +27,26 @@ class TestRMAParameters:
         params = RMAParameters("my-model")
         assert str(params) == "criteria=model::my-model"
 
-    def test_criteria(self):
-        criteria = {"id": 10, "name": "dataset"}
+    @pytest.mark.parametrize(
+        ("criteria", "url_params"),
+        (
+            (
+                {"id": 10, "name": "dataset"},
+                "[id$eq10][name$eqdataset]",
+            ),
+            (
+                {"genes": {"acronym": "Gad1"}, "plane_of_section": {"id": 1}},
+                "genes[acronym$eqGad1],plane_of_section[id$eq1]",
+            ),
+            (
+                {"specimen_id": 123, "genes": {"acronym": "Gad1"}},
+                "[specimen_id$eq123],genes[acronym$eqGad1]",
+            ),
+        ),
+    )
+    def test_criteria(self, criteria, url_params):
         params = RMAParameters("my-model", criteria=criteria)
-        url_params = "criteria=model::my-model,rma::criteria,[id$eq10][name$eqdataset]"
-        assert str(params) == url_params
+        assert str(params) == f"criteria=model::my-model,rma::criteria,{url_params}"
 
     def test_include(self):
         params = RMAParameters("my-model", include=("genes", "section_images"))

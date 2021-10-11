@@ -35,7 +35,16 @@ class RMAError(Exception):
 
 @dataclass
 class RMAParameters:
-    """Abstraction of RMA parameters."""
+    """Abstraction of RMA parameters.
+
+    For practical purposes not all RMA functionality is covered. Important
+    restrictions are:
+    * Criteria filters only support the equality operator
+    * Associations (~nested criteria) are modeled by values in the `criteria`
+      dictionary that are dictionaries themselves.
+    * Nested associations are not supported.
+    * The include field does not support filters
+    """
 
     model: str
     criteria: Optional[Dict[str, Any]] = None
@@ -49,8 +58,29 @@ class RMAParameters:
 
         # Criteria
         if self.criteria is not None:
+            # Associations are a way of specifying nested search filters and are
+            # modeled by nested criteria, i.e. by values that are dictionaries
+            # themselves.
+            # For example, genes are an association of the section data set. So
+            # to filter both on data set properties and on gene properties one
+            # has specify something like this:
+            # criteria = {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
+            # This should translate to the following URL part:
+            # "rma::criteria,[specimen_id$eq123],genes[acronym$eqGad1]"
             flags.append("rma::criteria")
-            flags.append("".join(f"[{k}$eq{v}]" for k, v in self.criteria.items()))
+            criteria = {}
+            sub_criteria_fields = {}
+            for k, v in self.criteria.items():
+                if isinstance(v, dict):
+                    sub_criteria_fields[k] = v
+                else:
+                    criteria[k] = v
+            if criteria:
+                flags.append("".join(f"[{k}$eq{v}]" for k, v in criteria.items()))
+            for field, sub_criteria in sub_criteria_fields.items():
+                flags.append(
+                    field + "".join(f"[{k}$eq{v}]" for k, v in sub_criteria.items())
+                )
 
         # Include
         if self.include is not None:
