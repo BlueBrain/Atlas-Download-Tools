@@ -69,7 +69,6 @@ def search_dataset(dataset_id, specimen_id, gene_acronym, plane_of_section):
         criteria=criteria,
         include=["genes", "section_images"],
     )
-    print(rma_parameters)
     click.secho("Searching...", fg="green")
     try:
         msg = requests.rma_all(rma_parameters)
@@ -99,11 +98,11 @@ def search_dataset(dataset_id, specimen_id, gene_acronym, plane_of_section):
 def search_img(image_id, dataset_id, gene_acronym, specimen_id):
     """Run search subcommand."""
     from collections import defaultdict
-    from typing import Any, Dict
+    from typing import Any, DefaultDict
 
     from atldld import requests
 
-    criteria: Dict[str, Any] = defaultdict(dict)
+    criteria: DefaultDict[str, Any] = defaultdict(dict)
     if image_id is not None:
         criteria["id"] = image_id
     if dataset_id is not None:
