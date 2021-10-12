@@ -20,7 +20,7 @@ More info: https://help.brain-map.org/display/api/Allen+Brain+Atlas+API
 """
 import logging
 from dataclasses import dataclass, replace
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import requests
 
@@ -57,30 +57,7 @@ class RMAParameters:
         flags = [f"model::{self.model}"]
 
         # Criteria
-        if self.criteria is not None:
-            # Associations are a way of specifying nested search filters and are
-            # modeled by nested criteria, i.e. by values that are dictionaries
-            # themselves.
-            # For example, genes are an association of the section data set. So
-            # to filter both on data set properties and on gene properties one
-            # has specify something like this:
-            # criteria = {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
-            # This should translate to the following URL part:
-            # "rma::criteria,[specimen_id$eq123],genes[acronym$eqGad1]"
-            flags.append("rma::criteria")
-            criteria = {}
-            sub_criteria_fields = {}
-            for k, v in self.criteria.items():
-                if isinstance(v, dict):
-                    sub_criteria_fields[k] = v
-                else:
-                    criteria[k] = v
-            if criteria:
-                flags.append("".join(f"[{k}$eq{v}]" for k, v in criteria.items()))
-            for field, sub_criteria in sub_criteria_fields.items():
-                flags.append(
-                    field + "".join(f"[{k}$eq{v}]" for k, v in sub_criteria.items())
-                )
+        flags += self.handle_criteria()
 
         # Include
         if self.include is not None:
@@ -97,6 +74,72 @@ class RMAParameters:
             flags.append(flag)
 
         return f'criteria={",".join(flags)}'
+
+    def handle_criteria(self) -> List[str]:
+        """Convert criteria dictionary into a list of strings for URL."""
+        if self.criteria is None:
+            return []
+
+        # Associations are a way of specifying nested search filters and are
+        # modeled by nested criteria, i.e. by values that are dictionaries
+        # themselves.
+        # For example, genes are an association of the section data set. So
+        # to filter both on data set properties and on gene properties one
+        # has specify something like this:
+        # criteria = {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
+        # This should translate to the following URL part:
+        # "rma::criteria,[specimen_id$eq123],genes[acronym$eqGad1]"
+        # criteria = {"data_set": {"specimen_id": 123, "genes": {"acronym": "Gad1"}}}
+        # This should translate to the following URL part:
+        # "rma::criteria,data_set[specimen_id$eq123](genes[acronym$eqGad1])"
+
+        criteria_flags = ["rma::criteria"]
+
+        def separate_criteria(
+            all_criteria: Dict[str, Any]
+        ) -> Tuple[Dict[str, str], Dict[str, Any]]:
+            """Separate all criteria into direct criteria and sub-criteria.
+
+            For example: {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
+            --> criteria: {"specimen_id": 123}
+            --> sub-criteria-fields: {"genes": {"acronym": "Gad1"}}
+            """
+            criteria = {}
+            sub_criteria_fields = {}
+
+            for k, v in all_criteria.items():
+                if isinstance(v, dict):
+                    sub_criteria_fields[k] = v
+                else:
+                    criteria[k] = v
+
+            return criteria, sub_criteria_fields
+
+        criteria, sub_criteria_fields = separate_criteria(self.criteria)
+
+        if criteria:
+            criteria_flags.append("".join(f"[{k}$eq{v}]" for k, v in criteria.items()))
+
+        for field, nested_criteria in sub_criteria_fields.items():
+            # data_set, {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
+            sub_flags = []
+            nested_criteria, nested_criteria_fields = separate_criteria(nested_criteria)
+
+            sub_flags.append(
+                "".join(f"[{k}$eq{v}]" for k, v in nested_criteria.items())
+            )
+
+            for sub_field, nested_values in nested_criteria_fields.items():
+                sub_flags.append(
+                    "("
+                    + sub_field
+                    + "".join(f"[{k}$eq{v}]" for k, v in nested_values.items())
+                    + ")"
+                )
+
+            criteria_flags.append(field + "".join(sub_flags))
+
+        return criteria_flags
 
 
 def rma_all(rma_parameters: RMAParameters) -> list:

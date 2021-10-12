@@ -42,6 +42,10 @@ class TestRMAParameters:
                 {"specimen_id": 123, "genes": {"acronym": "Gad1"}},
                 "[specimen_id$eq123],genes[acronym$eqGad1]",
             ),
+            (
+                {"data_set": {"specimen_id": 123, "genes": {"acronym": "Gad1"}}},
+                "data_set[specimen_id$eq123](genes[acronym$eqGad1])",
+            ),
         ),
     )
     def test_criteria(self, criteria, url_params):
