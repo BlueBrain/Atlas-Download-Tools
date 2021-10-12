@@ -84,7 +84,7 @@ def search_dataset(dataset_id, specimen_id, gene_acronym, plane_of_section):
         for meta in msg:
             genes = ", ".join(gene["acronym"] for gene in meta["genes"])
             plane_of_section = PlaneOfSection(meta["plane_of_section_id"])
-            print(
+            click.echo(
                 f"* id: {meta['id']:10d}, genes: {genes:>10s}, "
                 f"{plane_of_section}, {len(meta['section_images'])} section images"
             )
@@ -136,7 +136,7 @@ def search_img(image_id, dataset_id, gene_acronym, specimen_id):
     else:
         click.secho(f"{len(msg)} image(s) found:", fg="green")
         for meta in msg:
-            print(
+            click.echo(
                 f"* id: {meta['id']:10d}, dataset: {meta['data_set_id']:>10d}, "
                 f"h: {meta['height']:>5d}, w: {meta['width']:>5d}"
             )
