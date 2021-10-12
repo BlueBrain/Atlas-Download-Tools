@@ -69,6 +69,7 @@ def search_dataset(dataset_id, specimen_id, gene_acronym, plane_of_section):
         criteria=criteria,
         include=["genes", "section_images"],
     )
+    print(rma_parameters)
     click.secho("Searching...", fg="green")
     try:
         msg = requests.rma_all(rma_parameters)
@@ -93,15 +94,24 @@ def search_dataset(dataset_id, specimen_id, gene_acronym, plane_of_section):
 @search_cmd.command("img", help="Search section images")
 @click.option("-i", "--id", "image_id", help="The image ID")
 @click.option("-d", "--dataset", "dataset_id", help="The dataset ID")
-def search_img(image_id, dataset_id):
+@click.option("-g", "--gene-name", "gene_acronym", help="The gene acronym")
+@click.option("-s", "--specimen", "specimen_id", help="The specimen ID")
+def search_img(image_id, dataset_id, gene_acronym, specimen_id):
     """Run search subcommand."""
+    from collections import defaultdict
+    from typing import Any, Dict
+
     from atldld import requests
 
-    criteria = {}
+    criteria: Dict[str, Any] = defaultdict(dict)
     if image_id is not None:
         criteria["id"] = image_id
     if dataset_id is not None:
         criteria["data_set_id"] = dataset_id
+    if gene_acronym is not None:
+        criteria["data_set"]["genes"] = {"acronym": gene_acronym}
+    if specimen_id is not None:
+        criteria["data_set"]["specimen_id"] = specimen_id
 
     if len(criteria) == 0:
         raise click.ClickException(

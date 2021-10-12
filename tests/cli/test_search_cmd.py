@@ -161,7 +161,40 @@ class TestSearchImage:
         assert result.exit_code == 0
         assert "No image found" in result.output
 
-    @pytest.mark.parametrize("command", ["--id", "--dataset"])
+    @pytest.mark.parametrize(
+        ("cli_params", "expected_criteria"),
+        (
+            (["--id", "1"], {"id": "1"}),
+            (["--dataset", "789"], {"data_set_id": "789"}),
+            (["--specimen", "702694"], {"data_set": {"specimen_id": "702694"}}),
+            (
+                ["--gene-name", "my-gene"],
+                {"data_set": {"genes": {"acronym": "my-gene"}}},
+            ),
+        ),
+        ids=(
+            "Filter by image ID",
+            "Filter by dataset ID",
+            "Filter by specimen ID",
+            "Filter by gene acronym",
+        ),
+    )
+    def test_search_filters(self, rma_all, cli_params, expected_criteria):
+        """Test that CLI parameters are correctly translated to criteria."""
+        result = CliRunner().invoke(search_img, cli_params)
+        assert result.exit_code == 0
+        assert rma_all.called_once
+        # Get the args of the last call to rma_all
+        (rma_parameters,), _kwargs = rma_all.call_args
+        assert rma_parameters.criteria == expected_criteria
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "--id",
+            "--dataset",
+        ],
+    )
     def test_all_results_are_shown(self, rma_all, command):
         msg = [
             {
