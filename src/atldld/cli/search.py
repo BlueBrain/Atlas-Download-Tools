@@ -132,7 +132,7 @@ def search_img(image_id, dataset_id, gene_acronym, specimen_id):
         )
 
     if len(msg) == 0:
-        click.secho("No image found", fg="red")
+        click.secho("No images found", fg="red")
     else:
         click.secho(f"{len(msg)} image(s) found:", fg="green")
         for meta in msg:

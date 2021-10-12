@@ -155,11 +155,11 @@ class TestSearchImage:
         assert "error" in result.output
         assert error_msg in result.output
 
-    def test_no_datasets_found(self, rma_all):
+    def test_no_images_found(self, rma_all):
         rma_all.return_value = []
         result = CliRunner().invoke(search_img, ["--id", "1"])
         assert result.exit_code == 0
-        assert "No image found" in result.output
+        assert "No images found" in result.output
 
     @pytest.mark.parametrize(
         ("cli_params", "expected_criteria"),
