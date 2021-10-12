@@ -25,10 +25,19 @@ The Atlas-Download-Tools library can help you to download single section images
 and entire datasets, as well as the corresponding metadata.
 It can further pre-process the image data to place it in the standard reference space.
 
-## Installation
+* [Installation](#installation)
+    * [Installation from PyPI](#installation-from-pypi)
+    * [Installation from source](#installation-from-source)
+    * [Installation for development](#installation-for-development)
+* [How to use the package](#how-to-use-the-package)
+    * [Using the CLI](#using-the-cli)
+    * [Using the python API](#using-the-python-api)
+* [Funding & Acknowledgment](#funding-acknowledgment)
+
+## <a name="installation"></a> Installation
 
 
-### Installation from PyPI
+### <a name="installation-from-pypi"></a> Installation from PyPI
 The atldld package can be easily installed from PyPI.
 
 ```shell script
@@ -36,13 +45,13 @@ pip install atldld
 ```
 
 
-### Installation from source
+### <a name="installation-from-source"></a> Installation from source
 If you want to try the latest version, you can install from source.
 ```shell script
 pip install git+https://github.com/BlueBrain/Atlas-Download-Tools
 ```
 
-### Installation for development
+### <a name="installation-for-development"></a> Installation for development
 If you want a dev install, you should install the latest version from source with
 all the extra requirements for running test.
 ```shell script
@@ -51,14 +60,14 @@ cd Atlas-Download-Tools
 pip install -e '.[dev]'
 ```
 
-## How to use the package
+## <a name="how-to-use-the-package"></a> How to use the package
 Atlas-Download-Tools can be used through a command line interface (CLI), as well
 as programmatically through a python API.
 
 At present the CLI is rather limited, but we are working on adding the most
 useful functionality as soon as possible.
 
-### Using the CLI
+### <a name="using-the-cli"></a> Using the CLI
 All functionality can be accessed through the `atldld` command and its
 sub-commands. For example:
 ```bash
@@ -80,7 +89,7 @@ $ atldld dataset download $DATASET_ID
 For further information please refer to the help part of the corresponding
 command.
 
-### Using the python API
+### <a name="using-the-python-api"></a> Using the python API
 The package `atldld` has several functionalities to download data from [Allen Brain Institute](https://portal.brain-map.org/):
 
 - One can find dataset IDs from a gene expression name:
@@ -109,7 +118,7 @@ ref_space = CommonQueries.get_reference_space(dataset_id=DATASET_ID)
 matrix_3d = get_3d(dataset_id=DATASET_ID)
 ```
 
-## Funding & Acknowledgment
+## <a name="funding-acknowledgment"></a> Funding & Acknowledgment
 
 The development of this software was supported by funding to the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL), from the Swiss government’s ETH Board of the Swiss Federal Institutes of Technology.
 
