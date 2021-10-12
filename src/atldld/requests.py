@@ -72,14 +72,14 @@ class RMAParameters:
             # "rma::criteria,data_set[specimen_id$eq123](genes[acronym$eqGad1])"
             flags.append("rma::criteria")
 
-            fields, criteria = self._split_associations(self.criteria)
+            fields, associations = self._split_criteria(self.criteria)
 
             if fields:
                 flags.append("".join(f"[{k}$eq{v}]" for k, v in fields.items()))
 
-            for name, nested_criteria in criteria.items():
+            for name, criteria in associations.items():
                 # data_set, {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
-                flags.append(self._parse_association(name, nested_criteria))
+                flags.append(self._parse_association(name, criteria))
 
         # Include
         if self.include is not None:
@@ -97,38 +97,38 @@ class RMAParameters:
 
         return f'criteria={",".join(flags)}'
 
-    def _split_associations(
-        self, all_associations: Dict[str, Any]
+    def _split_criteria(
+        self, criteria: Dict[str, Any]
     ) -> Tuple[Dict[str, str], Dict[str, Any]]:
-        """Separate all criteria into direct criteria and sub-criteria.
+        """Separate criteria into fields and associations.
 
-        For example: {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
-        --> criteria: {"specimen_id": 123}
-        --> sub-criteria-fields: {"genes": {"acronym": "Gad1"}}
+        For example: criteria: {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
+        --> fields: {"specimen_id": 123}
+        --> associations: {"genes": {"acronym": "Gad1"}}
         """
-        criteria = {}
-        sub_criteria_fields = {}
+        fields = {}
+        associations = {}
 
-        for k, v in all_associations.items():
+        for k, v in criteria.items():
             if isinstance(v, dict):
-                sub_criteria_fields[k] = v
+                associations[k] = v
             else:
-                criteria[k] = v
+                fields[k] = v
 
-        return criteria, sub_criteria_fields
+        return fields, associations
 
     def _parse_association(self, name, criteria):
         """Parse association for the creation of the URL."""
         result = name
-        fields, assocations = self._split_associations(criteria)
+        fields, associations = self._split_criteria(criteria)
 
         for k, v in fields.items():
             result += f"[{k}$eq{v}]"
 
-        if assocations:
+        if associations:
             parsed_associations = [
                 self._parse_association(association_name, association_criteria)
-                for association_name, association_criteria in assocations.items()
+                for association_name, association_criteria in associations.items()
             ]
             result += "("
             result += ",".join(parsed_associations)
