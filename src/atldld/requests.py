@@ -42,7 +42,6 @@ class RMAParameters:
     * Criteria filters only support the equality operator
     * Associations (~nested criteria) are modeled by values in the `criteria`
       dictionary that are dictionaries themselves.
-    * Nested associations are not supported.
     * The include field does not support filters
     """
 
@@ -57,7 +56,29 @@ class RMAParameters:
         flags = [f"model::{self.model}"]
 
         # Criteria
-        flags += self.handle_criteria()
+        if self.criteria is not None:
+            # Associations are a way of specifying nested search filters and are
+            # modeled by nested criteria, i.e. by values that are dictionaries
+            # themselves.
+            # For example, genes are an association of the section data set. So
+            # to filter both on data set properties and on gene properties one
+            # has specify something like this:
+            # criteria = {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
+            # This should translate to the following URL part:
+            # "rma::criteria,[specimen_id$eq123],genes[acronym$eqGad1]"
+            # criteria = {"data_set": {"specimen_id": 123, "genes": {"acronym": "Gad1"}}}
+            # This should translate to the following URL part:
+            # "rma::criteria,data_set[specimen_id$eq123](genes[acronym$eqGad1])"
+            flags.append("rma::criteria")
+
+            fields, criteria = self._split_associations(self.criteria)
+
+            if fields:
+                flags.append("".join(f"[{k}$eq{v}]" for k, v in fields.items()))
+
+            for name, nested_criteria in criteria.items():
+                # data_set, {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
+                flags.append(self._parse_association(name, nested_criteria))
 
         # Include
         if self.include is not None:
@@ -75,71 +96,44 @@ class RMAParameters:
 
         return f'criteria={",".join(flags)}'
 
-    def handle_criteria(self) -> List[str]:
-        """Convert criteria dictionary into a list of strings for URL."""
-        if self.criteria is None:
-            return []
+    def _split_associations(
+        self, all_associations: Dict[str, Any]
+    ) -> Tuple[Dict[str, str], Dict[str, Any]]:
+        """Separate all criteria into direct criteria and sub-criteria.
 
-        # Associations are a way of specifying nested search filters and are
-        # modeled by nested criteria, i.e. by values that are dictionaries
-        # themselves.
-        # For example, genes are an association of the section data set. So
-        # to filter both on data set properties and on gene properties one
-        # has specify something like this:
-        # criteria = {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
-        # This should translate to the following URL part:
-        # "rma::criteria,[specimen_id$eq123],genes[acronym$eqGad1]"
-        # criteria = {"data_set": {"specimen_id": 123, "genes": {"acronym": "Gad1"}}}
-        # This should translate to the following URL part:
-        # "rma::criteria,data_set[specimen_id$eq123](genes[acronym$eqGad1])"
+        For example: {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
+        --> criteria: {"specimen_id": 123}
+        --> sub-criteria-fields: {"genes": {"acronym": "Gad1"}}
+        """
+        criteria = {}
+        sub_criteria_fields = {}
 
-        criteria_flags = ["rma::criteria"]
+        for k, v in all_associations.items():
+            if isinstance(v, dict):
+                sub_criteria_fields[k] = v
+            else:
+                criteria[k] = v
 
-        def separate_criteria(
-            all_criteria: Dict[str, Any]
-        ) -> Tuple[Dict[str, str], Dict[str, Any]]:
-            """Separate all criteria into direct criteria and sub-criteria.
+        return criteria, sub_criteria_fields
 
-            For example: {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
-            --> criteria: {"specimen_id": 123}
-            --> sub-criteria-fields: {"genes": {"acronym": "Gad1"}}
-            """
-            criteria = {}
-            sub_criteria_fields = {}
+    def _parse_association(self, name, criteria):
+        """Parse association for the creation of the URL."""
+        result = name
+        fields, assocations = self._split_associations(criteria)
 
-            for k, v in all_criteria.items():
-                if isinstance(v, dict):
-                    sub_criteria_fields[k] = v
-                else:
-                    criteria[k] = v
+        for k, v in fields.items():
+            result += f"[{k}$eq{v}]"
 
-            return criteria, sub_criteria_fields
+        if assocations:
+            parsed_associations = [
+                self._parse_association(association_name, association_criteria)
+                for association_name, association_criteria in assocations.items()
+            ]
+            result += "("
+            result += ",".join(parsed_associations)
+            result += ")"
 
-        criteria, sub_criteria_fields = separate_criteria(self.criteria)
-
-        if criteria:
-            criteria_flags.append("".join(f"[{k}$eq{v}]" for k, v in criteria.items()))
-
-        for field, nested_criteria in sub_criteria_fields.items():
-            # data_set, {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
-            sub_flags = []
-            nested_criteria, nested_criteria_fields = separate_criteria(nested_criteria)
-
-            sub_flags.append(
-                "".join(f"[{k}$eq{v}]" for k, v in nested_criteria.items())
-            )
-
-            for sub_field, nested_values in nested_criteria_fields.items():
-                sub_flags.append(
-                    "("
-                    + sub_field
-                    + "".join(f"[{k}$eq{v}]" for k, v in nested_values.items())
-                    + ")"
-                )
-
-            criteria_flags.append(field + "".join(sub_flags))
-
-        return criteria_flags
+        return result
 
 
 def rma_all(rma_parameters: RMAParameters) -> list:
