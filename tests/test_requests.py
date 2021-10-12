@@ -57,7 +57,7 @@ class TestRMAParameters:
                     "specimen": {"id": 702765},
                 },
                 "data_set[id$eq479][sphinx_id$eq138444](genes[acronym$eqGad1]"
-                "(organism[id$eq2][ncbitaxonomyid$eq10090]),specimen[id$eq702765])"
+                "(organism[id$eq2][ncbitaxonomyid$eq10090]),specimen[id$eq702765])",
             ),
         ),
     )

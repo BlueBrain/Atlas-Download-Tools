@@ -20,7 +20,7 @@ More info: https://help.brain-map.org/display/api/Allen+Brain+Atlas+API
 """
 import logging
 from dataclasses import dataclass, replace
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 import requests
 
@@ -66,7 +66,8 @@ class RMAParameters:
             # criteria = {"specimen_id": 123, "genes": {"acronym": "Gad1"}}
             # This should translate to the following URL part:
             # "rma::criteria,[specimen_id$eq123],genes[acronym$eqGad1]"
-            # criteria = {"data_set": {"specimen_id": 123, "genes": {"acronym": "Gad1"}}}
+            # criteria = {"data_set":
+            # {"specimen_id": 123, "genes": {"acronym": "Gad1"}}}
             # This should translate to the following URL part:
             # "rma::criteria,data_set[specimen_id$eq123](genes[acronym$eqGad1])"
             flags.append("rma::criteria")
