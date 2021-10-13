@@ -26,9 +26,7 @@ install_requires = [
     "matplotlib",
     "numpy",
     "opencv-python",
-    "pandas",
     "requests",
-    "responses",
     "scikit-image",
 ]
 extras_require = {
