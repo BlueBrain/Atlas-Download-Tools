@@ -21,7 +21,7 @@ python_requires = ">=3.6"
 install_requires = [
     "Pillow",
     "appdirs",
-    "click",
+    "click>=8",
     "dataclasses; python_version < '3.7'",
     "matplotlib",
     "numpy",
