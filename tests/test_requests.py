@@ -28,6 +28,45 @@ class TestRMAParameters:
         assert str(params) == "criteria=model::my-model"
 
     @pytest.mark.parametrize(
+        ("name", "criteria", "url_params"),
+        (
+            (
+                "",
+                {"id": 10, "name": "dataset"},
+                "[id$eq10][name$eqdataset]",
+            ),
+            (
+                "data_set",
+                {"id": 123, "genes": {"acronym": "Gad1"}},
+                "data_set[id$eq123](genes[acronym$eqGad1])",
+            ),
+            (
+                "data_set",
+                {"specimen_id": 123, "genes": {"acronym": "Gad1"}},
+                "data_set[specimen_id$eq123](genes[acronym$eqGad1])",
+            ),
+            (
+                "data_set",
+                {
+                    "id": 479,
+                    "sphinx_id": 138444,
+                    "genes": {
+                        "acronym": "Gad1",
+                        "organism": {"id": 2, "ncbitaxonomyid": 10090},
+                    },
+                    "specimen": {"id": 702765},
+                },
+                "data_set[id$eq479][sphinx_id$eq138444](genes[acronym$eqGad1]"
+                "(organism[id$eq2][ncbitaxonomyid$eq10090]),specimen[id$eq702765])",
+            ),
+        ),
+    )
+    def test_parse_association(self, name, criteria, url_params):
+        params = RMAParameters("my-model")
+        result = params._parse_association(name, criteria)
+        assert result == url_params
+
+    @pytest.mark.parametrize(
         ("criteria", "url_params"),
         (
             (
@@ -41,6 +80,10 @@ class TestRMAParameters:
             (
                 {"specimen_id": 123, "genes": {"acronym": "Gad1"}},
                 "[specimen_id$eq123],genes[acronym$eqGad1]",
+            ),
+            (
+                {"data_set": {"specimen_id": 123, "genes": {"acronym": "Gad1"}}},
+                "data_set[specimen_id$eq123](genes[acronym$eqGad1])",
             ),
         ),
     )
