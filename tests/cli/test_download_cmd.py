@@ -15,14 +15,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import json
+import re
 from collections import defaultdict
 
 import numpy as np
 import pytest
+import requests
+import responses
 from click.testing import CliRunner
+from PIL import Image
 
 from atldld.base import DisplacementField
-from atldld.cli.download import download_cmd, download_dataset
+from atldld.cli.download import download_cmd, download_dataset, download_image
 from atldld.sync import DatasetNotFoundError
 
 
@@ -130,3 +134,93 @@ class TestDownloadDataset:
                 "section_coordinate",
                 "section_coordinate_scaled",
             } == set(image_metadata.keys())
+
+
+class TestDownloadImage:
+    @responses.activate
+    def test_connection_errors_are_caught(self):
+        responses.add(responses.GET, re.compile(r""), requests.ConnectionError())
+
+        # Testing
+        runner = CliRunner()
+        result = runner.invoke(download_image, ["0", "out"])
+        assert result.exit_code != 0  # should exit with an error code
+        assert "Error: no network connection" in result.output
+
+    @responses.activate
+    def test_nonexistent_image_is_handled(self):
+        response = requests.Response()
+        response.reason = "some reason"
+        response.status_code = 999
+        responses.add(
+            responses.GET, re.compile(r""), requests.HTTPError(response=response)
+        )
+
+        # Testing
+        runner = CliRunner()
+        result = runner.invoke(download_image, ["0", "out"])
+        assert result.exit_code != 0  # should exit with an error code
+        assert "Error:" in result.output
+        assert response.reason in result.output
+        assert str(response.status_code) in result.output
+
+    @responses.activate
+    def test_normal_download(self, mocker, tmp_path):
+        responses.add(responses.GET, re.compile(r""))
+
+        image_arr = np.random.randint(0, 255, size=(5, 5, 3), dtype=np.uint8)
+        image_id = 12345
+        output_dir = tmp_path / "out"
+        get_image = mocker.patch("atldld.utils.get_image", return_value=image_arr)
+
+        runner = CliRunner()
+        result = runner.invoke(download_image, [str(image_id), str(output_dir)])
+
+        assert result.exit_code == 0
+        get_image.assert_called_once()
+
+        image_path = output_dir / f"{image_id}-0.png"
+        assert image_path.exists()
+        with Image.open(image_path) as lazy_img:
+            saved_image = np.asarray(lazy_img)
+        assert np.array_equal(image_arr, saved_image)
+
+    @responses.activate
+    def test_download_with_expression(self, mocker, tmp_path):
+        responses.add(responses.GET, re.compile(r""))
+
+        image_arr = np.random.randint(0, 255, size=(5, 5, 3), dtype=np.uint8)
+        expression_arr = np.random.randint(0, 255, size=(5, 5, 3), dtype=np.uint8)
+        image_id = 12345
+        downsample_img = 5
+
+        def get_image(_image_id, folder=None, expression=False, downsample=0):
+            if expression:
+                return expression_arr
+            else:
+                return image_arr
+
+        mocker.patch("atldld.utils.get_image", new=get_image)
+
+        runner = CliRunner()
+        args = [
+            str(image_id),
+            str(tmp_path),
+            "--include-expression",
+            "--downsample-img",
+            str(downsample_img),
+        ]
+        result = runner.invoke(download_image, args)
+
+        assert result.exit_code == 0
+
+        image_path = tmp_path / f"{image_id}-{downsample_img}.png"
+        expression_path = tmp_path / f"{image_id}-{downsample_img}-expression.png"
+        assert image_path.exists()
+        assert expression_path.exists()
+        with Image.open(image_path) as lazy_img:
+            saved_image = np.asarray(lazy_img)
+        with Image.open(expression_path) as lazy_img:
+            saved_expression = np.asarray(lazy_img)
+        assert np.array_equal(image_arr, saved_image)
+        assert np.array_equal(expression_arr, saved_expression)
