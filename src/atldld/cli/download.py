@@ -152,7 +152,7 @@ def download_dataset(
     is_flag=True,
     help="Include expression image.",
 )
-def download_dataset(
+def download_image(
     image_id,
     output_folder,
     downsample_img,
@@ -160,8 +160,10 @@ def download_dataset(
 ):
     """Download a section image."""
     import textwrap
+
     import requests
     from PIL import Image
+
     from atldld.utils import get_image
 
     cli_input = f"""
@@ -181,7 +183,9 @@ def download_dataset(
         else:
             expression = None
     except requests.ConnectionError:
-        raise click.ClickException("no network connection; check your network or try again later.")
+        raise click.ClickException(
+            "no network connection; check your network or try again later."
+        )
 
     # Prepare paths
     if not output_folder.exists():
@@ -197,4 +201,6 @@ def download_dataset(
         click.secho("Saving the expression...", fg="green")
         expression_path = output_folder / f"{file_name}-expression.png"
         Image.fromarray(expression, mode="RGB").save(expression_path)
-        click.secho(f"Expression saved to {expression_path.resolve().as_uri()}", fg="green")
+        click.secho(
+            f"Expression saved to {expression_path.resolve().as_uri()}", fg="green"
+        )
