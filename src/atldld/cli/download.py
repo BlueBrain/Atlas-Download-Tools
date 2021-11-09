@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""Implementation of the "atldld download" subcommand."""
 import pathlib
 
 import click

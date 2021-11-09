@@ -22,8 +22,8 @@ import pytest
 from click.testing import CliRunner
 
 from atldld.base import DisplacementField
+from atldld.cli.download import download_cmd, download_dataset
 from atldld.sync import DatasetNotFoundError
-from atldld.cli.download import download_dataset, download_cmd
 
 
 class TestDownloadSubgroup:

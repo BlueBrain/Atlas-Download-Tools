@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import json
 import pathlib
 import re
 import textwrap
@@ -218,5 +217,3 @@ class TestDatasetPreview:
             pathlib.Path(output_dir) / "dataset-id-123-preview.png"
         )
         assert output_dir.exists()
-
-
