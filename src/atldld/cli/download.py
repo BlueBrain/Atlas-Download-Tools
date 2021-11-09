@@ -131,3 +131,84 @@ def download_dataset(
 
     with metadata_path.open("w") as f:
         json.dump(metadata, f, indent=4)
+
+
+@download_cmd.command("image", help="Download a section image.")
+@click.argument("image_id", type=str)
+@click.argument(
+    "output_folder",
+    type=click.Path(exists=False, dir_okay=True, path_type=pathlib.Path),
+)
+@click.option(
+    "--downsample-img",
+    type=int,
+    default=0,
+    show_default=True,
+    help="Downsampling coefficient for the image download.",
+)
+@click.option(
+    "-e",
+    "--include-expression",
+    is_flag=True,
+    help="Include expression image.",
+)
+def download_image(
+    image_id,
+    output_folder,
+    downsample_img,
+    include_expression,
+):
+    """Download a section image."""
+    import textwrap
+
+    import requests
+    from PIL import Image
+
+    from atldld.utils import get_image
+
+    cli_input = f"""
+    Image ID                 : {image_id}
+    Downsample image         : {downsample_img}
+    Include expression       : {include_expression}
+    Output folder            : {output_folder.resolve()}
+    """
+    click.secho(textwrap.dedent(cli_input).strip(), fg="blue")
+
+    # Download the image and the expression
+    try:
+        click.secho("Downloading image...", fg="green")
+        image = get_image(image_id, downsample=downsample_img)
+        if include_expression:
+            click.secho("Downloading expression...", fg="green")
+            expression = get_image(image_id, expression=True, downsample=downsample_img)
+        else:
+            expression = None
+    except requests.ConnectionError:
+        raise click.ClickException(
+            "no network connection; check your network or try again later."
+        )
+    except requests.HTTPError as exc:
+        raise click.ClickException(
+            "the server responded with an error: "
+            f"{exc.response.reason} ({exc.response.status_code})"
+        )
+
+    # Prepare paths
+    if not output_folder.exists():
+        output_folder.mkdir(parents=True)
+    file_name = f"{image_id}-{downsample_img}"
+
+    # Save the image to disk
+    click.secho("Saving the image...", fg="green")
+    image_path = output_folder / f"{file_name}.png"
+    Image.fromarray(image, mode="RGB").save(image_path)
+    click.secho(f"Image saved to {image_path.resolve().as_uri()}", fg="green")
+
+    # Save the expression to disk
+    if expression is not None:
+        click.secho("Saving the expression...", fg="green")
+        expression_path = output_folder / f"{file_name}-expression.png"
+        Image.fromarray(expression, mode="RGB").save(expression_path)
+        click.secho(
+            f"Expression saved to {expression_path.resolve().as_uri()}", fg="green"
+        )
