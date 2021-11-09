@@ -174,6 +174,7 @@ def download_image(
     """
     click.secho(textwrap.dedent(cli_input).strip(), fg="blue")
 
+    # Download the image and the expression
     try:
         click.secho("Downloading image...", fg="green")
         image = get_image(image_id, downsample=downsample_img)
@@ -197,11 +198,13 @@ def download_image(
         output_folder.mkdir(parents=True)
     file_name = f"{image_id}-{downsample_img}"
 
+    # Save the image to disk
     click.secho("Saving the image...", fg="green")
     image_path = output_folder / f"{file_name}.png"
     Image.fromarray(image, mode="RGB").save(image_path)
     click.secho(f"Image saved to {image_path.resolve().as_uri()}", fg="green")
 
+    # Save the expression to disk
     if expression is not None:
         click.secho("Saving the expression...", fg="green")
         expression_path = output_folder / f"{file_name}-expression.png"
