@@ -186,6 +186,11 @@ def download_image(
         raise click.ClickException(
             "no network connection; check your network or try again later."
         )
+    except requests.HTTPError as exc:
+        raise click.ClickException(
+            "the server responded with an error: "
+            f"{exc.response.reason} ({exc.response.status_code})"
+        )
 
     # Prepare paths
     if not output_folder.exists():
