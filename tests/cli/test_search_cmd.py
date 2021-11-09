@@ -19,7 +19,7 @@ import re
 import pytest
 from click.testing import CliRunner
 
-from atldld.cli.search import search_cmd, search_dataset, search_img
+from atldld.cli.search import search_cmd, search_dataset, search_image
 from atldld.requests import RMAError
 
 
@@ -141,7 +141,7 @@ class TestSearchDataset:
 class TestSearchImage:
     def test_calling_without_parameters_produces_an_error(self):
         runner = CliRunner()
-        result = runner.invoke(search_img)
+        result = runner.invoke(search_image)
         assert result.exit_code != 0  # should exit with an error code
         assert result.output.startswith(
             "Error: At least one of the search criteria has to be specified."
@@ -150,14 +150,14 @@ class TestSearchImage:
     def test_rma_errors_are_reported(self, rma_all):
         error_msg = "Some error occurred"
         rma_all.side_effect = RMAError(error_msg)
-        result = CliRunner().invoke(search_img, ["--id", "1"])
+        result = CliRunner().invoke(search_image, ["--id", "1"])
         assert result.exit_code != 0
         assert "error" in result.output
         assert error_msg in result.output
 
     def test_no_images_found(self, rma_all):
         rma_all.return_value = []
-        result = CliRunner().invoke(search_img, ["--id", "1"])
+        result = CliRunner().invoke(search_image, ["--id", "1"])
         assert result.exit_code == 0
         assert "No images found" in result.output
 
@@ -181,7 +181,7 @@ class TestSearchImage:
     )
     def test_search_filters(self, rma_all, cli_params, expected_criteria):
         """Test that CLI parameters are correctly translated to criteria."""
-        result = CliRunner().invoke(search_img, cli_params)
+        result = CliRunner().invoke(search_image, cli_params)
         assert result.exit_code == 0
         assert rma_all.called_once
         # Get the args of the last call to rma_all
@@ -218,7 +218,7 @@ class TestSearchImage:
         ]
         rma_all.return_value = msg
         runner = CliRunner()
-        result = runner.invoke(search_img, [command, "whatever"])
+        result = runner.invoke(search_image, [command, "whatever"])
         assert result.exit_code == 0
 
         # Check the output contains the correct number of bullet points

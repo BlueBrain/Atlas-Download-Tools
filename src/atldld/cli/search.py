@@ -90,12 +90,12 @@ def search_dataset(dataset_id, specimen_id, gene_acronym, plane_of_section):
             )
 
 
-@search_cmd.command("img", help="Search section images")
+@search_cmd.command("image", help="Search section images")
 @click.option("-i", "--id", "image_id", help="The image ID")
 @click.option("-d", "--dataset", "dataset_id", help="The dataset ID")
 @click.option("-g", "--gene-name", "gene_acronym", help="The gene acronym")
 @click.option("-s", "--specimen", "specimen_id", help="The specimen ID")
-def search_img(image_id, dataset_id, gene_acronym, specimen_id):
+def search_image(image_id, dataset_id, gene_acronym, specimen_id):
     """Run search subcommand."""
     from collections import defaultdict
     from typing import Any, DefaultDict
