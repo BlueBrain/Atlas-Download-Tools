@@ -80,12 +80,17 @@ $ atldld info version --help
 $ atldld info cache
 ```
 
-One can also obtain dataset and dataset information through the CLI.
+One can also get dataset information through the CLI.
 ```bash
 $ atldld dataset info $DATASET_ID
 $ atldld dataset preview $DATASET_ID
-$ atldld dataset download $DATASET_ID
 ```
+
+To download a dataset use the `atldld download` command.
+```shell
+$ atldld download dataset $DATASET_ID
+```
+
 For further information please refer to the help part of the corresponding
 command.
 

@@ -30,6 +30,7 @@ functions:
 import click
 
 from atldld.cli.dataset import dataset_cmd
+from atldld.cli.download import download_cmd
 from atldld.cli.info import info_cmd
 from atldld.cli.search import search_cmd
 
@@ -45,6 +46,7 @@ def root_cmd():
     """Run the command line interface for Atlas-Download-Tools."""
 
 
-root_cmd.add_command(info_cmd)
 root_cmd.add_command(dataset_cmd)
+root_cmd.add_command(download_cmd)
+root_cmd.add_command(info_cmd)
 root_cmd.add_command(search_cmd)
