@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import logging
 import re
 
 import pytest
@@ -241,7 +242,7 @@ class TestRmaAll:
             rma_all(params)
 
     @responses.activate
-    def test_no_data_received(self):
+    def test_incomplete_data_received(self, caplog):
         params = RMAParameters("my-model")
         # Can at most fetch 25_000 in one request
         msg = list(range(26_000))
@@ -259,12 +260,14 @@ class TestRmaAll:
             "success": True,
             "id": 0,
             "start_row": len(msg_1),
-            "num_rows": 0,  # this should always be greater than 0
+            "num_rows": 0,  # this should normally always be greater than 0
             "total_rows": len(msg),
             "msg": msg_2,
         }
         responses.add(responses.GET, re.compile(""), json=return_json_1)
         responses.add(responses.GET, re.compile(""), json=return_json_2)
 
-        with pytest.raises(RuntimeError, match="No data received"):
+        with caplog.at_level(logging.WARNING, logger="atldld.requests"):
             rma_all(params)
+
+        assert "The server sent only" in caplog.text

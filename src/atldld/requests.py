@@ -181,13 +181,28 @@ def rma_all(rma_parameters: RMAParameters) -> list:
                 f'Expected total_rows to be {total_rows} but got {status["total_rows"]}'
             )
 
-        # Each new request should yield new data. If no data was received, then
-        # something must have gone wrong.
+        # We haven't got all the rows yet, but the query yielded zero results.
+        # This could be due to an arbitrary server-side problem, but we know
+        # of at least one query for which the number of returned results is
+        # consistently smaller than the number of reported results:
+        # RMAParameters(
+        #     "SectionDataSet",
+        #     criteria={
+        #         "specimen": {"donor": {"age": {"days": 56}}},
+        #         "probes": {"orientation": {"name": "Antisense"}}
+        #     },
+        # )
+        # this gives total_rows=50476 but len(msg)=50274.
+        # Previously we would raise an error when this happened, but since this
+        # is reproducible we now only print a warning.
         if status["num_rows"] == 0:
-            raise RuntimeError("No data received")
+            break
 
         pos += status["num_rows"]
         msg += new_msg
+
+    if not len(msg) == total_rows:
+        logger.warning("The server sent only %d of %d results", len(msg), total_rows)
 
     return msg
 
