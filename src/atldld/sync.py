@@ -199,8 +199,8 @@ def get_parallel_transform(
 
     coords_img = pir_to_xy(coords_ref, affine_2d, affine_3d)[:2]
 
-    tx = coords_img[0].reshape(grid_shape) / (2 ** downsample_img)
-    ty = coords_img[1].reshape(grid_shape) / (2 ** downsample_img)
+    tx = coords_img[0].reshape(grid_shape) / (2**downsample_img)
+    ty = coords_img[1].reshape(grid_shape) / (2**downsample_img)
 
     dx = tx - grid[1]
     dy = ty - grid[0]

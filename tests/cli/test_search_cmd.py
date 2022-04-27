@@ -94,8 +94,8 @@ class TestSearchDataset:
             n_img = len(item["section_images"])  # type: ignore[arg-type]
             assert re.search(
                 (
-                    fr"id: +{item['id']}, genes: +{genes}, "
-                    fr"coronal, {n_img} section images"
+                    rf"id: +{item['id']}, genes: +{genes}, "
+                    rf"coronal, {n_img} section images"
                 ),
                 result.output.strip(),
             )
@@ -228,8 +228,8 @@ class TestSearchImage:
         for item in msg:
             assert re.search(
                 (
-                    fr"id: +{item['id']}, dataset: +{item['data_set_id']}, "
-                    fr"h: +{item['height']}, w: +{item['width']}"
+                    rf"id: +{item['id']}, dataset: +{item['data_set_id']}, "
+                    rf"h: +{item['height']}, w: +{item['width']}"
                 ),
                 result.output.strip(),
             )
