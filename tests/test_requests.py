@@ -128,7 +128,7 @@ class TestRma:
 
         responses.add(
             responses.GET,
-            re.compile(fr"https://api.brain-map.org/api/.*/query.json\?{url_params}"),
+            re.compile(rf"https://api.brain-map.org/api/.*/query.json\?{url_params}"),
             json=return_json,
         )
         status_got, msg_got = rma(params)
