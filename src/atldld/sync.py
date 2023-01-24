@@ -378,8 +378,6 @@ class DatasetDownloader:
         metadata_images = self.metadata["images"]
         metadata_dataset = self.metadata["dataset"]
 
-        detection_xy = np.array(self.detection_xy)[:, None]
-
         plane_of_section = metadata_dataset["plane_of_section_id"]
         if plane_of_section == 1:
             slice_coordinate_ix = 0
@@ -394,8 +392,8 @@ class DatasetDownloader:
             z = metadata_dataset["section_thickness"] * metadata_image["section_number"]
             detection_xy = np.array(
                 [
-                    [detection_xy[0]],
-                    [detection_xy[1]],
+                    [self.detection_xy[0]],
+                    [self.detection_xy[1]],
                     [z],
                 ],
                 dtype=np.float32,
