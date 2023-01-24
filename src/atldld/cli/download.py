@@ -199,16 +199,20 @@ def download_image(
     file_name = f"{image_id}-{downsample_img}"
 
     # Save the image to disk
-    click.secho("Saving the image...", fg="green")
-    image_path = output_folder / f"{file_name}.png"
-    Image.fromarray(image, mode="RGB").save(image_path)
-    click.secho(f"Image saved to {image_path.resolve().as_uri()}", fg="green")
+    if image is not None:
+        click.secho("Saving the image...", fg="green")
+        image_path = output_folder / f"{file_name}.png"
+        Image.fromarray(image, mode="RGB").save(image_path)
+        click.secho(f"Image saved to {image_path.resolve().as_uri()}", fg="green")
 
-    # Save the expression to disk
-    if expression is not None:
-        click.secho("Saving the expression...", fg="green")
-        expression_path = output_folder / f"{file_name}-expression.png"
-        Image.fromarray(expression, mode="RGB").save(expression_path)
-        click.secho(
-            f"Expression saved to {expression_path.resolve().as_uri()}", fg="green"
-        )
+        # Save the expression to disk
+        if expression is not None:
+            click.secho("Saving the expression...", fg="green")
+            expression_path = output_folder / f"{file_name}-expression.png"
+            Image.fromarray(expression, mode="RGB").save(expression_path)
+            click.secho(
+                f"Expression saved to {expression_path.resolve().as_uri()}", fg="green"
+            )
+
+    else:
+        click.secho(f"{image_id} is corrupted. Impossible to save", fg="red")
