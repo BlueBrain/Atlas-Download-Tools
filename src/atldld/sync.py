@@ -398,7 +398,7 @@ class DatasetDownloader:
                     [detection_xy[1]],
                     [z],
                 ],
-                dtype=np.float32,
+                dtype=object,
             )
             detection_pir = xy_to_pir(
                 detection_xy,
