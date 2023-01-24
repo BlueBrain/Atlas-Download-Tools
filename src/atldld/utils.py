@@ -29,8 +29,8 @@ import pathlib
 import warnings
 from typing import Optional, Tuple, Union
 
-import PIL
 import numpy as np
+import PIL
 import requests
 from PIL import Image
 
