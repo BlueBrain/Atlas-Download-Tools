@@ -419,6 +419,8 @@ class DatasetDownloader:
                 image_id,
                 downsample=self.downsample_img,
             )
+            if img is None:
+                continue
 
             if self.include_expression:
                 img_expression = get_image(

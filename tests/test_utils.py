@@ -61,6 +61,12 @@ class TestGetImage:
         assert isinstance(img, np.ndarray)
         assert img.dtype == np.uint8
 
+    @pytest.mark.internet
+    def test_get_image_corrupted(self, tmpdir):
+        """Test that we return None when the image is corrupted."""
+        img = get_image(image_id=101322758, folder=tmpdir)
+        assert img is None
+
     def test_get_image_offline(self, tmpdir, img):
         """Test whether offline loading works"""
         image_id_fake = 123456

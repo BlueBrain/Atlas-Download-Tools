@@ -22,12 +22,15 @@ See the module `atldld.sync` for more elaborate functions that use these utils.
 Each function here is independent and performs a very specific lower level
 operation.
 """
+from __future__ import annotations
+
 import json
 import pathlib
 import warnings
 from typing import Optional, Tuple, Union
 
 import numpy as np
+import PIL
 import requests
 from PIL import Image
 
@@ -68,7 +71,7 @@ def get_image(
     folder: Optional[Union[str, pathlib.Path]] = None,
     expression: bool = False,
     downsample: int = 0,
-) -> np.ndarray:
+) -> np.ndarray | None:
     """Download an image from AIBS' servers given an image ID.
 
     All requested images are stored in the `folder` and then read.
@@ -133,10 +136,14 @@ def get_image(
     # https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.open
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=Image.DecompressionBombWarning)
-        with Image.open(image_path) as lazy_img:
-            img = np.asarray(lazy_img)
-    if not img.dtype == np.uint8:
-        raise ValueError("The dtype needs to be uint8")
+        try:
+            with Image.open(image_path) as lazy_img:
+                img = np.asarray(lazy_img)
+            if not img.dtype == np.uint8:
+                raise ValueError("The dtype needs to be uint8")
+        except PIL.UnidentifiedImageError:
+            img = None
+            print(f"For info, {image_id} is corrupted.")
 
     return img
 
