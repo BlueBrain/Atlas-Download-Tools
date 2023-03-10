@@ -25,7 +25,6 @@ install_requires = [
     "dataclasses; python_version < '3.7'",
     "matplotlib",
     "numpy",
-    "opencv-python",
     "requests",
     "scikit-image",
 ]
@@ -45,6 +44,12 @@ extras_require = {
     ],
     "docs": ["sphinx>=1.3", "sphinx-bluebrain-theme"],
 }
+
+try:
+    # Could already be installed on the system
+    import cv2  # noqa
+except ImportError:
+    install_requires.append("opencv-python")
 
 description = "Search, download, and prepare atlas data."
 long_description = """
