@@ -25,7 +25,6 @@ install_requires = [
     "dataclasses; python_version < '3.7'",
     "matplotlib",
     "numpy",
-    "opencv-python",
     "requests",
     "scikit-image",
 ]
