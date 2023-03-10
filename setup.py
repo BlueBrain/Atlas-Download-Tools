@@ -48,7 +48,7 @@ extras_require = {
 
 try:
     # Could already be installed on the system
-    import cv2 # noqa
+    import cv2  # noqa
 except ImportError:
     install_requires.append("opencv-python")
 
